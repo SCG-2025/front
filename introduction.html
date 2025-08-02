@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>설명 창</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      background: url('bg_sample2.jpg') no-repeat center center;
+      background-size: cover;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: center;
+      font-family: sans-serif;
+    }
+    .description {
+      width: 90vw;
+      max-width: 400px;
+      background: rgba(255,255,255,0.85);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 80px;
+      text-align: center;
+      font-size: 1.1rem;
+      min-height: 120px;
+      /* 설명 내용은 추후 추가 */
+    }
+    .start-btn {
+      width: 90vw;
+      max-width: 400px;
+      padding: 16px;
+      margin-bottom: 32px;
+      background: #007aff;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      transition: background 0.2s;
+    }
+    .start-btn:hover {
+      /* 호버 시 상호작용 제거 */
+      background: #007aff;
+      filter: none;
+      transform: none;
+    }
+    .start-btn:active {
+      /* 클릭 시 상호작용 추가 */
+      background: #005bb5;
+      transform: scale(0.97);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="description">
+    <!-- 설명 내용은 추후 추가 -->
+  </div>
+  <button class="start-btn" onclick="location.href='customizing.html'">시작하기</button>
