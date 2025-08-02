@@ -49,13 +49,27 @@
 
     /* ───────── 제출 로직 ───────── */
     function submitForm() {
-        const data = {
-            nickname: nicknameInput.value(),
-            memory: memoryInput.value(),
-            avatar
+        // 커스텀 팝업 표시
+        document.getElementById('confirmModal').style.display = 'flex';
+
+       // 예/아니요 버튼에 이벤트 리스너 등록 (중복 방지 위해 기존 리스너 제거 후 등록)
+        const yesBtn = document.getElementById('yesBtn');
+        const noBtn = document.getElementById('noBtn');
+
+        yesBtn.onclick = function() {
+            document.getElementById('confirmModal').style.display = 'none';
+            const data = {
+                nickname: nicknameInput.value(),
+                memory: memoryInput.value(),
+                avatar
+            };
+            console.log('SUBMIT', data);
+            alert('제출되었습니다!');
         };
-        console.log('SUBMIT', data);      // 여기서 서버 전송 or Firestore 저장 등
-        alert('제출되었습니다!');
+
+        noBtn.onclick = function() {
+            document.getElementById('confirmModal').style.display = 'none';
+        };
     }
 
     /* ───────── 아바타 그리기 ───────── */
