@@ -7,6 +7,7 @@ import { collection, addDoc, serverTimestamp }
 (() => {
     // 1. 로컬스토리지에서 아바타 복원
     const saved = JSON.parse(localStorage.getItem('avatarData') || '{}');
+    const category = localStorage.getItem('memoryType') || '사진';
     const avatar = Object.assign({
         hair: null, clothes: null, skin: '#ffdbac', eyes: '#000', shoes: null, gear: null
     }, saved);
@@ -77,7 +78,7 @@ import { collection, addDoc, serverTimestamp }
             const data = {
                 nickname: nicknameInput.value(),
                 memory: memoryInput.value(),
-                avatar
+                avatar, category
             };
 
             try {
