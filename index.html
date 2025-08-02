@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Media‑Wall QR & Memo Prototype</title>
+    <!-- p5.js core -->
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js"></script>
+    <!-- jsQR: lightweight QR decoder (Day 2) -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    <!-- (선택) Firebase SDK – Day 3 이후 연동 시 사용
+  <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js"></script>
+  -->
+    <style>
+        body {
+            margin: 0;
+            font-family: sans-serif;
+        }
+
+        #uiLayer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        #memoPanel {
+            position: absolute;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            pointer-events: auto;
+        }
+
+        textarea {
+            width: 240px;
+            height: 80px;
+            resize: none;
+        }
+
+        button {
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- UI Layer (HTML over canvas) -->
+    <div id="uiLayer">
+        <div id="memoPanel">
+            <textarea id="memoInput" placeholder="메모를 입력하세요"></textarea>
+            <button id="saveMemoBtn">저장</button>
+        </div>
+    </div>
+
+    <script>
+        /***************************
+         * Day 1: 환경 설정 및 p5 초기화
+         ***************************/
+        let video;          // 웹캠 영상 스트림
+        let canvas;         // p5 캔버스
+        let currentQRData;  // 스캔된 QR 문자열 (Day 2)
+        let memos = [];     // 저장된 메모 배열 (Day 3)
+
+        function setup() {
+            // 전체 화면 크기로 p5 캔버스 생성
+            canvas = createCanvas(windowWidth, windowHeight);
+            canvas.id('p5Canvas');
+
+            // 비디오 캡처 초기화 (숨김 처리)
+            video = createCapture(VIDEO);
+            video.size(width, height);
+            video.hide();
+
+            // UI 이벤트 바인딩 (Day 3)
+            document.getElementById('saveMemoBtn').addEventListener('click', saveMemo);
+        }
+
+        function draw() {
+            // Day 2: QR 스캔 원본 화면 표시 (디버그 용)
+            image(video, 0, 0, width, height);
+
+            // Day 2: 매 프레임 QR 코드 스캔 시도
+            scanQRCode();
+
+            // Day 4: 스캔 결과 및 메모 표시
+            drawOverlay();
+        }
+
+        /***************************
+         * Day 2: QR 코드 스캔 기능
+         ***************************/
+        function scanQRCode() {
+            const capture = video.get(); // p5.Image → HTMLCanvasElement 추출
+            const imageData = capture.canvas.getContext('2d').getImageData(0, 0, capture.width, capture.height);
+            const code = jsQR(imageData.data, capture.width, capture.height);
+            if (code && code.data !== currentQRData) {
+                currentQRData = code.data;
+                console.log('QR Detected:', currentQRData);
+                // TODO: Day 3 – QR 데이터와 메모 연결 로직
+            }
+        }
+
+        /***************************
+         * Day 3: 메모 저장 로직
+         ***************************/
+        function saveMemo() {
+            const memoText = document.getElementById('memoInput').value.trim();
+            if (!memoText) return;
+            const entry = {
+                qr: currentQRData || 'NO_QR',
+                memo: memoText,
+                ts: Date.now(),
+            };
+            memos.push(entry);
+            console.table(memos);
+            document.getElementById('memoInput').value = '';
+            // TODO: Firebase 등 클라우드 DB 연동 (Day 3)
+        }
+
+        /***************************
+         * Day 4: 통합 테스트용 오버레이
+         ***************************/
+        function drawOverlay() {
+            if (currentQRData) {
+                push();
+                fill(0, 200);
+                rect(0, 0, width, 40);
+                fill(255);
+                textSize(16);
+                textAlign(LEFT, CENTER);
+                text('QR: ' + currentQRData, 10, 20);
+                pop();
+            }
+        }
+
+        /***************************
+         * Day 5‑7: UI/UX 고도화 예정
+         ***************************/
+        function windowResized() {
+            resizeCanvas(windowWidth, windowHeight);
+            video.size(width, height);
+        }
+    </script>
+</body>
+
+</html>
