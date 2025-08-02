@@ -74,8 +74,9 @@
         animationState = 'plane-in';
         planeX = -80; // 왼쪽 밖에서 시작
         planeY = height * 0.55;
-        avatarX = width / 2;
-        avatarY = height * 0.35;
+        const size = min(windowWidth * 0.5, 280);
+        avatarX = windowWidth / 2;
+        avatarY = windowHeight * 0.45 / 2; // 중앙에 위치
         jumpProgress = 0;
         loop(); // draw 루프 시작
     }
@@ -130,7 +131,7 @@
             avatarX = planeX + 30; // 비행기와 함께 x축 이동
             if (jumpProgress >= 1) {
                 animationState = 'ride';
-                avatarY = planeY - 30; // 비행기 위에 탑승
+                avatarY = planeY - 80; // 비행기 위에 탑승
                 avatarX = planeX + 30;
             }
         }
@@ -140,7 +141,7 @@
             planeX += 18; // 비행기 속도 증가
             avatarX = planeX + 30; // 비행기와 함께 x축 이동
             planeY -= 2;
-            avatarY = planeY - 30; // 비행기와 함께 y축 이동
+            avatarY = planeY - 80; // 비행기와 함께 y축 이동
             if (planeX > width + 160) { // 비행기 크기만큼 더 멀리
                 animationState = 'fly-out';
                 setTimeout(() => {
@@ -156,14 +157,15 @@
         fill('#eee');
         stroke('#888');
         translate(planeX, planeY);
-        triangle(0, -40, 160, 0, 0, 40);
+        triangle(0, -120, 480, 0, 0, 120);
         pop();
 
         // 아바타 그리기 (애니메이션 중일 때만 위치 조정)
         if (animationState !== 'idle') {
             push();
-            translate(avatarX, avatarY);
-            scale(0.7);
+            // 아바타 크기 유지: 중앙 기준으로 위치 조정
+            const size = min(width * 0.5, 280);
+            translate(avatarX - size / 2, avatarY - size / 2);
             drawAvatarShape();
             pop();
         }
@@ -171,7 +173,7 @@
 
     // 아바타 도형만 그리는 함수 (애니메이션용)
     function drawAvatarShape() {
-        const size = 120;
+        const size = min(width * 0.5, 280);
         fill(avatar.skin); ellipse(size / 2, size * 0.25, size * 0.5);
         rect(size * 0.2, size * 0.45, size * 0.6, size * 0.5, 10);
         fill(avatar.eyes);
