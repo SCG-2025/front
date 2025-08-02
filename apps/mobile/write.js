@@ -56,16 +56,45 @@ import { collection, addDoc, serverTimestamp }
             .style('background', '#2196F3').style('color', '#fff').style('cursor', 'pointer')
             .mousePressed(submitForm);
     }
-    async function submitForm() {
-        const data = {
-            nickname: nicknameInput.value(),
-            memory: memoryInput.value(),
-            avatar
+
+    // 호출 지점: <form onsubmit="event.preventDefault(); submitForm();" …>
+    function submitForm() {
+        const confirmModal = document.getElementById('confirmModal');
+        const yesBtn = document.getElementById('yesBtn');
+        const noBtn = document.getElementById('noBtn');
+
+        // 모달 표시
+        confirmModal.style.display = 'flex';
+
+        // 혹시 이전에 달린 핸들러가 남아 있을 수 있으므로 초기화
+        yesBtn.onclick = null;
+        noBtn.onclick = null;
+
+        // [예] 버튼
+        yesBtn.onclick = async () => {
+            confirmModal.style.display = 'none';
+
+            const data = {
+                nickname: nicknameInput.value(),
+                memory: memoryInput.value(),
+                avatar
+            };
+
+            try {
+                await addDoc(collection(db, 'memories'), data);   // Firestore 저장
+                startAnimation();                                 // 애니메이션 실행
+            } catch (err) {
+                console.error('Firestore 저장 오류:', err);
+                alert('저장 중 문제가 발생했습니다. 다시 시도해 주세요.');
+            }
         };
-        await addDoc(collection(db, 'memories'), data);
-        alert('제출되었습니다!');
-        window.location.href = 'index.html';
+
+        // [아니요] 버튼
+        noBtn.onclick = () => {
+            confirmModal.style.display = 'none'; // 모달만 닫고 아무 것도 하지 않음
+        };
     }
+
 
     // ───────── 애니메이션 시작 ─────────
     function startAnimation() {
