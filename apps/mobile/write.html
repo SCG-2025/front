@@ -29,6 +29,26 @@
 </head>
 
 <body>
+    <!-- 뒤로 가기 버튼 -->
+    <button id="backBtn" style="
+        position:fixed;
+        top:24px;
+        left:20px;
+        z-index:1000;
+        background:#fff;
+        border:2px solid #222;
+        border-radius:10px;
+        padding:10px 22px;
+        font-size:1rem;
+        font-family:sans-serif;
+        cursor:pointer;
+        box-shadow:0 2px 8px rgba(0,0,0,0.08);
+    ">이전</button>
+    <script>
+      document.getElementById('backBtn').onclick = function() {
+        location.href = 'customizing.html';
+      }
+    </script>
     <script type="module" src="firebase-init.js"></script>
     <script type="module" src="write.js"></script>
 </body>
