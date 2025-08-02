@@ -1,6 +1,8 @@
 // customizing.js  – 모든 UI·로직을 p5.js DOM으로 생성
 (() => {
     /* ---------- 전역 상태 ---------- */
+    const memoryTypes = ['사진', '영상', '게임', '노래', '장소', '물건'];
+    const categories = ['머리', '옷', '피부색', '눈색', '신발', '장비'];
     const avatar = {
         hair: null,
         clothes: null,
@@ -10,35 +12,59 @@
         gear: null,
     };
 
-    const categories = ['머리', '옷', '피부색', '눈색', '신발', '장비'];
 
-    // 카테고리별 더미 아이템(원하는 만큼 추가·교체)
     const items = {
-        머리: [
-            { name: 'Short', img: 'assets/hair_short.png' },
-            { name: 'Long', img: 'assets/hair_long.png' },
-        ],
-        옷: [
-            { name: 'T-Shirt', img: 'assets/clothes_t.png' },
-            { name: 'Hoodie', img: 'assets/clothes_hoodie.png' },
-        ],
-        피부색: [
-            { name: 'Light', color: '#ffdbac' },
-            { name: 'Tan', color: '#c68642' },
-            { name: 'Dark', color: '#8d5524' },
-        ],
-        눈색: [
-            { name: 'Brown', color: '#5c4033' },
-            { name: 'Blue', color: '#3b7dd8' },
-            { name: 'Green', color: '#3d9d5d' },
-        ],
-        신발: [
-            { name: 'Sneakers', img: 'assets/shoes_sneakers.png' },
-        ],
-        장비: [
-            { name: 'Guitar', img: 'assets/gear_guitar.png' },
-        ],
+        사진: {
+            머리: [{ name: '단발머리', img: 'assets/hair_short.png' }, { name: '긴머리', img: 'assets/hair_long.png' }],
+            옷: [{ name: 'Vintage Tee', img: 'assets/clothes_t.png' }],
+            피부색: [{ name: '1', color: '#ffdbac' }, { name: '2', color: '#d3a871ff' }, { name: '3', color: '#c58b3fff' }, { name: '4', color: '#d4851dff' }],
+            눈색: [{ name: '1', color: '#ff3c0bff' }, { name: '2', color: '#e98e18ff' }, { name: '3', color: '#e4c516ff' }, { name: '4', color: '#60ff17ff' }],
+            신발: [{ name: 'Canvas', img: 'assets/photo_shoes.png' }],
+            장비: [{ name: 'Camera', img: 'assets/photo_cam.png' }],
+        },
+        영상: {
+            머리: [{ name: '단발머리', img: 'assets/hair_short.png' }, { name: '긴머리', img: 'assets/hair_long.png' }],
+            옷: [{ name: 'Crew Vest', img: 'assets/clothes_hoodie.png' }],
+            피부색: [{ name: '1', color: '#facecbff' }, { name: '2', color: '#f09089ff' }, { name: '3', color: '#eb645aff' }, { name: '4', color: '#f0291bff' }],
+            눈색: [{ name: '1', color: '#ff3c0bff' }, { name: '2', color: '#e98e18ff' }, { name: '3', color: '#e4c516ff' }, { name: '4', color: '#60ff17ff' }],
+            신발: [{ name: 'Boots', img: 'assets/video_boots.png' }],
+            장비: [{ name: 'Clapboard', img: 'assets/video_clap.png' }],
+        },
+        게임: {
+            머리: [{ name: '단발머리', img: 'assets/hair_short.png' }, { name: '긴머리', img: 'assets/hair_long.png' }],
+            옷: [{ name: 'Vintage Tee', img: 'assets/clothes_t.png' }],
+            피부색: [{ name: '1', color: '#f5f4c4ff' }, { name: '2', color: '#f5f269ff' }, { name: '3', color: '#ebe84cff' }, { name: '4', color: '#faf615ff' }],
+            눈색: [{ name: '1', color: '#ff3c0bff' }, { name: '2', color: '#e98e18ff' }, { name: '3', color: '#e4c516ff' }, { name: '4', color: '#60ff17ff' }],
+            신발: [{ name: 'Canvas', img: 'assets/photo_shoes.png' }],
+            장비: [{ name: 'Camera', img: 'assets/photo_cam.png' }],
+        },
+        노래: {
+            머리: [{ name: '단발머리', img: 'assets/hair_short.png' }, { name: '긴머리', img: 'assets/hair_long.png' }],
+            옷: [{ name: 'Crew Vest', img: 'assets/clothes_hoodie.png' }],
+            피부색: [{ name: '1', color: '#facecbff' }, { name: '2', color: '#f09089ff' }, { name: '3', color: '#eb645aff' }, { name: '4', color: '#f0291bff' }],
+            눈색: [{ name: '1', color: '#ff3c0bff' }, { name: '2', color: '#e98e18ff' }, { name: '3', color: '#e4c516ff' }, { name: '4', color: '#60ff17ff' }],
+            신발: [{ name: 'Boots', img: 'assets/video_boots.png' }],
+            장비: [{ name: 'Clapboard', img: 'assets/video_clap.png' }],
+        },
+        장소: {
+            머리: [{ name: '단발머리', img: 'assets/hair_short.png' }, { name: '긴머리', img: 'assets/hair_long.png' }],
+            옷: [{ name: 'Vintage Tee', img: 'assets/clothes_t.png' }],
+            피부색: [{ name: '1', color: '#ffdbac' }, { name: '2', color: '#d3a871ff' }, { name: '3', color: '#c58b3fff' }, { name: '4', color: '#d4851dff' }],
+            눈색: [{ name: '1', color: '#ff3c0bff' }, { name: '2', color: '#e98e18ff' }, { name: '3', color: '#e4c516ff' }, { name: '4', color: '#60ff17ff' }],
+            신발: [{ name: 'Canvas', img: 'assets/photo_shoes.png' }],
+            장비: [{ name: 'Camera', img: 'assets/photo_cam.png' }],
+        },
+        물건: {
+            머리: [{ name: '단발머리', img: 'assets/hair_short.png' }, { name: '긴머리', img: 'assets/hair_long.png' }],
+            옷: [{ name: 'Crew Vest', img: 'assets/clothes_hoodie.png' }],
+            피부색: [{ name: '1', color: '#facecbff' }, { name: '2', color: '#f09089ff' }, { name: '3', color: '#eb645aff' }, { name: '4', color: '#f0291bff' }],
+            눈색: [{ name: '1', color: '#ff3c0bff' }, { name: '2', color: '#e98e18ff' }, { name: '3', color: '#e4c516ff' }, { name: '4', color: '#60ff17ff' }],
+            신발: [{ name: 'Boots', img: 'assets/video_boots.png' }],
+            장비: [{ name: 'Clapboard', img: 'assets/video_clap.png' }],
+        },
     };
+    /* 현재 선택 상태 */
+    let selMemory = '사진';      // 추억 유형
 
     let selCat = '머리';          // 현재 선택된 카테고리
     let summaryDiv, inventoryDiv;
@@ -70,7 +96,17 @@
             .style('width', '42%').style('max-width', '220px')
             .style('padding', '8px').style('border', '1px solid #ccc')
             .style('background', '#fafafa').style('font-size', '0.9rem');
+        /* 추억 선택 바 (상단) */
+        const memBar = createDiv('').id('memory-bar')
+            .style('display', 'flex').style('flex-wrap', 'wrap')
+            .style('gap', '6px').style('padding', '8px');
 
+        memoryTypes.forEach(mem => {
+            createButton(mem)
+                .parent(memBar)
+                .mousePressed(() => { selMemory = mem; fillInventory(); })
+                .style('flex', '1').style('min-width', '70px');
+        });
         /* 하단 카테고리 버튼 바 */
         const bar = createDiv('').id('cat-bar')
             .style('position', 'fixed')
@@ -107,29 +143,25 @@
     /* ---------- 인벤토리 채우기 ---------- */
     function fillInventory() {
         inventoryDiv.html('');       // 비우기
+        const list = items[selMemory][selCat] || [];
 
-        items[selCat].forEach(obj => {
-            // 아이템 카드
+        list.forEach(obj => {
             const card = createDiv('').parent(inventoryDiv)
                 .style('width', '80px').style('height', '80px')
                 .style('border', '1px solid #aaa')
                 .style('display', 'flex').style('align-items', 'center')
-                .style('justify-content', 'center')
-                .style('cursor', 'pointer');
+                .style('justify-content', 'center').style('cursor', 'pointer');
 
-            // 이미지 or 색상 칩
             if (obj.img) {
                 createImg(obj.img, '').parent(card).style('width', '70%');
             } else if (obj.color) {
                 card.style('background', obj.color);
             }
 
-            // 클릭 시 장착
             card.attribute('title', obj.name);
             card.mousePressed(() => equip(selCat, obj));
         });
     }
-
     /* ---------- 아이템 장착 ---------- */
     function equip(cat, obj) {
         if (cat === '피부색') avatar.skin = obj.color;
