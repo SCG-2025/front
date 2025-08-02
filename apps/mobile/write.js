@@ -7,6 +7,10 @@
     }, saved);
 
     let nicknameInput, memoryInput;
+    let animationState = 'idle'; // idle, plane-in, jump, ride, fly-out
+    let planeX = 0, planeY = 0;
+    let avatarX = 0, avatarY = 0;
+    let jumpProgress = 0;
 
     // ───────── p5 ─────────
     function setup() {
@@ -17,6 +21,7 @@
 
         // (2) 입력 폼
         buildForm();
+        noLoop(); // 기본 draw 멈춤, 애니메이션 시작 시 loop()
     }
 
     function windowResized() {
@@ -49,28 +54,30 @@
 
     // ───────── 제출 로직 ─────────
     function submitForm() {
-        // 커스텀 팝업 표시
         document.getElementById('confirmModal').style.display = 'flex';
 
-        // 예/아니요 버튼에 이벤트 리스너 등록
         const yesBtn = document.getElementById('yesBtn');
         const noBtn = document.getElementById('noBtn');
 
         yesBtn.onclick = function() {
             document.getElementById('confirmModal').style.display = 'none';
-            const data = {
-                nickname: nicknameInput.value(),
-                memory: memoryInput.value(),
-                avatar
-            };
-            console.log('SUBMIT', data);
-            alert('제출되었습니다!');
-            window.location.href = 'index.html'; // 시작 화면 경로로 이동
+            startAnimation();
         };
 
         noBtn.onclick = function() {
             document.getElementById('confirmModal').style.display = 'none';
         };
+    }
+
+    // ───────── 애니메이션 시작 ─────────
+    function startAnimation() {
+        animationState = 'plane-in';
+        planeX = -80; // 왼쪽 밖에서 시작
+        planeY = height * 0.55;
+        avatarX = width / 2;
+        avatarY = height * 0.35;
+        jumpProgress = 0;
+        loop(); // draw 루프 시작
     }
 
     // ───────── 아바타 그리기 ─────────
@@ -97,7 +104,84 @@
         pop();
     }
 
+    // ───────── 애니메이션 draw ─────────
+    function draw() {
+        clear();
+
+        // 기본 아바타/폼
+        if (animationState === 'idle') {
+            renderAvatar();
+            return;
+        }
+
+        // 1. 비행기 등장
+        if (animationState === 'plane-in') {
+            planeX += 8;
+            if (planeX >= avatarX) {
+                animationState = 'jump';
+                jumpProgress = 0;
+            }
+        }
+
+        // 2. 아바타 점프
+        if (animationState === 'jump') {
+            jumpProgress += 0.05; // 점프 진행
+            avatarY = height * 0.35 - sin(jumpProgress * Math.PI) * 40;
+            avatarX = planeX + 30; // 비행기와 함께 x축 이동
+            if (jumpProgress >= 1) {
+                animationState = 'ride';
+                avatarY = planeY - 30; // 비행기 위에 탑승
+                avatarX = planeX + 30;
+            }
+        }
+
+        // 3. 탑승 후 비행기+아바타 이동
+        if (animationState === 'ride') {
+            planeX += 18; // 비행기 속도 증가
+            avatarX = planeX + 30; // 비행기와 함께 x축 이동
+            planeY -= 2;
+            avatarY = planeY - 30; // 비행기와 함께 y축 이동
+            if (planeX > width + 160) { // 비행기 크기만큼 더 멀리
+                animationState = 'fly-out';
+                setTimeout(() => {
+                    animationState = 'idle';
+                    alert('제출되었습니다!');
+                    window.location.href = 'index.html';
+                }, 500);
+            }
+        }
+
+        // 비행기 그리기 (오른쪽 세모)
+        push();
+        fill('#eee');
+        stroke('#888');
+        translate(planeX, planeY);
+        triangle(0, -40, 160, 0, 0, 40);
+        pop();
+
+        // 아바타 그리기 (애니메이션 중일 때만 위치 조정)
+        if (animationState !== 'idle') {
+            push();
+            translate(avatarX, avatarY);
+            scale(0.7);
+            drawAvatarShape();
+            pop();
+        }
+    }
+
+    // 아바타 도형만 그리는 함수 (애니메이션용)
+    function drawAvatarShape() {
+        const size = 120;
+        fill(avatar.skin); ellipse(size / 2, size * 0.25, size * 0.5);
+        rect(size * 0.2, size * 0.45, size * 0.6, size * 0.5, 10);
+        fill(avatar.eyes);
+        ellipse(size * 0.4, size * 0.23, size * 0.06);
+        ellipse(size * 0.6, size * 0.23, size * 0.06);
+        // 옷, 머리, 신발 등은 필요시 추가
+    }
+
     // p5 export
     window.setup = setup;
     window.windowResized = windowResized;
+    window.draw = draw;
 })();
