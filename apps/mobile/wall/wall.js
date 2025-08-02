@@ -1,4 +1,4 @@
-import { db } from "./firebase-init.js";
+import { db } from "../firebase-init.js";
 import {
   collection,
   query,
@@ -70,9 +70,9 @@ function drawAvatarToCanvas(canvas, avatar) {
   // 이미지 레이어들(비동기 로딩)
   const layers = [
     { key: "clothes", x: size * 0.2, y: size * 0.45, w: size * 0.6, h: size * 0.5 },
-    { key: "hair",    x: 0,          y: 0,          w: size,       h: size },
-    { key: "shoes",   x: size * 0.25,y: size * 0.88,w: size * 0.5, h: size * 0.15 },
-    { key: "gear",    x: size * 0.65,y: size * 0.55,w: size * 0.3, h: size * 0.3 }
+    { key: "hair", x: 0, y: 0, w: size, h: size },
+    { key: "shoes", x: size * 0.25, y: size * 0.88, w: size * 0.5, h: size * 0.15 },
+    { key: "gear", x: size * 0.65, y: size * 0.55, w: size * 0.3, h: size * 0.3 }
   ];
 
   layers.forEach(({ key, x, y, w, h }) => {

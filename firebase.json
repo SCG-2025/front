@@ -1,24 +1,13 @@
 {
-  "hosting": [
-    {
-      "target": "mobile",
-      "public": "apps/mobile",
-      "ignore": [
-        "firebase.json",
-        "**/.*",
-        "**/node_modules/**"
-      ]
-    },
-    {
-      "target": "wall",
-      "public": "apps/wall",
-      "ignore": [
-        "firebase.json",
-        "**/.*",
-        "**/node_modules/**"
-      ]
-    }
-  ],
+  "hosting": {
+    "target": "mobile",
+    "public": "apps/mobile",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ]
+  },
   "firestore": {
     "database": "(default)",
     "location": "asia-northeast3",
