@@ -64,6 +64,7 @@ import { collection, addDoc, serverTimestamp }
         };
         await addDoc(collection(db, 'memories'), data);
         alert('제출되었습니다!');
+        window.location.href = 'index.html';
     }
 
     // ───────── 애니메이션 시작 ─────────
