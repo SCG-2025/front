@@ -1,3 +1,8 @@
+import { db } from './firebase-init.js';
+import { collection, addDoc, serverTimestamp }
+    from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js';
+
+
 /* write.js – p5.js DOM으로 작성 폼 구성 */
 (() => {
     // 1. 로컬스토리지에서 아바타 복원
@@ -51,22 +56,14 @@
             .style('background', '#2196F3').style('color', '#fff').style('cursor', 'pointer')
             .mousePressed(submitForm);
     }
-
-    // ───────── 제출 로직 ─────────
-    function submitForm() {
-        document.getElementById('confirmModal').style.display = 'flex';
-
-        const yesBtn = document.getElementById('yesBtn');
-        const noBtn = document.getElementById('noBtn');
-
-        yesBtn.onclick = function() {
-            document.getElementById('confirmModal').style.display = 'none';
-            startAnimation();
+    async function submitForm() {
+        const data = {
+            nickname: nicknameInput.value(),
+            memory: memoryInput.value(),
+            avatar
         };
-
-        noBtn.onclick = function() {
-            document.getElementById('confirmModal').style.display = 'none';
-        };
+        await addDoc(collection(db, 'memories'), data);
+        alert('제출되었습니다!');
     }
 
     // ───────── 애니메이션 시작 ─────────
