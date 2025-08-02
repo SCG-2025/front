@@ -96,6 +96,17 @@
             .style('width', '42%').style('max-width', '220px')
             .style('padding', '8px').style('border', '1px solid #ccc')
             .style('background', '#fafafa').style('font-size', '0.9rem');
+        const nextBtn = createButton('다음')
+            .id('next-btn')
+            .style('position', 'absolute').style('top', '10px').style('right', '10px')
+            .style('padding', '8px 18px').style('border', 'none')
+            .style('border-radius', '6px')
+            .style('background', '#4CAF50').style('color', '#fff')
+            .style('font-size', '0.9rem').style('cursor', 'pointer')
+            .mousePressed(() => {
+                localStorage.setItem('avatarData', JSON.stringify(avatar)); // 아바타 저장
+                window.location.href = 'write.html';                        // 페이지 이동
+            });
         /* 추억 선택 바 (상단) */
         const memBar = createDiv('').id('memory-bar')
             .style('display', 'flex').style('flex-wrap', 'wrap')
