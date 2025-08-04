@@ -105,6 +105,7 @@
             .style('font-size', '0.9rem').style('cursor', 'pointer')
             .mousePressed(() => {
                 localStorage.setItem('avatarData', JSON.stringify(avatar)); // 아바타 저장
+                localStorage.setItem('memoryType', selMemory); // 추억 유형 저장
                 window.location.href = 'write.html';                        // 페이지 이동
             });
         /* 추억 선택 바 (상단) */

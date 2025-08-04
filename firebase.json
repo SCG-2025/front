@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "target": "mobile",
     "public": "apps/mobile",
     "ignore": [
       "firebase.json",

@@ -1,5 +1,11 @@
 {
-  "projects": {
-    "default": "scg2025-2e856"
+  "targets": {
+    "scg2025-2e856": {
+      "hosting": {
+        "mobile": [
+          "scg2025-2e856"
+        ]
+      }
+    }
   }
 }
