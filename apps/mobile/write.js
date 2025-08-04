@@ -111,7 +111,7 @@ import { collection, addDoc, serverTimestamp }
     // ───────── 아바타 그리기 ─────────
     function renderAvatar() {
         clear();
-        const size = min(width * 0.5, 280), cx = width / 2, cy = height / 2;
+        const size = 32; // 아바타 크기 32*32 픽셀
         push(); translate(cx - size / 2, cy - size / 2);
 
         // 몸통

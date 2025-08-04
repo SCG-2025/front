@@ -201,7 +201,7 @@
     /* ---------- 아바타 그리기 ---------- */
     function renderAvatar() {
         clear();
-        const size = min(width * 0.5, 280);
+        const size = 32; // 아바타 크기 32*32 픽셀
         const cx = width / 2, cy = height / 2;
 
         push();
