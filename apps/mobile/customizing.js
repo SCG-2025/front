@@ -206,7 +206,8 @@
         const cx = width / 2, cy = height / 2;
 
         push();
-        translate(cx - size / 2, cy - size / 2);
+        translate(cx - size / 2, cy - size * 0.25);
+        scale(3); // 아바타만 3배 확대 (원하는 배율로 조절)
 
         /* 몸통(기본 스킨) */
         fill(avatar.skin);
