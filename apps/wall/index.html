@@ -84,6 +84,33 @@
       color: #333;
     }
 
+    .nickname-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .nickname-text {
+      font-weight: bold;
+      color: #333;
+    }
+
+    .keywords-container {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .keyword-tag {
+      background: #f0f0f0;
+      color: #666;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
     .avatar-details p {
       margin: 5px 0;
       color: #666;
@@ -109,7 +136,12 @@
         <img id="popupAvatarImage" class="avatar-image" src="avatar_sample.jpeg" alt="아바타">
         <div class="avatar-details">
           <h3>아바타 정보</h3>
-          <p><strong>닉네임:</strong> <span id="popupNickname">-</span></p>
+          <div class="nickname-row">
+            <span class="nickname-text"><span id="popupNickname">-</span></span>
+            <div class="keywords-container" id="popupKeywords">
+              <!-- 키워드 태그들이 여기에 동적으로 추가됩니다 -->
+            </div>
+          </div>
           <p><strong>카테고리:</strong> <span id="popupCategory">-</span></p>
           <p><strong>추억:</strong> <span id="popupMemory">-</span></p>
         </div>

@@ -84,6 +84,33 @@
       color: #333;
     }
 
+    .nickname-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .nickname-text {
+      font-weight: bold;
+      color: #333;
+    }
+
+    .keywords-container {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .keyword-tag {
+      background: #f0f0f0;
+      color: #666;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
     .avatar-details p {
       margin: 5px 0;
       color: #666;
@@ -109,7 +136,12 @@
         <img id="popupAvatarImage" class="avatar-image" src="avatar_sample.jpeg" alt="아바타">
         <div class="avatar-details">
           <h3>아바타 정보</h3>
-          <p><strong>닉네임:</strong> <span id="popupNickname">-</span></p>
+          <div class="nickname-row">
+            <span class="nickname-text"><span id="popupNickname">-</span></span>
+            <div class="keywords-container" id="popupKeywords">
+              <!-- 키워드 태그들이 여기에 동적으로 추가됩니다 -->
+            </div>
+          </div>
           <p><strong>카테고리:</strong> <span id="popupCategory">-</span></p>
           <p><strong>추억:</strong> <span id="popupMemory">-</span></p>
         </div>
@@ -153,7 +185,14 @@
           // 임시 데이터 추가
           nickname: '삐삐' + (i + 1), // 각각 다른 닉네임
           category: ['사진', '음악', '영화', '음식', '여행'][i], // 다양한 카테고리
-          memory: '초등학생 때 부모님과 함께 함덕해수욕장에 간 기억이 있어요'
+          memory: '초등학생 때 부모님과 함께 함덕해수욕장에 간 기억이 있어요',
+          keywords: [
+            ['가족', '해변', '추억'],
+            ['음악', '콘서트', '감동'],
+            ['영화관', '데이트', '로맨스'],
+            ['맛집', '친구', '만족'],
+            ['여행', '모험', '힐링']
+          ][i]
         });
       }
       
@@ -286,8 +325,8 @@
         translate(x, 640);
         imageMode(CENTER);
         
-        // 선택된 무대 아바타는 더 크게 표시하고 하이라이트 효과 추가
-        if (selectedStageAvatar === i) {
+        // 선택된 무대 아바타는 더 크게 표시하고 하이라이트 효과 추가 (팝업이 열렸을 때만)
+        if (showPopup && popupAvatar && popupAvatar.isStageAvatar && popupAvatar.stageIndex === i) {
           // 배경 원 (하이라이트 효과)
           fill(255, 215, 0, 150); // 골드 색상, 반투명
           ellipse(0, 0, 90, 90);
@@ -345,8 +384,19 @@
         const x = stageX + spacing * (i + 1);
         let distance = dist(mouseX, mouseY, x, stageY);
         if (distance <= 32) { // 64x64 아바타의 절반
-          selectedStageAvatar = i;
+          // 무대 아바타 정보 생성 후 팝업 표시
+          const stageAvatarInfo = {
+            id: 'stage_' + i,
+            isStageAvatar: true,
+            stageIndex: i,
+            nickname: '무대 아바타 ' + (i + 1),
+            category: '공연',
+            memory: '무대 위에서 멋진 공연을 준비하고 있습니다.',
+            keywords: ['공연', '무대', '예술']
+          };
+          showPopupFor(stageAvatarInfo);
           selectedAvatar = null; // 동적 아바타 선택 해제
+          selectedStageAvatar = null;
           return;
         }
       }
@@ -365,7 +415,8 @@
           currentAction: 'walking',
           nickname: '삐삐' + testAvatars.length,
           category: '일반',
-          memory: '초등학생 때 부모님과 함께 함덕해수욕장에 간 기억이 있어요'
+          memory: '초등학생 때 부모님과 함께 함덕해수욕장에 간 기억이 있어요',
+          keywords: ['해변', '가족', '추억']
         });
       }
     }
@@ -408,11 +459,6 @@
         selectedAvatar = null;
         isDragging = false;
       }
-      
-      // 무대 아바타 선택 해제 (클릭만 했을 때)
-      if (selectedStageAvatar !== null) {
-        selectedStageAvatar = null;
-      }
     }
 
     function showPopupFor(avatar) {
@@ -424,11 +470,26 @@
       document.getElementById('popupCategory').textContent = avatar.category;
       document.getElementById('popupMemory').textContent = avatar.memory;
       
+      // 키워드 태그들 생성
+      const keywordsContainer = document.getElementById('popupKeywords');
+      keywordsContainer.innerHTML = ''; // 기존 키워드 제거
+      
+      if (avatar.keywords && Array.isArray(avatar.keywords)) {
+        avatar.keywords.forEach(keyword => {
+          const keywordTag = document.createElement('span');
+          keywordTag.className = 'keyword-tag';
+          keywordTag.textContent = '#' + keyword;
+          keywordsContainer.appendChild(keywordTag);
+        });
+      }
+      
       // 팝업 표시
       document.getElementById('popupOverlay').style.display = 'block';
       
-      // 아바타 멈춤 상태 유지
-      avatar.currentAction = 'stopped';
+      // 동적 아바타만 멈춤 상태로 만듦 (무대 아바타는 고정이므로 제외)
+      if (!avatar.isStageAvatar) {
+        avatar.currentAction = 'stopped';
+      }
     }
 
     function closePopup() {
@@ -438,9 +499,11 @@
       document.getElementById('popupOverlay').style.display = 'none';
       
       if (popupAvatar) {
-        // 아바타 다시 움직이게 함
-        popupAvatar.currentAction = 'idle';
-        popupAvatar.idleTimer = random(30, 120);
+        // 동적 아바타만 다시 움직이게 함 (무대 아바타는 고정이므로 제외)
+        if (!popupAvatar.isStageAvatar) {
+          popupAvatar.currentAction = 'idle';
+          popupAvatar.idleTimer = random(30, 120);
+        }
         popupAvatar = null;
       }
     }

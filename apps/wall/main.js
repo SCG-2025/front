@@ -218,8 +218,8 @@ function drawSampleAvatars() {
     translate(x, stageY);
     imageMode(CENTER);
     
-    // 선택된 무대 아바타는 더 크게 표시하고 하이라이트 효과 추가
-    if (selectedStageAvatar === i) {
+    // 선택된 무대 아바타는 더 크게 표시하고 하이라이트 효과 추가 (팝업이 열렸을 때만)
+    if (showPopup && popupAvatar && popupAvatar.isStageAvatar && popupAvatar.stageIndex === i) {
       // 배경 원 (하이라이트 효과)
       fill(255, 215, 0, 150); // 골드 색상, 반투명
       ellipse(0, 0, 90, 90);
@@ -285,8 +285,19 @@ function mousePressed() {
     const x = stageX + spacing * (i + 1);
     let distance = dist(mouseX, mouseY, x, stageY);
     if (distance <= 32) { // 64x64 아바타의 절반
-      selectedStageAvatar = i;
+      // 무대 아바타 정보 생성 후 팝업 표시
+      const stageAvatarInfo = {
+        id: 'stage_' + i,
+        isStageAvatar: true,
+        stageIndex: i,
+        nickname: '무대 아바타 ' + (i + 1),
+        category: '공연',
+        memory: '무대 위에서 멋진 공연을 준비하고 있습니다.',
+        keywords: ['공연', '무대', '예술']
+      };
+      showPopupFor(stageAvatarInfo);
       selectedAvatar = null; // 동적 아바타 선택 해제
+      selectedStageAvatar = null;
       return;
     }
   }
@@ -330,11 +341,6 @@ function mouseReleased() {
     selectedAvatar = null;
     isDragging = false;
   }
-  
-  // 무대 아바타 선택 해제 (클릭만 했을 때)
-  if (selectedStageAvatar !== null) {
-    selectedStageAvatar = null;
-  }
 }
 
 function showPopupFor(avatar) {
@@ -346,11 +352,34 @@ function showPopupFor(avatar) {
   document.getElementById('popupCategory').textContent = avatar.category || '일반';
   document.getElementById('popupMemory').textContent = avatar.memory || '소중한 추억을 간직하고 있습니다.';
   
+  // 키워드 태그들 생성
+  const keywordsContainer = document.getElementById('popupKeywords');
+  keywordsContainer.innerHTML = ''; // 기존 키워드 제거
+  
+  if (avatar.keywords) {
+    let keywords = [];
+    if (Array.isArray(avatar.keywords)) {
+      keywords = avatar.keywords;
+    } else if (typeof avatar.keywords === 'string') {
+      // 문자열인 경우 쉼표나 공백으로 분리
+      keywords = avatar.keywords.split(/[,\s]+/).filter(k => k.trim().length > 0);
+    }
+    
+    keywords.forEach(keyword => {
+      const keywordTag = document.createElement('span');
+      keywordTag.className = 'keyword-tag';
+      keywordTag.textContent = '#' + keyword.trim();
+      keywordsContainer.appendChild(keywordTag);
+    });
+  }
+  
   // 팝업 표시
   document.getElementById('popupOverlay').style.display = 'block';
   
-  // 아바타 멈춤 상태 유지
-  avatar.currentAction = 'stopped';
+  // 동적 아바타만 멈춤 상태로 만듦 (무대 아바타는 고정이므로 제외)
+  if (!avatar.isStageAvatar) {
+    avatar.currentAction = 'stopped';
+  }
 }
 
 function closePopup() {
@@ -360,9 +389,11 @@ function closePopup() {
   document.getElementById('popupOverlay').style.display = 'none';
   
   if (popupAvatar) {
-    // 아바타 다시 움직이게 함
-    popupAvatar.currentAction = 'idle';
-    popupAvatar.idleTimer = random(30, 120);
+    // 동적 아바타만 다시 움직이게 함 (무대 아바타는 고정이므로 제외)
+    if (!popupAvatar.isStageAvatar) {
+      popupAvatar.currentAction = 'idle';
+      popupAvatar.idleTimer = random(30, 120);
+    }
     popupAvatar = null;
   }
 }
