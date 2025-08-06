@@ -13,5 +13,76 @@
   </style>
 </head>
 <body>
+<script>
+  function setup() {
+    createCanvas(1920, 1760); // 전체 높이도 160px 증가
+    noLoop();
+    drawSpaces();
+    drawSampleAvatars();
+  }
+
+  function drawSpaces() {
+    // 스크린 공간 (회색, 가로 전체, 세로 480px로 증가)
+    fill('#cccccc');
+    rect(0, 0, 1920, 480);
+
+    // 무대 공간 (갈색, 가로 1920/3 = 640, 가운데 정렬)
+    const stageW = 1920 / 3;
+    const stageX = (1920 - stageW) / 2;
+    fill('#a67c52');
+    rect(stageX, 480, stageW, 320);
+
+    // 자유 공간 (하늘색, 무대 아래 전체)
+    fill('#7ecbff');
+    noStroke();
+    rect(0, 800, 1920, 960);
+
+    // 자유 공간 (하늘색, 무대 양 옆)
+    fill('#7ecbff');
+    rect(0, 480, stageX, 320); // 왼쪽
+    rect(stageX + stageW, 480, stageX, 320); // 오른쪽
+
+    // 스크린 3분할 표시선 (가로 전체 기준)
+    stroke('#888');
+    strokeWeight(2);
+    for (let i = 1; i < 3; i++) {
+      let x = (1920 / 3) * i;
+      line(x, 0, x, 480);
+    }
+    noStroke();
+  }
+
+  // 간단한 아바타(원+눈) 그리기 함수
+  function drawSimpleAvatar(x, y, skin = '#ffdbac', eyes = '#222') {
+    push();
+    translate(x, y);
+    fill(skin);
+    ellipse(16, 8, 32, 32); // 머리
+    fill(eyes);
+    ellipse(10, 12, 4, 4); // 왼눈
+    ellipse(22, 12, 4, 4); // 오른눈
+    pop();
+  }
+
+  function drawSampleAvatars() {
+    // 무대에 6명 (가운데 정렬, y=640, 무대 가로 640)
+    let stageW = 1920 / 3;
+    let stageX = (1920 - stageW) / 2;
+    let stageY = 640;
+    let spacing = stageW / 7;
+    for (let i = 0; i < 6; i++) {
+      drawSimpleAvatar(stageX + spacing * (i + 1), stageY);
+    }
+
+    // 자유 공간에 10명 (2줄, 5명씩, y=960, 1040)
+    let freeStartX = 1920 / 2 - (5 * 64) / 2;
+    for (let i = 0; i < 5; i++) {
+      drawSimpleAvatar(freeStartX + i * 64, 960);
+      drawSimpleAvatar(freeStartX + i * 64, 1040);
+    }
+  }
+
+  window.setup = setup;
+</script>
 </body>
 </html>
