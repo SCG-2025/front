@@ -110,8 +110,8 @@
         <div class="avatar-details">
           <h3>아바타 정보</h3>
           <p><strong>닉네임:</strong> <span id="popupNickname">-</span></p>
+          <p><strong>카테고리:</strong> <span id="popupCategory">-</span></p>
           <p><strong>추억:</strong> <span id="popupMemory">-</span></p>
-          <p><strong>키워드:</strong> <span id="popupKeywords">-</span></p>
         </div>
       </div>
       <div class="help-text">
@@ -152,8 +152,8 @@
           currentAction: 'walking',
           // 임시 데이터 추가
           nickname: '삐삐' + (i + 1), // 각각 다른 닉네임
-          memory: '초등학생 때 부모님과 함께 함덕해수욕장에 간 기억이 있어요',
-          keywords: '부모님, 초등학생, 해수욕장'
+          category: ['사진', '음악', '영화', '음식', '여행'][i], // 다양한 카테고리
+          memory: '초등학생 때 부모님과 함께 함덕해수욕장에 간 기억이 있어요'
         });
       }
       
@@ -364,8 +364,8 @@
           idleTimer: 0,
           currentAction: 'walking',
           nickname: '삐삐' + testAvatars.length,
-          memory: '초등학생 때 부모님과 함께 함덕해수욕장에 간 기억이 있어요',
-          keywords: '부모님, 초등학생, 해수욕장'
+          category: '일반',
+          memory: '초등학생 때 부모님과 함께 함덕해수욕장에 간 기억이 있어요'
         });
       }
     }
@@ -421,8 +421,8 @@
       
       // HTML 팝업에 정보 채우기
       document.getElementById('popupNickname').textContent = avatar.nickname;
+      document.getElementById('popupCategory').textContent = avatar.category;
       document.getElementById('popupMemory').textContent = avatar.memory;
-      document.getElementById('popupKeywords').textContent = avatar.keywords;
       
       // 팝업 표시
       document.getElementById('popupOverlay').style.display = 'block';

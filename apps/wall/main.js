@@ -341,10 +341,10 @@ function showPopupFor(avatar) {
   popupAvatar = avatar;
   showPopup = true;
   
-  // HTML 팝업에 정보 채우기
+  // HTML 팝업에 실제 Firebase 데이터 채우기
   document.getElementById('popupNickname').textContent = avatar.nickname || '사용자';
+  document.getElementById('popupCategory').textContent = avatar.category || '일반';
   document.getElementById('popupMemory').textContent = avatar.memory || '소중한 추억을 간직하고 있습니다.';
-  document.getElementById('popupKeywords').textContent = avatar.keywords || '#추억 #소중함 #행복';
   
   // 팝업 표시
   document.getElementById('popupOverlay').style.display = 'block';
