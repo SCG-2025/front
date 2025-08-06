@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PC 아바타 월드 - 크기 미리보기</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.3/p5.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      background: #222;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    canvas {
+      display: block;
+      border: 2px solid #fff;
+    }
+  </style>
+</head>
+
+<body>
+  <script>
+    let avatarImage;
+    let testAvatars = [];
+
+    function preload() {
+      avatarImage = loadImage('avatar_sample.jpeg');
+    }
+
+    function setup() {
+      createCanvas(2560, 1760); // 아이맥 가로 화면에 맞춰 확장 (1920 → 2560)
+      
+      // 테스트용 움직이는 아바타들 생성 (5개)
+      for (let i = 0; i < 5; i++) {
+        testAvatars.push({
+          x: random(200, 2360), // 새로운 가로 크기에 맞춤
+          y: random(900, 1500),
+          vx: random(-1, 1),
+          vy: random(-1, 1),
+          direction: random() > 0.5 ? 1 : -1,
+          walkTimer: random(60, 240),
+          idleTimer: 0,
+          currentAction: 'walking'
+        });
+      }
+      
+      drawMainScreen();
+    }
+
+    function draw() {
+      drawMainScreen();
+      
+      // 테스트 아바타들 애니메이션
+      testAvatars.forEach(avatar => {
+        if (avatar.currentAction === 'idle') {
+          avatar.idleTimer--;
+          if (avatar.idleTimer <= 0) {
+            const directions = [
+              {dx: 1, dy: 0}, {dx: -1, dy: 0}, {dx: 0, dy: 1}, {dx: 0, dy: -1}
+            ];
+            const dir = random(directions);
+            avatar.vx = dir.dx * random(0.5, 1.5);
+            avatar.vy = dir.dy * random(0.5, 1.5);
+            avatar.direction = avatar.vx > 0 ? 1 : (avatar.vx < 0 ? -1 : avatar.direction);
+            avatar.currentAction = 'walking';
+            avatar.walkTimer = random(60, 240);
+          }
+        } else if (avatar.currentAction === 'walking') {
+          avatar.walkTimer--;
+          avatar.x += avatar.vx;
+          avatar.y += avatar.vy;
+          
+          if (avatar.walkTimer <= 0) {
+            avatar.vx = 0;
+            avatar.vy = 0;
+            avatar.currentAction = 'idle';
+            avatar.idleTimer = random(30, 120);
+          }
+        }
+
+        // 경계 충돌 처리
+        if (avatar.x < 0 || avatar.x > 2560) { // 새로운 가로 크기
+          avatar.vx *= -1;
+          avatar.direction *= -1;
+          avatar.x = constrain(avatar.x, 0, 2560);
+        }
+        if (avatar.y < 480 || avatar.y > 1760) {
+          avatar.vy *= -1;
+          avatar.y = constrain(avatar.y, 480, 1760);
+        }
+        
+        // 무대 충돌 처리 (무대 크기도 확장)
+        const stageLeft = 853, stageRight = 1707, stageTop = 480, stageBottom = 800; // 2560/3 = 853.33
+        if (avatar.y >= stageTop && avatar.y <= stageBottom && 
+            avatar.x >= stageLeft && avatar.x <= stageRight) {
+          const centerX = (stageLeft + stageRight) / 2;
+          const centerY = (stageTop + stageBottom) / 2;
+          const dx = avatar.x - centerX;
+          const dy = avatar.y - centerY;
+          
+          if (Math.abs(dx) > Math.abs(dy)) {
+            avatar.vx *= -1;
+            avatar.direction *= -1;
+            avatar.x = dx > 0 ? stageRight + 5 : stageLeft - 5;
+          } else {
+            avatar.vy *= -1;
+            avatar.y = dy > 0 ? stageBottom + 5 : stageTop - 5;
+          }
+        }
+
+        // 아바타 그리기
+        push();
+        translate(avatar.x, avatar.y);
+        if (avatar.direction === -1) {
+          scale(-1, 1);
+        }
+        imageMode(CENTER);
+        image(avatarImage, 0, 0, 64, 64);
+        pop();
+      });
+    }
+
+    function drawMainScreen() {
+      background('#222');
+      
+      // 스크린 공간 (회색, 2560x480)
+      fill('#cccccc');
+      rect(0, 0, 2560, 480);
+
+      // 무대 공간 (갈색, 가운데 1/3 = 853px)
+      const stageW = 2560 / 3; // 853.33
+      const stageX = (2560 - stageW) / 2;
+      fill('#a67c52');
+      rect(stageX, 480, stageW, 320);
+
+      // 자유 공간 (하늘색)
+      fill('#7ecbff');
+      noStroke();
+      rect(0, 800, 2560, 960); // 무대 아래 전체
+      rect(0, 480, stageX, 320); // 왼쪽
+      rect(stageX + stageW, 480, stageX, 320); // 오른쪽
+
+      // 스크린 3분할 표시선
+      stroke('#888');
+      strokeWeight(2);
+      for (let i = 1; i < 3; i++) {
+        line((2560 / 3) * i, 0, (2560 / 3) * i, 480);
+      }
+      noStroke();
+
+      // 무대 아바타들 (6명)
+      const spacing = stageW / 7;
+      for (let i = 0; i < 6; i++) {
+        const x = stageX + spacing * (i + 1);
+        push();
+        translate(x, 640);
+        imageMode(CENTER);
+        image(avatarImage, 0, 0, 64, 64);
+        pop();
+      }
+
+      // 화면 정보 표시
+      fill(255);
+      textSize(16);
+      textAlign(LEFT);
+      text('Canvas Size: 2560 x 1760 (iMac 적합)', 20, 30);
+      text('Avatar Size: 64 x 64 pixels', 20, 50);
+      text('Stage Avatars: 6 (fixed)', 20, 70);
+      text('Moving Avatars: ' + testAvatars.length + ' (animated)', 20, 90);
+    }
+
+    // 클릭으로 테스트 아바타 추가
+    function mousePressed() {
+      if (mouseX > 0 && mouseX < 2560 && mouseY > 800 && mouseY < 1760) {
+        testAvatars.push({
+          x: mouseX,
+          y: mouseY,
+          vx: random(-1, 1),
+          vy: random(-1, 1),
+          direction: random() > 0.5 ? 1 : -1,
+          walkTimer: random(60, 240),
+          idleTimer: 0,
+          currentAction: 'walking'
+        });
+      }
+    }
+  </script>
+</body>
+
+</html>
