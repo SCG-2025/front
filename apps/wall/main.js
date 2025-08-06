@@ -17,7 +17,31 @@ function preload() {
 onSnapshot(collection(db, 'memories'), (snapshot) => {
   snapshot.docChanges().forEach(change => {
     if (change.type === 'added') {
-      const avatar = change.doc.data().avatar;
+      const docData = change.doc.data(); // 전체 문서 데이터
+      const avatar = docData.avatar; // 아바타 객체
+      
+      // Firebase 문서의 정보를 아바타 객체에 병합
+      avatar.id = change.doc.id; // Firebase 문서 ID를 아바타 ID로 사용
+      avatar.nickname = docData.nickname; // 사용자가 입력한 닉네임
+      avatar.memory = docData.memory; // 사용자가 입력한 추억
+      avatar.category = docData.category; // 선택한 카테고리
+      
+      // 키워드: 사용자가 입력했으면 그것을 사용, 없으면 카테고리별 기본 키워드
+      if (docData.keywords) {
+        avatar.keywords = docData.keywords;
+      } else {
+        // 카테고리별 기본 키워드
+        const categoryKeywords = {
+          '사진': ['추억', '순간', '소중함'],
+          '음악': ['멜로디', '감동', '리듬'],
+          '영화': ['스토리', '감동', '여운'],
+          '음식': ['맛', '향', '만족'],
+          '여행': ['모험', '경험', '힐링'],
+          '일반': ['기억', '소중함', '의미']
+        };
+        avatar.keywords = categoryKeywords[docData.category] || categoryKeywords['일반'];
+      }
+      
       avatar.x = -100;
       avatar.y = 1120; // 하늘색 자유공간 중앙
       avatar.vx = 6;
@@ -143,8 +167,8 @@ function draw() {
     }
     imageMode(CENTER);
     
-    // 선택된 아바타는 더 크게 표시하고 하이라이트 효과 추가
-    if (selectedAvatar && selectedAvatar.nickname === avatar.nickname) {
+    // 선택된 아바타는 더 크게 표시하고 하이라이트 효과 추가 (팝업이 열렸을 때만)
+    if (showPopup && popupAvatar && popupAvatar.id === avatar.id) {
       // 배경 원 (하이라이트 효과)
       fill(255, 215, 0, 150); // 골드 색상, 반투명
       ellipse(0, 0, 90, 90);
@@ -157,10 +181,7 @@ function draw() {
     pop();
   });
   
-  // 팝업창 그리기
-  if (showPopup && popupAvatar) {
-    drawPopup();
-  }
+  // HTML 팝업을 사용하므로 p5.js 팝업 그리기는 제거
 }
 
 // 회색 스크린 / 무대 / 자유공간 그리기
@@ -220,8 +241,8 @@ function drawSampleAvatars() {
     translate(x, stageY);
     imageMode(CENTER);
     
-    // 선택된 무대 아바타는 더 크게 표시하고 하이라이트 효과 추가
-    if (selectedStageAvatar === i) {
+    // 선택된 무대 아바타는 더 크게 표시하고 하이라이트 효과 추가 (팝업이 열렸을 때만)
+    if (showPopup && popupAvatar && popupAvatar.isStageAvatar && popupAvatar.stageIndex === i) {
       // 배경 원 (하이라이트 효과)
       fill(255, 215, 0, 150); // 골드 색상, 반투명
       ellipse(0, 0, 90, 90);
@@ -248,22 +269,12 @@ window.draw = draw;
 window.mousePressed = mousePressed;
 window.mouseDragged = mouseDragged;
 window.mouseReleased = mouseReleased;
+window.closePopup = closePopup; // HTML에서 호출할 수 있도록 전역 함수로 노출
 
 // 마우스 이벤트 처리
 function mousePressed() {
-  // 팝업이 열려있을 때
+  // 팝업이 열려있을 때는 캔버스 클릭 무시
   if (showPopup) {
-    // 닫기 버튼 클릭 (팝업 우상단)
-    if (mouseX >= 2260 && mouseX <= 2290 && mouseY >= 1310 && mouseY <= 1340) {
-      closePopup();
-      return;
-    }
-    // 팝업 영역 외부 클릭
-    if (mouseX < 200 || mouseX > 2360 || mouseY < 1300 || mouseY > 1650) {
-      closePopup();
-      return;
-    }
-    // 팝업 내부 클릭은 무시
     return;
   }
 
@@ -297,8 +308,19 @@ function mousePressed() {
     const x = stageX + spacing * (i + 1);
     let distance = dist(mouseX, mouseY, x, stageY);
     if (distance <= 32) { // 64x64 아바타의 절반
-      selectedStageAvatar = i;
+      // 무대 아바타 정보 생성 후 팝업 표시
+      const stageAvatarInfo = {
+        id: 'stage_' + i,
+        isStageAvatar: true,
+        stageIndex: i,
+        nickname: '무대 아바타 ' + (i + 1),
+        category: '공연',
+        memory: '무대 위에서 멋진 공연을 준비하고 있습니다.',
+        keywords: ['공연', '무대', '예술']
+      };
+      showPopupFor(stageAvatarInfo);
       selectedAvatar = null; // 동적 아바타 선택 해제
+      selectedStageAvatar = null;
       return;
     }
   }
@@ -342,79 +364,69 @@ function mouseReleased() {
     selectedAvatar = null;
     isDragging = false;
   }
-  
-  // 무대 아바타 선택 해제 (클릭만 했을 때)
-  if (selectedStageAvatar !== null) {
-    selectedStageAvatar = null;
-  }
 }
 
 function showPopupFor(avatar) {
   popupAvatar = avatar;
   showPopup = true;
-  // 아바타 멈춤 상태 유지
-  avatar.currentAction = 'stopped';
+  
+  // HTML 팝업에 실제 Firebase 데이터 채우기
+  document.getElementById('popupNickname').textContent = avatar.nickname || '사용자';
+  document.getElementById('popupCategory').textContent = avatar.category || '일반';
+  document.getElementById('popupMemory').textContent = avatar.memory || '소중한 추억을 간직하고 있습니다.';
+  
+  // 키워드 태그들 생성
+  const keywordsContainer = document.getElementById('popupKeywords');
+  keywordsContainer.innerHTML = ''; // 기존 키워드 제거
+  
+  if (avatar.keywords) {
+    let keywords = [];
+    if (Array.isArray(avatar.keywords)) {
+      keywords = avatar.keywords;
+    } else if (typeof avatar.keywords === 'string') {
+      // 문자열인 경우 쉼표나 공백으로 분리
+      keywords = avatar.keywords.split(/[,\s]+/).filter(k => k.trim().length > 0);
+    }
+    
+    keywords.forEach(keyword => {
+      const keywordTag = document.createElement('span');
+      keywordTag.className = 'keyword-tag';
+      keywordTag.textContent = '#' + keyword.trim();
+      keywordsContainer.appendChild(keywordTag);
+    });
+  }
+  
+  // 팝업 표시
+  document.getElementById('popupOverlay').style.display = 'block';
+  
+  // 동적 아바타만 멈춤 상태로 만듦 (무대 아바타는 고정이므로 제외)
+  if (!avatar.isStageAvatar) {
+    avatar.currentAction = 'stopped';
+  }
 }
 
 function closePopup() {
   showPopup = false;
+  
+  // HTML 팝업 숨기기
+  document.getElementById('popupOverlay').style.display = 'none';
+  
   if (popupAvatar) {
-    // 아바타 다시 움직이게 함
-    popupAvatar.currentAction = 'idle';
-    popupAvatar.idleTimer = random(30, 120);
+    // 동적 아바타만 다시 움직이게 함 (무대 아바타는 고정이므로 제외)
+    if (!popupAvatar.isStageAvatar) {
+      popupAvatar.currentAction = 'idle';
+      popupAvatar.idleTimer = random(30, 120);
+    }
     popupAvatar = null;
   }
 }
 
-// 팝업창 그리기
-function drawPopup() {
-  if (!popupAvatar) return;
-  
-  // 반투명 배경
-  fill(0, 0, 0, 150);
-  rect(0, 0, 2560, 1760);
-  
-  // 팝업창 배경 (화면 하단)
-  fill(255, 255, 255);
-  stroke(200);
-  strokeWeight(2);
-  rect(200, 1300, 2160, 350, 15); // 모서리 둥글게
-  
-  // 닫기 버튼 (X)
-  fill(220, 220, 220);
-  stroke(180);
-  strokeWeight(1);
-  rect(2260, 1310, 30, 30, 5);
-  fill(100);
-  noStroke();
-  textAlign(CENTER, CENTER);
-  textSize(20);
-  text('×', 2275, 1325);
-  
-  // 아바타 이미지 (팝업 내부)
-  push();
-  translate(280, 1380);
-  imageMode(CENTER);
-  image(avatarImage, 0, 0, 80, 80); // 팝업에서는 더 크게
-  pop();
-  
-  // 텍스트 정보
-  fill(50);
-  textAlign(LEFT, TOP);
-  textSize(24);
-  text('아바타 정보', 380, 1320);
-  
-  textSize(18);
-  // 임시 데이터 (실제로는 Firebase에서 가져올 데이터)
-  text('닉네임: ' + (popupAvatar.nickname || '사용자'), 380, 1360);
-  text('추억: ' + (popupAvatar.memory || '소중한 추억을 간직하고 있습니다.'), 380, 1390);
-  text('키워드: ' + (popupAvatar.keywords || '#추억 #소중함 #행복'), 380, 1420);
-  
-  // 추가 설명
-  fill(120);
-  textSize(14);
-  text('이 아바타를 드래그해서 원하는 위치로 이동시킬 수 있습니다.', 380, 1460);
-  text('팝업 외부를 클릭하거나 X 버튼을 눌러 닫을 수 있습니다.', 380, 1480);
-  
-  noStroke();
-}
+// HTML 팝업 이벤트 리스너 설정 (페이지 로드 후 실행)
+window.addEventListener('DOMContentLoaded', function() {
+  // 팝업 오버레이 클릭 시 닫기
+  document.getElementById('popupOverlay').addEventListener('click', function(e) {
+    if (e.target === this) {
+      closePopup();
+    }
+  });
+});

@@ -20,10 +20,139 @@
       display: block;
       border: 2px solid #fff;
     }
+
+    /* 팝업 스타일 */
+    .popup-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      z-index: 1000;
+      display: none;
+    }
+
+    .popup-content {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      padding: 20px;
+      border-radius: 15px 15px 0 0;
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .popup-close {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      background: #ddd;
+      border: none;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      cursor: pointer;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .popup-close:hover {
+      background: #ccc;
+    }
+
+    .avatar-info {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+    }
+
+    .avatar-image {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .avatar-details h3 {
+      margin: 0 0 10px 0;
+      color: #333;
+    }
+
+    .nickname-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .nickname-text {
+      font-weight: bold;
+      color: #333;
+    }
+
+    .keywords-container {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .keyword-tag {
+      background: #f0f0f0;
+      color: #666;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .avatar-details p {
+      margin: 5px 0;
+      color: #666;
+      line-height: 1.4;
+    }
+
+    .help-text {
+      margin-top: 15px;
+      font-size: 12px;
+      color: #999;
+      border-top: 1px solid #eee;
+      padding-top: 10px;
+    }
   </style>
 </head>
 
 <body>
+  <!-- 팝업 오버레이 -->
+  <div id="popupOverlay" class="popup-overlay">
+    <div class="popup-content">
+      <button class="popup-close" onclick="closePopup()">×</button>
+      <div class="avatar-info">
+        <img id="popupAvatarImage" class="avatar-image" src="avatar_sample.jpeg" alt="아바타">
+        <div class="avatar-details">
+          <h3>아바타 정보</h3>
+          <div class="nickname-row">
+            <span class="nickname-text"><span id="popupNickname">-</span></span>
+            <div class="keywords-container" id="popupKeywords">
+              <!-- 키워드 태그들이 여기에 동적으로 추가됩니다 -->
+            </div>
+          </div>
+          <p><strong>카테고리:</strong> <span id="popupCategory">-</span></p>
+          <p><strong>추억:</strong> <span id="popupMemory">-</span></p>
+        </div>
+      </div>
+      <div class="help-text">
+        이 아바타를 드래그해서 원하는 위치로 이동시킬 수 있습니다.<br>
+        팝업 외부를 클릭하거나 × 버튼을 눌러 닫을 수 있습니다.
+      </div>
+    </div>
+  </div>
+
   <script>
     let avatarImage;
     let testAvatars = [];
@@ -44,6 +173,7 @@
       // 테스트용 움직이는 아바타들 생성 (5개)
       for (let i = 0; i < 5; i++) {
         testAvatars.push({
+          id: 'avatar_' + i, // 고유 ID 추가
           x: random(200, 2360), // 새로운 가로 크기에 맞춤
           y: random(900, 1500),
           vx: random(-1, 1),
@@ -53,9 +183,16 @@
           idleTimer: 0,
           currentAction: 'walking',
           // 임시 데이터 추가
-          nickname: '삐삐',
+          nickname: '삐삐' + (i + 1), // 각각 다른 닉네임
+          category: ['사진', '음악', '영화', '음식', '여행'][i], // 다양한 카테고리
           memory: '초등학생 때 부모님과 함께 함덕해수욕장에 간 기억이 있어요',
-          keywords: '부모님, 초등학생, 해수욕장'
+          keywords: [
+            ['가족', '해변', '추억'],
+            ['음악', '콘서트', '감동'],
+            ['영화관', '데이트', '로맨스'],
+            ['맛집', '친구', '만족'],
+            ['여행', '모험', '힐링']
+          ][i]
         });
       }
       
@@ -135,8 +272,8 @@
         }
         imageMode(CENTER);
         
-        // 선택된 아바타는 더 크게 표시하고 하이라이트 효과 추가
-        if (selectedAvatar && selectedAvatar.nickname === avatar.nickname) {
+        // 선택된 아바타는 더 크게 표시하고 하이라이트 효과 추가 (팝업이 열렸을 때만)
+        if (showPopup && popupAvatar && popupAvatar.id === avatar.id) {
           // 배경 원 (하이라이트 효과)
           fill(255, 215, 0, 150); // 골드 색상, 반투명
           ellipse(0, 0, 90, 90);
@@ -149,10 +286,7 @@
         pop();
       });
       
-      // 팝업창 그리기
-      if (showPopup && popupAvatar) {
-        drawPopup();
-      }
+      // HTML 팝업을 사용하므로 p5.js 팝업 그리기는 제거
     }
 
     function drawMainScreen() {
@@ -191,8 +325,8 @@
         translate(x, 640);
         imageMode(CENTER);
         
-        // 선택된 무대 아바타는 더 크게 표시하고 하이라이트 효과 추가
-        if (selectedStageAvatar === i) {
+        // 선택된 무대 아바타는 더 크게 표시하고 하이라이트 효과 추가 (팝업이 열렸을 때만)
+        if (showPopup && popupAvatar && popupAvatar.isStageAvatar && popupAvatar.stageIndex === i) {
           // 배경 원 (하이라이트 효과)
           fill(255, 215, 0, 150); // 골드 색상, 반투명
           ellipse(0, 0, 90, 90);
@@ -217,19 +351,8 @@
 
     // 마우스 이벤트 처리
     function mousePressed() {
-      // 팝업이 열려있을 때
+      // 팝업이 열려있을 때는 캔버스 클릭 무시
       if (showPopup) {
-        // 닫기 버튼 클릭 (팝업 우상단)
-        if (mouseX >= 2260 && mouseX <= 2290 && mouseY >= 1310 && mouseY <= 1340) {
-          closePopup();
-          return;
-        }
-        // 팝업 영역 외부 클릭
-        if (mouseX < 200 || mouseX > 2360 || mouseY < 1300 || mouseY > 1650) {
-          closePopup();
-          return;
-        }
-        // 팝업 내부 클릭은 무시
         return;
       }
 
@@ -261,8 +384,19 @@
         const x = stageX + spacing * (i + 1);
         let distance = dist(mouseX, mouseY, x, stageY);
         if (distance <= 32) { // 64x64 아바타의 절반
-          selectedStageAvatar = i;
+          // 무대 아바타 정보 생성 후 팝업 표시
+          const stageAvatarInfo = {
+            id: 'stage_' + i,
+            isStageAvatar: true,
+            stageIndex: i,
+            nickname: '무대 아바타 ' + (i + 1),
+            category: '공연',
+            memory: '무대 위에서 멋진 공연을 준비하고 있습니다.',
+            keywords: ['공연', '무대', '예술']
+          };
+          showPopupFor(stageAvatarInfo);
           selectedAvatar = null; // 동적 아바타 선택 해제
+          selectedStageAvatar = null;
           return;
         }
       }
@@ -270,6 +404,7 @@
       // 기존 아바타 추가 기능 (자유공간 클릭 시)
       if (mouseX > 0 && mouseX < 2560 && mouseY > 800 && mouseY < 1760) {
         testAvatars.push({
+          id: 'avatar_' + Date.now(), // 타임스탬프로 고유 ID 생성
           x: mouseX,
           y: mouseY,
           vx: random(-1, 1),
@@ -278,9 +413,10 @@
           walkTimer: random(60, 240),
           idleTimer: 0,
           currentAction: 'walking',
-          nickname: '삐삐',
+          nickname: '삐삐' + testAvatars.length,
+          category: '일반',
           memory: '초등학생 때 부모님과 함께 함덕해수욕장에 간 기억이 있어요',
-          keywords: '부모님, 초등학생, 해수욕장'
+          keywords: ['해변', '가족', '추억']
         });
       }
     }
@@ -323,81 +459,61 @@
         selectedAvatar = null;
         isDragging = false;
       }
-      
-      // 무대 아바타 선택 해제 (클릭만 했을 때)
-      if (selectedStageAvatar !== null) {
-        selectedStageAvatar = null;
-      }
     }
 
     function showPopupFor(avatar) {
       popupAvatar = avatar;
       showPopup = true;
-      // 아바타 멈춤 상태 유지
-      avatar.currentAction = 'stopped';
+      
+      // HTML 팝업에 정보 채우기
+      document.getElementById('popupNickname').textContent = avatar.nickname;
+      document.getElementById('popupCategory').textContent = avatar.category;
+      document.getElementById('popupMemory').textContent = avatar.memory;
+      
+      // 키워드 태그들 생성
+      const keywordsContainer = document.getElementById('popupKeywords');
+      keywordsContainer.innerHTML = ''; // 기존 키워드 제거
+      
+      if (avatar.keywords && Array.isArray(avatar.keywords)) {
+        avatar.keywords.forEach(keyword => {
+          const keywordTag = document.createElement('span');
+          keywordTag.className = 'keyword-tag';
+          keywordTag.textContent = '#' + keyword;
+          keywordsContainer.appendChild(keywordTag);
+        });
+      }
+      
+      // 팝업 표시
+      document.getElementById('popupOverlay').style.display = 'block';
+      
+      // 동적 아바타만 멈춤 상태로 만듦 (무대 아바타는 고정이므로 제외)
+      if (!avatar.isStageAvatar) {
+        avatar.currentAction = 'stopped';
+      }
     }
 
     function closePopup() {
       showPopup = false;
+      
+      // HTML 팝업 숨기기
+      document.getElementById('popupOverlay').style.display = 'none';
+      
       if (popupAvatar) {
-        // 아바타 다시 움직이게 함
-        popupAvatar.currentAction = 'idle';
-        popupAvatar.idleTimer = random(30, 120);
+        // 동적 아바타만 다시 움직이게 함 (무대 아바타는 고정이므로 제외)
+        if (!popupAvatar.isStageAvatar) {
+          popupAvatar.currentAction = 'idle';
+          popupAvatar.idleTimer = random(30, 120);
+        }
         popupAvatar = null;
       }
     }
 
-    // 팝업창 그리기
-    function drawPopup() {
-      if (!popupAvatar) return;
-      
-      // 반투명 배경
-      fill(0, 0, 0, 150);
-      rect(0, 0, 2560, 1760);
-      
-      // 팝업창 배경 (화면 하단)
-      fill(255, 255, 255);
-      stroke(200);
-      strokeWeight(2);
-      rect(200, 1300, 2160, 350, 15); // 모서리 둥글게
-      
-      // 닫기 버튼 (X)
-      fill(220, 220, 220);
-      stroke(180);
-      strokeWeight(1);
-      rect(2260, 1310, 30, 30, 5);
-      fill(100);
-      noStroke();
-      textAlign(CENTER, CENTER);
-      textSize(20);
-      text('×', 2275, 1325);
-      
-      // 아바타 이미지 (팝업 내부)
-      push();
-      translate(280, 1380);
-      imageMode(CENTER);
-      image(avatarImage, 0, 0, 80, 80); // 팝업에서는 더 크게
-      pop();
-      
-      // 텍스트 정보
-      fill(50);
-      textAlign(LEFT, TOP);
-      textSize(24);
-      text('아바타 정보', 380, 1320);
-      
-      textSize(18);
-      text('닉네임: ' + popupAvatar.nickname, 380, 1360);
-      text('추억: ' + popupAvatar.memory, 380, 1390);
-      text('키워드: ' + popupAvatar.keywords, 380, 1420);
-      
-      // 추가 설명
-      fill(120);
-      textSize(14);
-      text('이 아바타를 드래그해서 원하는 위치로 이동시킬 수 있습니다.', 380, 1460);
-      text('팝업 외부를 클릭하거나 X 버튼을 눌러 닫을 수 있습니다.', 380, 1480);
-      
-      noStroke();
-    }
+    // 팝업 오버레이 클릭 시 닫기
+    document.getElementById('popupOverlay').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closePopup();
+      }
+    });
   </script>
 </body>
 
