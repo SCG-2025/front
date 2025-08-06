@@ -2,36 +2,51 @@ import { db } from '../firebase-init.js';  // apps/firebase-init.js 기준
 import { collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js';
 
 let avatars = [];
+let avatarImage;
+
+function preload() {
+  avatarImage = loadImage('avatar_sample.jpeg');
+}
 
 onSnapshot(collection(db, 'memories'), (snapshot) => {
   snapshot.docChanges().forEach(change => {
     if (change.type === 'added') {
       const avatar = change.doc.data().avatar;
       avatar.x = -100;
-      avatar.y = windowHeight / 2;
+      avatar.y = 1120;
       avatar.vx = 6;
       avatar.state = 'plane-in';
+      avatar.direction = 1; // 1: 오른쪽, -1: 왼쪽
+      avatar.walkTimer = 0; // 걷기 타이머
+      avatar.idleTimer = 0; // 대기 타이머
+      avatar.currentAction = 'walking'; // 'walking', 'idle'
       avatars.push(avatar);
     }
   });
 });
 
 function setup() {
-  createCanvas(windowWidth, windowHeight);
+  createCanvas(1920, 1760);
   drawSpaces();
   drawSampleAvatars();
 }
 
 function draw() {
   background('#222');
+  
+  // 무대와 공간들을 매 프레임마다 다시 그리기
+  drawSpaces();
+  drawSampleAvatars();
 
   avatars.forEach(avatar => {
     if (avatar.state === 'plane-in') {
       avatar.x += avatar.vx;
-      if (avatar.x > width / 2) {
+      if (avatar.x > 1920 / 2) {
         avatar.state = 'idle';
-        avatar.vx = random(-2, 2);
-        avatar.vy = random(-2, 2);
+        avatar.vx = 0;
+        avatar.vy = 0;
+        avatar.currentAction = 'idle';
+        avatar.idleTimer = random(60, 180); // 1-3초 대기
       }
 
       // 비행기 그리기
@@ -44,42 +59,111 @@ function draw() {
     }
 
     if (avatar.state === 'idle') {
-      avatar.x += avatar.vx;
-      avatar.y += avatar.vy;
+      // NPC 행동 패턴
+      if (avatar.currentAction === 'idle') {
+        avatar.idleTimer--;
+        if (avatar.idleTimer <= 0) {
+          // 새로운 방향 선택
+          const directions = [
+            {dx: 1, dy: 0},   // 오른쪽
+            {dx: -1, dy: 0},  // 왼쪽
+            {dx: 0, dy: 1},   // 아래
+            {dx: 0, dy: -1}   // 위
+          ];
+          const dir = random(directions);
+          avatar.vx = dir.dx * random(0.5, 1.5);
+          avatar.vy = dir.dy * random(0.5, 1.5);
+          avatar.direction = avatar.vx > 0 ? 1 : (avatar.vx < 0 ? -1 : avatar.direction);
+          avatar.currentAction = 'walking';
+          avatar.walkTimer = random(60, 240); // 1-4초 걷기
+        }
+      } else if (avatar.currentAction === 'walking') {
+        avatar.walkTimer--;
+        avatar.x += avatar.vx;
+        avatar.y += avatar.vy;
+        
+        if (avatar.walkTimer <= 0) {
+          avatar.vx = 0;
+          avatar.vy = 0;
+          avatar.currentAction = 'idle';
+          avatar.idleTimer = random(30, 120); // 0.5-2초 대기
+        }
+      }
 
-      if (avatar.x < 0 || avatar.x > width) avatar.vx *= -1;
-      if (avatar.y < 0 || avatar.y > height) avatar.vy *= -1;
+      // 경계 충돌 처리
+      if (avatar.x < 0 || avatar.x > 1920) {
+        avatar.vx *= -1;
+        avatar.direction *= -1;
+        avatar.x = constrain(avatar.x, 0, 1920);
+      }
+      if (avatar.y < 480 || avatar.y > 1760) {
+        avatar.vy *= -1;
+        avatar.y = constrain(avatar.y, 480, 1760);
+      }
+      
+      // 무대 영역 충돌 감지
+      const stageLeft = 640;
+      const stageRight = 1280;
+      const stageTop = 480;
+      const stageBottom = 800;
+      
+      if (avatar.y >= stageTop && avatar.y <= stageBottom && 
+          avatar.x >= stageLeft && avatar.x <= stageRight) {
+        const centerX = (stageLeft + stageRight) / 2;
+        const centerY = (stageTop + stageBottom) / 2;
+        const dx = avatar.x - centerX;
+        const dy = avatar.y - centerY;
+        
+        if (Math.abs(dx) > Math.abs(dy)) {
+          avatar.vx *= -1;
+          avatar.direction *= -1;
+          avatar.x = dx > 0 ? stageRight + 5 : stageLeft - 5;
+        } else {
+          avatar.vy *= -1;
+          avatar.y = dy > 0 ? stageBottom + 5 : stageTop - 5;
+        }
+      }
     }
 
-    // 아바타 그리기 (예시용: 원 + 눈)
+    // 아바타 이미지 그리기 (2배 크기 - 게더타운 스타일)
     push();
     translate(avatar.x, avatar.y);
-    scale(3);
-    drawSimpleAvatar(0, 0);
+    if (avatar.direction === -1) {
+      scale(-1, 1); // 왼쪽 방향일 때 이미지 뒤집기
+    }
+    imageMode(CENTER);
+    image(avatarImage, 0, 0, 64, 64); // 32*2 = 64
     pop();
   });
 }
 
 // 회색 스크린 / 무대 / 자유공간 그리기
 function drawSpaces() {
+  // 스크린 공간 (회색, 1920x480)
   fill('#cccccc');
-  rect(0, 0, width, 480);
+  rect(0, 0, 1920, 480);
 
-  const stageW = width / 3;
-  const stageX = (width - stageW) / 2;
+  // 무대 공간 (갈색, 가운데 1/3, 1920/3 = 640px)
+  const stageW = 1920 / 3;
+  const stageX = (1920 - stageW) / 2;
   fill('#a67c52');
   rect(stageX, 480, stageW, 320);
 
+  // 자유 공간 (하늘색, 무대 아래 전체 1920x960)
   fill('#7ecbff');
   noStroke();
-  rect(0, 800, width, height - 800);
-  rect(0, 480, stageX, 320);
-  rect(stageX + stageW, 480, stageX, 320);
+  rect(0, 800, 1920, 960);
 
+  // 자유 공간 (하늘색, 무대 양 옆)
+  fill('#7ecbff');
+  rect(0, 480, stageX, 320); // 왼쪽
+  rect(stageX + stageW, 480, stageX, 320); // 오른쪽
+
+  // 스크린 3분할 표시선
   stroke('#888');
   strokeWeight(2);
   for (let i = 1; i < 3; i++) {
-    line((width / 3) * i, 0, (width / 3) * i, 480);
+    line((1920 / 3) * i, 0, (1920 / 3) * i, 480);
   }
   noStroke();
 }
@@ -96,23 +180,31 @@ function drawSimpleAvatar(x, y, skin = '#ffdbac', eyes = '#222') {
   pop();
 }
 
-// 무대/자유 공간에 기본 아바타 배치
+// 무대에 기본 아바타 배치 (자유공간 아바타는 제거)
 function drawSampleAvatars() {
-  const stageW = width / 3;
-  const stageX = (width - stageW) / 2;
+  const stageW = 1920 / 3;
+  const stageX = (1920 - stageW) / 2;
   const stageY = 640;
   const spacing = stageW / 7;
 
+  // 무대에만 6명 배치 (2배 크기 - 게더타운 스타일)
   for (let i = 0; i < 6; i++) {
-    drawSimpleAvatar(stageX + spacing * (i + 1), stageY);
+    const x = stageX + spacing * (i + 1);
+    push();
+    translate(x, stageY);
+    imageMode(CENTER);
+    image(avatarImage, 0, 0, 64, 64); // 32*2 = 64
+    pop();
   }
-
-  const freeStartX = width / 2 - (5 * 64) / 2;
-  for (let i = 0; i < 5; i++) {
-    drawSimpleAvatar(freeStartX + i * 64, 960);
-    drawSimpleAvatar(freeStartX + i * 64, 1040);
-  }
+  
+  // 자유공간 아바타들 제거 (주석 처리)
+  // const freeStartX = 1920 / 2 - (5 * 64) / 2;
+  // for (let i = 0; i < 5; i++) {
+  //   drawSimpleAvatar(freeStartX + i * 64, 960);
+  //   drawSimpleAvatar(freeStartX + i * 64, 1040);
+  // }
 }
 
+window.preload = preload;
 window.setup = setup;
 window.draw = draw;
