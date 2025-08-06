@@ -17,8 +17,31 @@ function preload() {
 onSnapshot(collection(db, 'memories'), (snapshot) => {
   snapshot.docChanges().forEach(change => {
     if (change.type === 'added') {
-      const avatar = change.doc.data().avatar;
+      const docData = change.doc.data(); // 전체 문서 데이터
+      const avatar = docData.avatar; // 아바타 객체
+      
+      // Firebase 문서의 정보를 아바타 객체에 병합
       avatar.id = change.doc.id; // Firebase 문서 ID를 아바타 ID로 사용
+      avatar.nickname = docData.nickname; // 사용자가 입력한 닉네임
+      avatar.memory = docData.memory; // 사용자가 입력한 추억
+      avatar.category = docData.category; // 선택한 카테고리
+      
+      // 키워드: 사용자가 입력했으면 그것을 사용, 없으면 카테고리별 기본 키워드
+      if (docData.keywords) {
+        avatar.keywords = docData.keywords;
+      } else {
+        // 카테고리별 기본 키워드
+        const categoryKeywords = {
+          '사진': ['추억', '순간', '소중함'],
+          '음악': ['멜로디', '감동', '리듬'],
+          '영화': ['스토리', '감동', '여운'],
+          '음식': ['맛', '향', '만족'],
+          '여행': ['모험', '경험', '힐링'],
+          '일반': ['기억', '소중함', '의미']
+        };
+        avatar.keywords = categoryKeywords[docData.category] || categoryKeywords['일반'];
+      }
+      
       avatar.x = -100;
       avatar.y = 1120; // 하늘색 자유공간 중앙
       avatar.vx = 6;
