@@ -18,6 +18,7 @@ onSnapshot(collection(db, 'memories'), (snapshot) => {
   snapshot.docChanges().forEach(change => {
     if (change.type === 'added') {
       const avatar = change.doc.data().avatar;
+      avatar.id = change.doc.id; // Firebase 문서 ID를 아바타 ID로 사용
       avatar.x = -100;
       avatar.y = 1120; // 하늘색 자유공간 중앙
       avatar.vx = 6;
@@ -143,8 +144,8 @@ function draw() {
     }
     imageMode(CENTER);
     
-    // 선택된 아바타는 더 크게 표시하고 하이라이트 효과 추가
-    if (selectedAvatar && selectedAvatar.nickname === avatar.nickname) {
+    // 선택된 아바타는 더 크게 표시하고 하이라이트 효과 추가 (팝업이 열렸을 때만)
+    if (showPopup && popupAvatar && popupAvatar.id === avatar.id) {
       // 배경 원 (하이라이트 효과)
       fill(255, 215, 0, 150); // 골드 색상, 반투명
       ellipse(0, 0, 90, 90);
@@ -157,10 +158,7 @@ function draw() {
     pop();
   });
   
-  // 팝업창 그리기
-  if (showPopup && popupAvatar) {
-    drawPopup();
-  }
+  // HTML 팝업을 사용하므로 p5.js 팝업 그리기는 제거
 }
 
 // 회색 스크린 / 무대 / 자유공간 그리기
@@ -248,22 +246,12 @@ window.draw = draw;
 window.mousePressed = mousePressed;
 window.mouseDragged = mouseDragged;
 window.mouseReleased = mouseReleased;
+window.closePopup = closePopup; // HTML에서 호출할 수 있도록 전역 함수로 노출
 
 // 마우스 이벤트 처리
 function mousePressed() {
-  // 팝업이 열려있을 때
+  // 팝업이 열려있을 때는 캔버스 클릭 무시
   if (showPopup) {
-    // 닫기 버튼 클릭 (팝업 우상단)
-    if (mouseX >= 2260 && mouseX <= 2290 && mouseY >= 1310 && mouseY <= 1340) {
-      closePopup();
-      return;
-    }
-    // 팝업 영역 외부 클릭
-    if (mouseX < 200 || mouseX > 2360 || mouseY < 1300 || mouseY > 1650) {
-      closePopup();
-      return;
-    }
-    // 팝업 내부 클릭은 무시
     return;
   }
 
@@ -352,12 +340,25 @@ function mouseReleased() {
 function showPopupFor(avatar) {
   popupAvatar = avatar;
   showPopup = true;
+  
+  // HTML 팝업에 정보 채우기
+  document.getElementById('popupNickname').textContent = avatar.nickname || '사용자';
+  document.getElementById('popupMemory').textContent = avatar.memory || '소중한 추억을 간직하고 있습니다.';
+  document.getElementById('popupKeywords').textContent = avatar.keywords || '#추억 #소중함 #행복';
+  
+  // 팝업 표시
+  document.getElementById('popupOverlay').style.display = 'block';
+  
   // 아바타 멈춤 상태 유지
   avatar.currentAction = 'stopped';
 }
 
 function closePopup() {
   showPopup = false;
+  
+  // HTML 팝업 숨기기
+  document.getElementById('popupOverlay').style.display = 'none';
+  
   if (popupAvatar) {
     // 아바타 다시 움직이게 함
     popupAvatar.currentAction = 'idle';
@@ -366,55 +367,12 @@ function closePopup() {
   }
 }
 
-// 팝업창 그리기
-function drawPopup() {
-  if (!popupAvatar) return;
-  
-  // 반투명 배경
-  fill(0, 0, 0, 150);
-  rect(0, 0, 2560, 1760);
-  
-  // 팝업창 배경 (화면 하단)
-  fill(255, 255, 255);
-  stroke(200);
-  strokeWeight(2);
-  rect(200, 1300, 2160, 350, 15); // 모서리 둥글게
-  
-  // 닫기 버튼 (X)
-  fill(220, 220, 220);
-  stroke(180);
-  strokeWeight(1);
-  rect(2260, 1310, 30, 30, 5);
-  fill(100);
-  noStroke();
-  textAlign(CENTER, CENTER);
-  textSize(20);
-  text('×', 2275, 1325);
-  
-  // 아바타 이미지 (팝업 내부)
-  push();
-  translate(280, 1380);
-  imageMode(CENTER);
-  image(avatarImage, 0, 0, 80, 80); // 팝업에서는 더 크게
-  pop();
-  
-  // 텍스트 정보
-  fill(50);
-  textAlign(LEFT, TOP);
-  textSize(24);
-  text('아바타 정보', 380, 1320);
-  
-  textSize(18);
-  // 임시 데이터 (실제로는 Firebase에서 가져올 데이터)
-  text('닉네임: ' + (popupAvatar.nickname || '사용자'), 380, 1360);
-  text('추억: ' + (popupAvatar.memory || '소중한 추억을 간직하고 있습니다.'), 380, 1390);
-  text('키워드: ' + (popupAvatar.keywords || '#추억 #소중함 #행복'), 380, 1420);
-  
-  // 추가 설명
-  fill(120);
-  textSize(14);
-  text('이 아바타를 드래그해서 원하는 위치로 이동시킬 수 있습니다.', 380, 1460);
-  text('팝업 외부를 클릭하거나 X 버튼을 눌러 닫을 수 있습니다.', 380, 1480);
-  
-  noStroke();
-}
+// HTML 팝업 이벤트 리스너 설정 (페이지 로드 후 실행)
+window.addEventListener('DOMContentLoaded', function() {
+  // 팝업 오버레이 클릭 시 닫기
+  document.getElementById('popupOverlay').addEventListener('click', function(e) {
+    if (e.target === this) {
+      closePopup();
+    }
+  });
+});
