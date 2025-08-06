@@ -5,6 +5,7 @@ import { collection, addDoc, serverTimestamp }
 /* write.js – p5.js DOM으로 작성 폼 구성 */
 (() => {
     // 1. 로컬스토리지에서 아바타 복원
+    const sound = 'sounds/test.mp3'; //나중에 사운드 추가되면 이 부분 수정해야함
     const saved = JSON.parse(localStorage.getItem('avatarData') || '{}');
     const category = localStorage.getItem('memoryType') || '사진';
     const avatar = Object.assign({
@@ -77,7 +78,7 @@ import { collection, addDoc, serverTimestamp }
             const data = {
                 nickname: nicknameInput.value(),
                 memory: memoryInput.value(),
-                avatar, category
+                avatar,sound, category
             };
 
             try {
