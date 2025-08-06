@@ -1,4 +1,4 @@
-import { db } from '../firebase-init.js';  // apps/firebase-init.js 기준
+import { db } from './firebase-init.js';
 import { collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js';
 
 let avatars = [];

@@ -10,8 +10,8 @@
       ]
     },
     {
-      "target": "pc",
-      "public": "apps/pc",
+      "target": "wall",
+      "public": "apps/wall",
       "ignore": [
         "firebase.json",
         "**/.*",
