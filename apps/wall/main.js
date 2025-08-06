@@ -4,6 +4,7 @@ import { collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.0.
 let avatars = [];
 let avatarImage;
 let selectedAvatar = null;
+let selectedStageAvatar = null; // 무대 아바타 선택용
 let isDragging = false;
 let showPopup = false;
 let popupAvatar = null;
@@ -141,7 +142,18 @@ function draw() {
       scale(-1, 1); // 왼쪽 방향일 때 이미지 뒤집기
     }
     imageMode(CENTER);
-    image(avatarImage, 0, 0, 64, 64); // 32*2 = 64
+    
+    // 선택된 아바타는 더 크게 표시하고 하이라이트 효과 추가
+    if (selectedAvatar && selectedAvatar.nickname === avatar.nickname) {
+      // 배경 원 (하이라이트 효과)
+      fill(255, 215, 0, 150); // 골드 색상, 반투명
+      ellipse(0, 0, 90, 90);
+      // 선택된 아바타는 1.25배 크기
+      image(avatarImage, 0, 0, 80, 80);
+    } else {
+      // 일반 아바타
+      image(avatarImage, 0, 0, 64, 64); // 32*2 = 64
+    }
     pop();
   });
   
@@ -207,7 +219,18 @@ function drawSampleAvatars() {
     push();
     translate(x, stageY);
     imageMode(CENTER);
-    image(avatarImage, 0, 0, 64, 64); // 32*2 = 64
+    
+    // 선택된 무대 아바타는 더 크게 표시하고 하이라이트 효과 추가
+    if (selectedStageAvatar === i) {
+      // 배경 원 (하이라이트 효과)
+      fill(255, 215, 0, 150); // 골드 색상, 반투명
+      ellipse(0, 0, 90, 90);
+      // 선택된 아바타는 1.25배 크기
+      image(avatarImage, 0, 0, 80, 80);
+    } else {
+      // 일반 아바타
+      image(avatarImage, 0, 0, 64, 64); // 32*2 = 64
+    }
     pop();
   }
   
@@ -250,6 +273,7 @@ function mousePressed() {
       let distance = dist(mouseX, mouseY, avatar.x, avatar.y);
       if (distance <= 32) { // 64x64 아바타의 절반
         selectedAvatar = avatar;
+        selectedStageAvatar = null; // 무대 아바타 선택 해제
         isDragging = false;
         dragOffset.x = mouseX - avatar.x;
         dragOffset.y = mouseY - avatar.y;
@@ -260,6 +284,22 @@ function mousePressed() {
         avatar.vy = 0;
         return;
       }
+    }
+  }
+
+  // 무대 아바타 클릭 감지 (고정 아바타)
+  const stageW = 2560 / 3;
+  const stageX = (2560 - stageW) / 2;
+  const stageY = 640;
+  const spacing = stageW / 7;
+  
+  for (let i = 0; i < 6; i++) {
+    const x = stageX + spacing * (i + 1);
+    let distance = dist(mouseX, mouseY, x, stageY);
+    if (distance <= 32) { // 64x64 아바타의 절반
+      selectedStageAvatar = i;
+      selectedAvatar = null; // 동적 아바타 선택 해제
+      return;
     }
   }
 }
@@ -301,6 +341,11 @@ function mouseReleased() {
     }
     selectedAvatar = null;
     isDragging = false;
+  }
+  
+  // 무대 아바타 선택 해제 (클릭만 했을 때)
+  if (selectedStageAvatar !== null) {
+    selectedStageAvatar = null;
   }
 }
 
