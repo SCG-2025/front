@@ -13,6 +13,23 @@ onSnapshot(collection(db, 'memories'), (snapshot) => {
     if (change.type === 'added') {
       const avatar = change.doc.data().avatar;
       avatar.x = -100;
+      avatar.y = 1120; // 하늘색 자유공간 중앙
+      avatar.vx = 6;
+      avatar.state = 'plane-in';
+      avatar.direction = 1; // 1: 오른쪽, -1: 왼쪽
+      avatar.walkTimer = 0; // 걷기 타이머
+      avatar.idleTimer = 0; // 대기 타이머
+      avatar.currentAction = 'walking'; // 'walking', 'idle'
+      avatars.push(avatar);
+    }
+  });
+});
+
+onSnapshot(collection(db, 'memories'), (snapshot) => {
+  snapshot.docChanges().forEach(change => {
+    if (change.type === 'added') {
+      const avatar = change.doc.data().avatar;
+      avatar.x = -100;
       avatar.y = 1120;
       avatar.vx = 6;
       avatar.state = 'plane-in';
@@ -26,7 +43,7 @@ onSnapshot(collection(db, 'memories'), (snapshot) => {
 });
 
 function setup() {
-  createCanvas(1920, 1760);
+  createCanvas(2560, 1760); // 아이맥 가로 화면에 맞춰 확장
   drawSpaces();
   drawSampleAvatars();
 }
@@ -41,7 +58,7 @@ function draw() {
   avatars.forEach(avatar => {
     if (avatar.state === 'plane-in') {
       avatar.x += avatar.vx;
-      if (avatar.x > 1920 / 2) {
+      if (avatar.x > 2560 / 2) { // 새로운 화면 중앙 (1280)
         avatar.state = 'idle';
         avatar.vx = 0;
         avatar.vy = 0;
@@ -91,19 +108,19 @@ function draw() {
       }
 
       // 경계 충돌 처리
-      if (avatar.x < 0 || avatar.x > 1920) {
+      if (avatar.x < 0 || avatar.x > 2560) { // 새로운 가로 크기
         avatar.vx *= -1;
         avatar.direction *= -1;
-        avatar.x = constrain(avatar.x, 0, 1920);
+        avatar.x = constrain(avatar.x, 0, 2560);
       }
       if (avatar.y < 480 || avatar.y > 1760) {
         avatar.vy *= -1;
         avatar.y = constrain(avatar.y, 480, 1760);
       }
       
-      // 무대 영역 충돌 감지
-      const stageLeft = 640;
-      const stageRight = 1280;
+      // 무대 영역 충돌 감지 (새로운 무대 크기)
+      const stageLeft = 853; // 2560/3 = 853.33
+      const stageRight = 1707; // 853*2 = 1706.67
       const stageTop = 480;
       const stageBottom = 800;
       
@@ -139,20 +156,20 @@ function draw() {
 
 // 회색 스크린 / 무대 / 자유공간 그리기
 function drawSpaces() {
-  // 스크린 공간 (회색, 1920x480)
+  // 스크린 공간 (회색, 2560x480)
   fill('#cccccc');
-  rect(0, 0, 1920, 480);
+  rect(0, 0, 2560, 480);
 
-  // 무대 공간 (갈색, 가운데 1/3, 1920/3 = 640px)
-  const stageW = 1920 / 3;
-  const stageX = (1920 - stageW) / 2;
+  // 무대 공간 (갈색, 가운데 1/3, 2560/3 = 853px)
+  const stageW = 2560 / 3;
+  const stageX = (2560 - stageW) / 2;
   fill('#a67c52');
   rect(stageX, 480, stageW, 320);
 
-  // 자유 공간 (하늘색, 무대 아래 전체 1920x960)
+  // 자유 공간 (하늘색, 무대 아래 전체 2560x960)
   fill('#7ecbff');
   noStroke();
-  rect(0, 800, 1920, 960);
+  rect(0, 800, 2560, 960);
 
   // 자유 공간 (하늘색, 무대 양 옆)
   fill('#7ecbff');
@@ -163,7 +180,7 @@ function drawSpaces() {
   stroke('#888');
   strokeWeight(2);
   for (let i = 1; i < 3; i++) {
-    line((1920 / 3) * i, 0, (1920 / 3) * i, 480);
+    line((2560 / 3) * i, 0, (2560 / 3) * i, 480);
   }
   noStroke();
 }
@@ -182,8 +199,8 @@ function drawSimpleAvatar(x, y, skin = '#ffdbac', eyes = '#222') {
 
 // 무대에 기본 아바타 배치 (자유공간 아바타는 제거)
 function drawSampleAvatars() {
-  const stageW = 1920 / 3;
-  const stageX = (1920 - stageW) / 2;
+  const stageW = 2560 / 3;
+  const stageX = (2560 - stageW) / 2;
   const stageY = 640;
   const spacing = stageW / 7;
 
@@ -198,7 +215,7 @@ function drawSampleAvatars() {
   }
   
   // 자유공간 아바타들 제거 (주석 처리)
-  // const freeStartX = 1920 / 2 - (5 * 64) / 2;
+  // const freeStartX = 2560 / 2 - (5 * 64) / 2;
   // for (let i = 0; i < 5; i++) {
   //   drawSimpleAvatar(freeStartX + i * 64, 960);
   //   drawSimpleAvatar(freeStartX + i * 64, 1040);
