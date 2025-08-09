@@ -1,8 +1,67 @@
+/*
+==========================================
+다중 BPM 음악 시스템 구현 가이드
+==========================================
+
+현재 상황:
+- 약 20개의 음악 세트 예정, 각각 다른 BPM 가능성
+- 서로 다른 BPM의 음악이 동시 재생될 수 있음
+- 현재는 단일 마스터 클럭(110 BPM)으로 임시 구현
+
+구현 우선순위:
+
+1. 데이터베이스 설계 (우선순위: 높음)
+   - Firebase에 음악별 BPM 정보 추가
+   - 아바타 데이터에 BPM 관련 필드 추가
+   - 음악 파일과 BPM 매핑 테이블 생성
+
+2. BPM 그룹 시스템 (우선순위: 높음)
+   - 동일 BPM끼리 그룹화하여 동기화
+   - 그룹별 독립적인 마스터 클럭 운영
+   - 그룹 간 전환 시 부드러운 처리
+
+3. 사용자 경험 개선 (우선순위: 중간)
+   - BPM 충돌 상황 UI 표시
+   - 호환되는 BPM 범위 제안
+   - 음악 전환 시 자연스러운 페이드 인/아웃
+
+4. 고급 기능 (우선순위: 낮음)
+   - 실시간 BPM 변경 지원
+   - 음악 키 호환성 검사
+   - 자동 BPM 매칭 알고리즘
+
+테스트 케이스:
+- 110 BPM + 120 BPM 동시 재생
+- BPM 전환 시 기존 음악 페이드 아웃
+- 동일 BPM 그룹 내 동기화 정확성
+- 3개 이상 서로 다른 BPM 동시 재생
+
+==========================================
+*/
+
 import { db } from './firebase-init.js';
 import { collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js';
 
-let avatars = [];
+let avatars = []; // Firebase에서 가져온 아바타 데이터
 let stageAvatars = []; // 무대 전용 아바타들
+
+// TODO: 다중 BPM 지원을 위한 아바타 데이터 구조 확장 필요
+// 현재 아바타 객체 구조:
+// {
+//   id, nickname, category, memory, keywords, musicType, 
+//   x, y, vx, vy, state, currentAction, ...
+// }
+//
+// 추가 필요한 필드들:
+// {
+//   ...기존 필드들,
+//   bpm: 110,                    // 해당 아바타 음악의 BPM
+//   musicKey: 'C',               // 음악의 키
+//   timeSignature: '4/4',        // 박자표
+//   musicDuration: 180.5,        // 음악 길이(초)
+//   compatibleBpms: [105, 110, 115], // 호환 가능한 BPM 범위
+//   bpmGroup: 'group_110'        // BPM 그룹 식별자 (동기화용)
+// }
 let avatarImage;
 let selectedAvatar = null;
 let isDragging = false;
@@ -16,6 +75,10 @@ let cameraY = 0;
 let isPanning = false;
 let panStart = { x: 0, y: 0 };
 
+// 아바타 정렬 관련 변수들
+let isSorting = false;
+let sortingAnimations = []; // 정렬 애니메이션 정보 저장
+
 // 음원 관련 변수들
 let musicSamples = {};
 let tonePlayers = {}; // Tone.js 플레이어들
@@ -24,15 +87,65 @@ let tonePlayers = {}; // Tone.js 플레이어들
 let stageSlots = [null, null, null, null, null, null];
 
 // 음악 동기화 시스템
+// TODO: 다중 BPM 지원 시스템 구현 필요
+// 
+// 현재 이슈:
+// - 음악 세트가 약 20개로 예상되며, 각각 다른 BPM을 가질 수 있음
+// - 서로 다른 BPM의 음악이 동시에 재생될 가능성 있음
+// - 현재 단일 마스터 클럭(110 BPM 고정)으로는 해결 불가
+//
+// 해결 방안 1: 개별 아바타별 BPM 관리
+// - 각 아바타마다 개별 BPM 정보 저장
+// - 아바타별 독립적인 클럭 시스템 운영
+// - 동기화는 각 음악의 고유 BPM에 맞춰 개별 처리
+//
+// 해결 방안 2: BPM 그룹화
+// - 동일한 BPM의 음악들을 그룹으로 관리
+// - 그룹별 마스터 클럭 운영
+// - 서로 다른 BPM 그룹은 독립적으로 동기화
+//
+// 해결 방안 3: 적응형 마스터 클럭
+// - 현재 재생 중인 음악들의 BPM을 분석
+// - 가장 일반적인 BPM으로 마스터 클럭 자동 조정
+// - BPM이 다른 음악은 개별 오프셋 적용
+//
+// 구현 시 고려사항:
+// - Firebase에 음악별 BPM 정보 저장 필요
+// - 아바타 데이터 구조에 BPM 필드 추가
+// - UI에서 BPM 충돌 상황 사용자에게 표시
+// - 음악 전환 시 부드러운 BPM 전환 로직 필요
+
 let masterClock = {
   isRunning: false,
   startTime: 0,
-  bpm: 110, // 4/4박자, 110 BPM 기준 (실제 음악에 맞춰 조정)
+  bpm: 110, // 임시 고정값 - 추후 동적으로 변경되어야 함
   beatsPerMeasure: 4,
   currentBeat: 0,
   currentMeasure: 0,
   nextMeasureStart: 0
 };
+
+// TODO: 다중 BPM 지원을 위한 데이터 구조 (미래 구현용)
+/*
+let musicBpmDatabase = {
+  // 음악 파일별 BPM 정보
+  'Music Sample_Bass.mp3': { bpm: 110, key: 'C', timeSignature: '4/4' },
+  'Music Sample_Drum.mp3': { bpm: 120, key: 'C', timeSignature: '4/4' },
+  'Music Sample_Lead.mp3': { bpm: 95, key: 'G', timeSignature: '4/4' },
+  // ... 추가 음악들
+};
+
+let activeBpmGroups = {
+  // 현재 재생 중인 BPM 그룹들
+  110: { avatars: [], masterClock: {...}, isActive: true },
+  120: { avatars: [], masterClock: {...}, isActive: false },
+  95: { avatars: [], masterClock: {...}, isActive: false }
+};
+
+// 아바타별 BPM 정보 추적
+let avatarBpmMapping = new Map();
+// avatarId -> { bpm: 110, musicFile: 'Music Sample_Bass.mp3', startTime: 1234567890 }
+*/
 
 let playingAvatars = new Set(); // 현재 재생 중인 아바타들
 let pendingAvatars = new Map(); // 다음 마디 대기 중인 아바타들
@@ -259,6 +372,9 @@ function draw() {
   
   // 마스터 클럭 업데이트
   updateMasterClock();
+  
+  // 아바타 정렬 애니메이션 업데이트
+  updateSortingAnimations();
   
   drawSpaces();
   drawSampleAvatars();
@@ -563,6 +679,13 @@ function mousePressed() {
       console.log('🎯 리셋 버튼 직접 실행');
       resetStage();
     }
+    
+    // 정렬 버튼인 경우 직접 실행
+    if (elementUnderMouse.id === 'sortAvatarsBtn' && !elementUnderMouse.disabled && !isSorting) {
+      console.log('🎯 정렬 버튼 직접 실행');
+      sortAvatars();
+    }
+    
     return;
   }
 
@@ -965,6 +1088,199 @@ function resetStage() {
   console.log('🎭 === 무대 리셋 종료 ===');
 }
 
+// 아바타 정렬 함수 - 모든 아바타를 격자 형태로 정렬
+function sortAvatars() {
+  console.log('📐 === 아바타 정렬 시작 ===');
+  
+  try {
+    // 정렬 버튼 비활성화 (중복 실행 방지)
+    const sortBtn = document.getElementById('sortAvatarsBtn');
+    if (sortBtn) {
+      sortBtn.disabled = true;
+      sortBtn.textContent = '📐 정렬 중...';
+    }
+    
+    isSorting = true;
+    sortingAnimations = [];
+    
+    // 모든 아바타 수집 (무대 아바타 + 일반 아바타)
+    let allAvatars = [...stageAvatars, ...avatars];
+    let sortableAvatars = allAvatars.filter(avatar => avatar.state === 'idle' && !avatar.isOnStage);
+    
+    console.log(`📐 정렬 대상 아바타: ${sortableAvatars.length}개`);
+    
+    if (sortableAvatars.length === 0) {
+      console.log('⚠️ 정렬할 아바타가 없습니다');
+      finishSorting();
+      return;
+    }
+    
+    // 자유공간 영역 정의 (무대 아래 자유 공간)
+    const freeAreaStartY = 900;  // 무대 아래부터
+    const freeAreaEndY = 1600;   // 캔버스 하단까지
+    const freeAreaStartX = 200;
+    const freeAreaEndX = 2360;
+    
+    // 자유공간의 정중앙 계산
+    const freeAreaCenterX = (freeAreaStartX + freeAreaEndX) / 2;
+    const freeAreaCenterY = (freeAreaStartY + freeAreaEndY) / 2;
+    
+    // 원의 중심을 자유공간 중앙에 설정
+    const circleCenterX = freeAreaCenterX;
+    const circleCenterY = freeAreaCenterY;
+    
+    console.log(`📐 자유공간: X(${freeAreaStartX}~${freeAreaEndX}), Y(${freeAreaStartY}~${freeAreaEndY})`);
+    console.log(`📐 원형 정렬 중심: (${Math.round(circleCenterX)}, ${Math.round(circleCenterY)})`);
+    
+    if (sortableAvatars.length === 1) {
+      // 아바타가 1명일 때는 중심에 배치
+      const animation = {
+        avatar: sortableAvatars[0],
+        startX: sortableAvatars[0].x,
+        startY: sortableAvatars[0].y,
+        targetX: circleCenterX,
+        targetY: circleCenterY,
+        progress: 0,
+        duration: 1.0,
+        easing: 'easeOutCubic'
+      };
+      
+      sortingAnimations.push(animation);
+      sortableAvatars[0].currentAction = 'sorting';
+      sortableAvatars[0].vx = 0;
+      sortableAvatars[0].vy = 0;
+      
+      console.log(`📐 ${sortableAvatars[0].nickname}: 자유공간 중심에 단독 배치`);
+    } else {
+      // 여러 명일 때는 원형으로 배치
+      const avatarSpacing = 80; // 아바타 간 최소 간격
+      const minRadius = (sortableAvatars.length * avatarSpacing) / (2 * Math.PI); // 최소 반지름
+      
+      // 자유공간 크기에 맞는 최대 반지름 계산
+      const freeAreaWidth = freeAreaEndX - freeAreaStartX;
+      const freeAreaHeight = freeAreaEndY - freeAreaStartY;
+      const maxRadius = Math.min(freeAreaWidth / 2.5, freeAreaHeight / 2.5, 300); // 여유공간 고려
+      
+      const radius = Math.max(minRadius, 80); // 최소 80px 반지름 보장
+      
+      // 반지름이 너무 클 때는 동심원으로 배치
+      let finalRadius = Math.min(radius, maxRadius);
+      let rings = 1;
+      
+      if (radius > maxRadius) {
+        // 다중 링 계산
+        const avatarsPerRing = Math.floor((2 * Math.PI * maxRadius) / avatarSpacing);
+        rings = Math.ceil(sortableAvatars.length / avatarsPerRing);
+        finalRadius = maxRadius;
+      }
+      
+      console.log(`📐 원형 배치: 반지름=${Math.round(finalRadius)}, 링수=${rings}, 아바타=${sortableAvatars.length}개`);
+      console.log(`📐 자유공간 크기: ${freeAreaWidth}×${freeAreaHeight}, 최대반지름=${Math.round(maxRadius)}`);
+      
+      let avatarIndex = 0;
+      
+      for (let ring = 0; ring < rings; ring++) {
+        const ringRadius = finalRadius - (ring * 60); // 링간 간격 60px
+        const avatarsInThisRing = ring === 0 ? 
+          Math.min(sortableAvatars.length, Math.floor((2 * Math.PI * ringRadius) / avatarSpacing)) :
+          Math.min(sortableAvatars.length - avatarIndex, Math.floor((2 * Math.PI * ringRadius) / avatarSpacing));
+        
+        if (avatarsInThisRing <= 0) break;
+        
+        const angleStep = (2 * Math.PI) / avatarsInThisRing;
+        const startAngle = ring * 0.5; // 각 링마다 약간씩 회전하여 더 자연스럽게
+        
+        for (let i = 0; i < avatarsInThisRing && avatarIndex < sortableAvatars.length; i++) {
+          const angle = startAngle + i * angleStep;
+          const targetX = circleCenterX + Math.cos(angle) * ringRadius;
+          const targetY = circleCenterY + Math.sin(angle) * ringRadius;
+          
+          const avatar = sortableAvatars[avatarIndex];
+          const animation = {
+            avatar: avatar,
+            startX: avatar.x,
+            startY: avatar.y,
+            targetX: targetX,
+            targetY: targetY,
+            progress: 0,
+            duration: 1.0 + (ring * 0.1), // 바깥쪽 링일수록 약간 더 오래
+            easing: 'easeOutCubic'
+          };
+          
+          sortingAnimations.push(animation);
+          avatar.currentAction = 'sorting';
+          avatar.vx = 0;
+          avatar.vy = 0;
+          
+          console.log(`📐 ${avatar.nickname}: 링${ring}, 각도${Math.round(angle * 180 / Math.PI)}° → (${Math.round(targetX)}, ${Math.round(targetY)})`);
+          avatarIndex++;
+        }
+      }
+    }
+    
+  } catch (error) {
+    console.error('❌ 아바타 정렬 중 오류:', error);
+    finishSorting();
+  }
+  
+  console.log('📐 === 아바타 정렬 애니메이션 시작 ===');
+}
+
+// 정렬 애니메이션 업데이트 (draw 함수에서 호출)
+function updateSortingAnimations() {
+  if (!isSorting || sortingAnimations.length === 0) return;
+  
+  let allCompleted = true;
+  const deltaTime = 1/60; // 60fps 기준
+  
+  sortingAnimations.forEach(animation => {
+    if (animation.progress < 1) {
+      allCompleted = false;
+      
+      // 진행도 업데이트
+      animation.progress = Math.min(1, animation.progress + deltaTime / animation.duration);
+      
+      // Easing 함수 적용 (easeOutCubic)
+      const easedProgress = 1 - Math.pow(1 - animation.progress, 3);
+      
+      // 현재 위치 계산
+      animation.avatar.x = animation.startX + (animation.targetX - animation.startX) * easedProgress;
+      animation.avatar.y = animation.startY + (animation.targetY - animation.startY) * easedProgress;
+    } else {
+      // 애니메이션 완료 시 정확한 목표 위치로 설정
+      animation.avatar.x = animation.targetX;
+      animation.avatar.y = animation.targetY;
+    }
+  });
+  
+  // 모든 애니메이션이 완료되면 정렬 종료
+  if (allCompleted) {
+    finishSorting();
+  }
+}
+
+// 정렬 작업 완료 처리
+function finishSorting() {
+  console.log('📐 === 아바타 정렬 완료 ===');
+  
+  isSorting = false;
+  
+  // 모든 아바타를 idle 상태로 복원
+  sortingAnimations.forEach(animation => {
+    animation.avatar.currentAction = 'idle';
+    animation.avatar.idleTimer = random(30, 120);
+  });
+  
+  sortingAnimations = [];
+  
+  // 버튼 재활성화
+  const sortBtn = document.getElementById('sortAvatarsBtn');
+  if (sortBtn) {
+    sortBtn.disabled = false;
+    sortBtn.textContent = '📐 아바타 정렬';
+  }
+}
+
 // HTML 팝업 이벤트 리스너 설정
 window.addEventListener('DOMContentLoaded', function() {
   console.log('🔧 DOM 로드 완료, 이벤트 리스너 등록 중...');
@@ -992,9 +1308,38 @@ window.addEventListener('DOMContentLoaded', function() {
   } else {
     console.error('❌ 리셋 버튼을 찾을 수 없음!');
   }
+  
+  // 정렬 버튼 이벤트 리스너 추가
+  const sortBtn = document.getElementById('sortAvatarsBtn');
+  if (sortBtn) {
+    console.log('✅ 정렬 버튼 찾음, 이벤트 리스너 등록');
+    
+    sortBtn.addEventListener('click', function(e) {
+      console.log('🎯 정렬 버튼 클릭됨, disabled:', this.disabled);
+      
+      if (!this.disabled && !isSorting) {
+        console.log('🚀 sortAvatars() 실행 시작');
+        sortAvatars();
+      }
+    });
+    
+  } else {
+    console.error('❌ 정렬 버튼을 찾을 수 없음!');
+  }
 });
 
 // 음악 재생 함수 (음원이 없어도 오류 없이 처리)
+// TODO: 다중 BPM 지원 시 대폭 수정 필요
+// 
+// 현재 제한사항:
+// - 모든 음악이 동일한 BPM(110)으로 가정하고 동기화
+// - 서로 다른 BPM의 음악 동시 재생 시 박자 불일치 발생 가능
+//
+// 다중 BPM 지원 시 필요한 로직:
+// 1. 아바타 음악 파일에서 BPM 정보 추출 또는 DB 조회
+// 2. 동일한 BPM 그룹끼리만 동기화
+// 3. 서로 다른 BPM 그룹은 독립적으로 관리
+// 4. UI에서 BPM 충돌 상황 사용자에게 경고 표시
 function playAvatarMusic(avatar) {
   if (!avatar.musicType) {
     console.warn('⚠️ 음악 타입이 설정되지 않음:', avatar.nickname, '- 음악 없이 무대에 올라갑니다');
@@ -1007,9 +1352,20 @@ function playAvatarMusic(avatar) {
     return; // 음악 없이도 무대에 올릴 수 있음
   }
   
+  // TODO: 여기서 해당 음악의 BPM 정보 확인 필요
+  // const musicBpm = musicBpmDatabase[avatar.musicType]?.bpm || 110;
+  // const currentMasterBpm = masterClock.bpm;
+  // 
+  // if (musicBpm !== currentMasterBpm && playingAvatars.size > 0) {
+  //   console.warn(`⚠️ BPM 불일치: ${avatar.musicType}(${musicBpm}) vs 현재(${currentMasterBpm})`);
+  //   // 사용자에게 BPM 충돌 경고 표시하거나 별도 그룹으로 처리
+  // }
+  
   if (playingAvatars.size === 0) {
     // 정말 아무것도 재생 중이 아닐 때만 즉시 시작
     console.log(`🎯 ${avatar.nickname} - 첫 번째 아바타, 즉시 시작`);
+    // TODO: 해당 음악의 BPM으로 마스터 클럭 설정
+    // masterClock.bpm = musicBpm;
     startMasterClockFromPosition(0);
     startAvatarMusicFromPosition(avatar, sound, 0);
   } else {
@@ -1401,3 +1757,4 @@ window.mouseWheel = mouseWheel;
 window.keyPressed = keyPressed;
 window.closePopup = closePopup;
 window.resetStage = resetStage;
+window.sortAvatars = sortAvatars;
