@@ -10,17 +10,11 @@ let showPopup = false;
 let popupAvatar = null;
 let dragOffset = { x: 0, y: 0 };
 
-// 카메라/패닝 관련 변수들
-let cameraX = 0;
-let cameraY = 0;
-let isPanning = false;
-let panStart = { x: 0, y: 0 };
-
 // 음원 관련 변수들
 let musicSamples = {};
 let tonePlayers = {}; // Tone.js 플레이어들
 
-// 무대 슬롯 관리 (6개 슬롯으로 원래대로)
+// 무대 슬롯 관리 (6개 슬롯: 0, 1, 2, 3, 4, 5)
 let stageSlots = [null, null, null, null, null, null];
 
 // 음악 동기화 시스템
@@ -138,13 +132,6 @@ async function initTonePlayers() {
 function setup() {
   createCanvas(2560, 1760);
   
-  // 카메라 초기화
-  cameraX = 0;
-  cameraY = 0;
-  
-  // 브라우저 스크롤 위치 강제 리셋
-  window.scrollTo(0, 0);
-  
   // Tone.js 플레이어 초기화
   initTonePlayers();
   
@@ -237,13 +224,10 @@ onSnapshot(collection(db, 'memories'), (snapshot) => {
       avatar.clickTimer = 0;
       avatar.isClicked = false;
       
-      // 일반 아바타도 무대에 올릴 수 있음 (단, 음원은 없음)
+      // 일반 아바타는 무대에 올릴 수 없음
       avatar.isOnStage = false;
       avatar.stageSlot = -1;
-      avatar.isSpecial = true; // 모든 아바타를 무대에 올릴 수 있게 설정
-      
-      // 음원 관련 속성은 없음 (무대아바타만 음원 보유)
-      // avatar.musicType = null; // 일반 아바타는 음원 없음
+      avatar.isSpecial = false;
       
       avatars.push(avatar);
     }
@@ -252,10 +236,6 @@ onSnapshot(collection(db, 'memories'), (snapshot) => {
 
 function draw() {
   background('#222');
-  
-  // 카메라 변환 적용
-  push();
-  translate(-cameraX, -cameraY);
   
   // 마스터 클럭 업데이트
   updateMasterClock();
@@ -274,12 +254,6 @@ function draw() {
     updateAvatar(avatar);
     drawAvatar(avatar);
   });
-  
-  // 카메라 변환 해제
-  pop();
-  
-  // UI 요소들은 카메라 변환 없이 그리기
-  updatePanningUI();
   
   // 디버그 정보 표시 (개발 중에만)
   if (masterClock.isRunning) {
@@ -453,7 +427,7 @@ function drawAvatar(avatar) {
   pop();
 }
 
-// 무대 슬롯 위치 계산 (6개 슬롯을 1줄로 배치)
+// 무대 슬롯 위치 계산
 function getStageSlotPosition(slotIndex) {
   const stageW = 2560 / 3;
   const stageX = (2560 - stageW) / 2;
@@ -466,12 +440,12 @@ function getStageSlotPosition(slotIndex) {
   };
 }
 
-// 가장 가까운 빈 무대 슬롯 찾기 (6개 슬롯)
+// 가장 가까운 빈 무대 슬롯 찾기
 function findNearestEmptyStageSlot(x, y) {
   let nearestSlot = -1;
   let minDistance = Infinity;
   
-  for (let i = 0; i < 6; i++) { // 6개 슬롯으로 원래대로
+  for (let i = 0; i < 6; i++) {
     if (stageSlots[i] === null) {
       const slotPos = getStageSlotPosition(i);
       const distance = dist(x, y, slotPos.x, slotPos.y);
@@ -526,22 +500,22 @@ function drawSpaces() {
   noStroke();
 }
 
-// 무대 아바타들 그리기 (빈 슬롯 표시 - 6개 슬롯)
+// 무대 아바타들 그리기 (빈 슬롯 표시)
 function drawSampleAvatars() {
-  for (let i = 0; i < 6; i++) { // 6개 슬롯으로 원래대로
+  for (let i = 0; i < 6; i++) {
     if (stageSlots[i] === null) {
       const slotPos = getStageSlotPosition(i);
       push();
       fill(255, 255, 255, 30);
       noStroke();
-      ellipse(slotPos.x, slotPos.y, 70, 70); // 원래 크기로
+      ellipse(slotPos.x, slotPos.y, 70, 70);
       pop();
       
       push();
       textAlign(CENTER, CENTER);
-      textSize(10); // 원래 텍스트 크기로
+      textSize(10);
       fill(255, 255, 255, 100);
-      text(`SLOT ${i + 1}`, slotPos.x, slotPos.y); // 원래 표시 방식으로
+      text(`SLOT ${i + 1}`, slotPos.x, slotPos.y);
       pop();
     }
   }
@@ -553,39 +527,21 @@ function mousePressed() {
     return;
   }
 
-  // DOM 요소(버튼 등) 위에서 클릭한 경우 패닝 방지
-  const elementUnderMouse = document.elementFromPoint(mouseX, mouseY);
-  if (elementUnderMouse && elementUnderMouse !== document.querySelector('canvas')) {
-    console.log('🚫 UI 요소 클릭 감지, 패닝 방지:', elementUnderMouse.tagName);
-    
-    // 리셋 버튼인 경우 직접 실행 (첫 번째 방법 복원)
-    if (elementUnderMouse.id === 'resetStageBtn' && !elementUnderMouse.disabled) {
-      console.log('🎯 리셋 버튼 직접 실행');
-      resetStage();
-    }
-    return;
-  }
-
   // 첫 클릭 시 오디오 컨텍스트 활성화 (브라우저 정책 때문에 필요)
   if (getAudioContext().state === 'suspended') {
     getAudioContext().resume();
     console.log('🔊 오디오 컨텍스트 활성화됨');
   }
 
-  // 월드 좌표로 변환 (카메라 적용)
-  const worldMouseX = mouseX + cameraX;
-  const worldMouseY = mouseY + cameraY;
-
   // 무대 아바타 클릭 감지
   for (let avatar of stageAvatars) {
     if (avatar.state === 'idle') {
-      let distance = dist(worldMouseX, worldMouseY, avatar.x, avatar.y);
+      let distance = dist(mouseX, mouseY, avatar.x, avatar.y);
       if (distance <= 32) {
-        console.log('🎯 무대 아바타 선택:', avatar.nickname);
         selectedAvatar = avatar;
         isDragging = false;
-        dragOffset.x = worldMouseX - avatar.x;
-        dragOffset.y = worldMouseY - avatar.y;
+        dragOffset.x = mouseX - avatar.x;
+        dragOffset.y = mouseY - avatar.y;
         
         avatar.currentAction = 'stopped';
         avatar.vx = 0;
@@ -602,13 +558,12 @@ function mousePressed() {
   // Firebase 아바타 클릭 감지
   for (let avatar of avatars) {
     if (avatar.state === 'idle') {
-      let distance = dist(worldMouseX, worldMouseY, avatar.x, avatar.y);
+      let distance = dist(mouseX, mouseY, avatar.x, avatar.y);
       if (distance <= 32) {
-        console.log('🎯 Firebase 아바타 선택:', avatar.nickname);
         selectedAvatar = avatar;
         isDragging = false;
-        dragOffset.x = worldMouseX - avatar.x;
-        dragOffset.y = worldMouseY - avatar.y;
+        dragOffset.x = mouseX - avatar.x;
+        dragOffset.y = mouseY - avatar.y;
         
         avatar.currentAction = 'stopped';
         avatar.vx = 0;
@@ -621,52 +576,14 @@ function mousePressed() {
       }
     }
   }
-  
-  // 아바타를 클릭하지 않았다면 패닝 시작
-  console.log('🖐️ 패닝 시작 - 아바타 수:', stageAvatars.length, '/', avatars.length);
-  isPanning = true;
-  panStart.x = mouseX;
-  panStart.y = mouseY;
 }
 
 function mouseDragged() {
-  if (isPanning) {
-    // 패닝 중일 때
-    const deltaX = mouseX - panStart.x;
-    const deltaY = mouseY - panStart.y;
-    
-    // 너무 많은 로그 방지 - 큰 움직임만 로그
-    if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
-      console.log('🖐️ 패닝:', {before: [cameraX, cameraY], delta: [deltaX, deltaY]});
-    }
-    
-    cameraX -= deltaX;
-    cameraY -= deltaY;
-    
-    // 캔버스 경계 제한 (캔버스 크기: 2560x1760)
-    const canvasWidth = 2560;
-    const canvasHeight = 1760;
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    
-    // 카메라가 캔버스 밖으로 나가지 않도록 제한
-    const maxCameraX = Math.max(0, canvasWidth - viewportWidth);
-    const maxCameraY = Math.max(0, canvasHeight - viewportHeight);
-    
-    cameraX = constrain(cameraX, 0, maxCameraX);
-    cameraY = constrain(cameraY, 0, maxCameraY);
-    
-    panStart.x = mouseX;
-    panStart.y = mouseY;
-  } else if (selectedAvatar && selectedAvatar.state === 'idle') {
-    // 아바타 드래그 중일 때
-    const worldMouseX = mouseX + cameraX;
-    const worldMouseY = mouseY + cameraY;
-    
+  if (selectedAvatar && selectedAvatar.state === 'idle') {
     isDragging = true;
     selectedAvatar.isDragged = true;
-    selectedAvatar.x = worldMouseX - dragOffset.x;
-    selectedAvatar.y = worldMouseY - dragOffset.y;
+    selectedAvatar.x = mouseX - dragOffset.x;
+    selectedAvatar.y = mouseY - dragOffset.y;
     
     selectedAvatar.x = constrain(selectedAvatar.x, 0, 2560);
     
@@ -694,11 +611,7 @@ function mouseDragged() {
 }
 
 function mouseReleased() {
-  if (isPanning) {
-    // 패닝 종료
-    console.log('🖐️ 패닝 종료');
-    isPanning = false;
-  } else if (selectedAvatar) {
+  if (selectedAvatar) {
     if (!isDragging) {
       selectedAvatar.isClicked = false;
       selectedAvatar.isDragged = false;
@@ -730,8 +643,7 @@ function mouseReleased() {
           // 음악 재생
           playAvatarMusic(selectedAvatar);
         } else {
-          // 빈 슬롯이 없으면 무대 밖으로 (슬롯이 다 참)
-          console.log('⚠️ 무대 슬롯이 모두 차있습니다!');
+          // 빈 슬롯이 없으면 무대 밖으로
           selectedAvatar.y = 850;
           selectedAvatar.isOnStage = false;
           if (selectedAvatar.stageSlot !== -1) {
@@ -759,44 +671,9 @@ function mouseReleased() {
         selectedAvatar.idleTimer = random(30, 120);
       }
     }
+    selectedAvatar = null;
+    isDragging = false;
   }
-  
-  // 변수들 리셋
-  selectedAvatar = null;
-  isDragging = false;
-}
-
-// 마우스 휠 이벤트 처리 (브라우저 스크롤 대신 카메라 이동)
-function mouseWheel(event) {
-  // 기본 스크롤 동작 방지
-  event.preventDefault();
-  
-  // 휠 스크롤을 카메라 이동으로 변환
-  const wheelSensitivity = 1; // 스크롤 감도 조절
-  const deltaX = 0; // 가로 스크롤은 없음
-  const deltaY = event.delta * wheelSensitivity;
-  
-  console.log('🖱️ 마우스 휠:', deltaY);
-  
-  // 카메라 이동 (휠 스크롤)
-  cameraY += deltaY;
-  
-  // 캔버스 경계 제한
-  const canvasWidth = 2560;
-  const canvasHeight = 1760;
-  const viewportWidth = window.innerWidth;
-  const viewportHeight = window.innerHeight;
-  
-  const maxCameraX = Math.max(0, canvasWidth - viewportWidth);
-  const maxCameraY = Math.max(0, canvasHeight - viewportHeight);
-  
-  cameraX = constrain(cameraX, 0, maxCameraX);
-  cameraY = constrain(cameraY, 0, maxCameraY);
-  
-  console.log('🖱️ 휠 후 카메라:', cameraX, cameraY, '/ 최대:', maxCameraX, maxCameraY);
-  
-  // 기본 스크롤 방지
-  return false;
 }
 
 function showPopupFor(avatar) {
@@ -846,165 +723,26 @@ function closePopup() {
   }
 }
 
-// 무대 리셋 함수 - 모든 아바타를 무대에서 제거하고 음악 정지
-function resetStage() {
-  console.log('🎭 === 무대 리셋 시작 ===');
-  
-  try {
-    // 버튼 비활성화 (중복 클릭 방지)
-    const resetBtn = document.getElementById('resetStageBtn');
-    if (resetBtn) {
-      console.log('🔧 리셋 버튼 비활성화');
-      resetBtn.disabled = true;
-      resetBtn.textContent = '🎭 리셋 중...';
-    } else {
-      console.warn('⚠️ 리셋 버튼을 찾을 수 없음');
-    }
-    
-    // 1. 모든 음악 정지
-    console.log('🛑 모든 음악 정지 시작');
-    console.log('   - playingAvatars:', playingAvatars.size);
-    console.log('   - pendingAvatars:', pendingAvatars.size);
-    
-    playingAvatars.clear();
-    pendingAvatars.clear();
-    
-    // 모든 Tone.js 플레이어 정지
-    let tonePlayerCount = 0;
-    Object.values(tonePlayers).forEach(player => {
-      if (player && player.state === 'started') {
-        player.stop();
-        tonePlayerCount++;
-      }
-    });
-    console.log('   - Tone.js 플레이어 정지:', tonePlayerCount);
-    
-    // 모든 p5.sound 정지
-    let p5SoundCount = 0;
-    Object.values(musicSamples).forEach(sound => {
-      if (sound && sound.isPlaying()) {
-        sound.stop();
-        p5SoundCount++;
-      }
-    });
-    console.log('   - p5.sound 정지:', p5SoundCount);
-    
-    // 마스터 클럭 정지
-    masterClock.isRunning = false;
-    masterClock.startTime = 0;
-    masterClock.currentBeat = 0;
-    masterClock.currentMeasure = 0;
-    console.log('   - 마스터 클럭 정지');
-    
-    // 2. 모든 무대 아바타들을 무대에서 제거
-    let removedCount = 0;
-    console.log('🎭 무대 아바타 제거 시작');
-    console.log('   - stageAvatars 수:', stageAvatars.length);
-    console.log('   - avatars 수:', avatars.length);
-    
-    // 무대아바타들 처리
-    stageAvatars.forEach(avatar => {
-      if (avatar.isOnStage) {
-        console.log(`   🎭 ${avatar.nickname} 무대에서 제거`);
-        
-        // 무대에서 내림
-        avatar.isOnStage = false;
-        avatar.stageSlot = -1;
-        
-        // 무대 아래로 이동
-        avatar.y = 850;
-        avatar.currentAction = 'idle';
-        avatar.idleTimer = random(30, 120);
-        
-        removedCount++;
-      }
-    });
-    
-    // 일반 아바타들 처리
-    avatars.forEach(avatar => {
-      if (avatar.isOnStage) {
-        console.log(`   🎭 ${avatar.nickname} 무대에서 제거`);
-        
-        // 무대에서 내림
-        avatar.isOnStage = false;
-        avatar.stageSlot = -1;
-        
-        // 무대 아래로 이동
-        avatar.y = 1200;
-        avatar.currentAction = 'idle';
-        avatar.idleTimer = random(30, 120);
-        
-        removedCount++;
-      }
-    });
-    
-    // 3. 모든 슬롯 비우기
-    for (let i = 0; i < stageSlots.length; i++) {
-      stageSlots[i] = null;
-    }
-    
-    console.log(`✅ 무대 리셋 완료! ${removedCount}개 아바타 제거됨`);
-    
-    // 즉시 버튼 상태 업데이트
-    setTimeout(() => {
-      console.log('🔧 버튼 상태 업데이트 중...');
-      updateResetButton();
-    }, 100);
-    
-  } catch (error) {
-    console.error('❌ resetStage 실행 중 오류:', error);
-    
-    // 오류 발생시에도 버튼은 다시 활성화
-    const resetBtn = document.getElementById('resetStageBtn');
-    if (resetBtn) {
-      resetBtn.disabled = false;
-      resetBtn.textContent = '🎭 무대 리셋 (오류)';
-    }
-  }
-  
-  console.log('🎭 === 무대 리셋 종료 ===');
-}
-
 // HTML 팝업 이벤트 리스너 설정
 window.addEventListener('DOMContentLoaded', function() {
-  console.log('🔧 DOM 로드 완료, 이벤트 리스너 등록 중...');
-  
   document.getElementById('popupOverlay').addEventListener('click', function(e) {
     if (e.target === this) {
       closePopup();
     }
   });
-  
-  // 리셋 버튼 이벤트 리스너 - 단순하게 처리
-  const resetBtn = document.getElementById('resetStageBtn');
-  if (resetBtn) {
-    console.log('✅ 리셋 버튼 찾음, 이벤트 리스너 등록');
-    
-    resetBtn.addEventListener('click', function(e) {
-      console.log('🎯 리셋 버튼 클릭됨, disabled:', this.disabled);
-      
-      if (!this.disabled) {
-        console.log('🚀 resetStage() 실행 시작');
-        resetStage();
-      }
-    });
-    
-  } else {
-    console.error('❌ 리셋 버튼을 찾을 수 없음!');
-  }
 });
 
-// 음악 재생 함수 (음원이 없어도 오류 없이 처리)
+// 음악 재생 함수
 function playAvatarMusic(avatar) {
   if (!avatar.musicType) {
-    console.warn('⚠️ 음악 타입이 설정되지 않음:', avatar.nickname, '- 음악 없이 무대에 올라갑니다');
-    return; // 음악 없이도 무대에 올릴 수 있음
+    console.warn('⚠️ 음악 타입이 설정되지 않음:', avatar.nickname);
+    return;
   }
   
   const sound = musicSamples[avatar.musicType];
   if (!sound) {
-    console.warn('⚠️ 음원을 찾을 수 없음:', avatar.musicType, '- 음악 없이 무대에 올라갑니다');
-    return; // 음악 없이도 무대에 올릴 수 있음
+    console.error('❌ 음원을 찾을 수 없음:', avatar.musicType);
+    return;
   }
   
   if (playingAvatars.size === 0) {
@@ -1328,76 +1066,11 @@ function stopAvatarMusic(avatar) {
   }
 }
 
-// 패닝 UI 업데이트 함수
-function updatePanningUI() {
-  const panUI = document.getElementById('panUI');
-  const cameraDebug = document.getElementById('cameraDebug');
-  const canvas = document.querySelector('canvas');
-  
-  if (isPanning) {
-    panUI.style.display = 'block';
-    if (canvas) canvas.style.cursor = 'grabbing';
-  } else {
-    panUI.style.display = 'none';
-    if (canvas) canvas.style.cursor = 'default';
-  }
-  
-  // 카메라 디버그 정보 (개발용)
-  if (cameraDebug) {
-    const canvasWidth = 2560;
-    const canvasHeight = 1760;
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const maxCameraX = Math.max(0, canvasWidth - viewportWidth);
-    const maxCameraY = Math.max(0, canvasHeight - viewportHeight);
-    
-    cameraDebug.innerHTML = `카메라: (${Math.round(cameraX)}, ${Math.round(cameraY)}) | 최대: (${maxCameraX}, ${maxCameraY})<br>패닝: ${isPanning} | 뷰포트: ${viewportWidth}x${viewportHeight}`;
-    cameraDebug.style.display = 'block';
-    
-    // 실시간으로 카메라 값이 바뀌는지 확인 (너무 많은 로그 방지)
-    if (isPanning) {
-      console.log('📊 실시간 카메라:', cameraX, cameraY, '/', maxCameraX, maxCameraY);
-    }
-  }
-  
-  // 리셋 버튼 상태 업데이트
-  updateResetButton();
-}
-
-// 리셋 버튼 상태 업데이트 함수
-function updateResetButton() {
-  const resetBtn = document.getElementById('resetStageBtn');
-  if (!resetBtn) return;
-  
-  // 무대에 아바타가 있는지 확인
-  let stageAvatarCount = 0;
-  
-  // 무대아바타 확인
-  stageAvatars.forEach(avatar => {
-    if (avatar.isOnStage) stageAvatarCount++;
-  });
-  
-  // 일반 아바타 확인
-  avatars.forEach(avatar => {
-    if (avatar.isOnStage) stageAvatarCount++;
-  });
-  
-  if (stageAvatarCount > 0) {
-    resetBtn.disabled = false;
-    resetBtn.textContent = `🎭 무대 리셋 (${stageAvatarCount}개)`;
-  } else {
-    resetBtn.disabled = true;
-    resetBtn.textContent = '🎭 무대 리셋';
-  }
-}
-
 window.preload = preload;
 window.setup = setup;
 window.draw = draw;
 window.mousePressed = mousePressed;
 window.mouseDragged = mouseDragged;
 window.mouseReleased = mouseReleased;
-window.mouseWheel = mouseWheel;
 window.keyPressed = keyPressed;
 window.closePopup = closePopup;
-window.resetStage = resetStage;

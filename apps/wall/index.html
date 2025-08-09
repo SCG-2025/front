@@ -8,18 +8,58 @@
   <script src="https://unpkg.com/tone@next/build/Tone.js"></script>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.3/p5.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.3/addons/p5.sound.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.9.3/lib/addons/p5.sound.min.js"></script>
   <script type="module" src="./firebase-init.js"></script>
   <script type="module" src="./main.js"></script>
+  <script>
+    // 브라우저 기본 스크롤 완전히 비활성화
+    document.addEventListener('DOMContentLoaded', function() {
+      // 휠 스크롤 방지
+      window.addEventListener('wheel', function(e) {
+        e.preventDefault();
+      }, { passive: false });
+      
+      // 키보드 스크롤 방지
+      window.addEventListener('keydown', function(e) {
+        if(['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Home', 'End'].indexOf(e.code) > -1) {
+          e.preventDefault();
+        }
+      }, false);
+      
+      // 터치 스크롤 방지 (모바일)
+      document.addEventListener('touchstart', function(e) {
+        if(e.touches.length > 1) {
+          e.preventDefault();
+        }
+      }, { passive: false });
+      
+      document.addEventListener('touchmove', function(e) {
+        e.preventDefault();
+      }, { passive: false });
+    });
+  </script>
   <style>
-    body {
+    html, body {
       margin: 0;
+      padding: 0;
       background: #222;
+      overflow: hidden; /* 브라우저 스크롤 비활성화 */
+      height: 100vh;
+      width: 100vw;
     }
 
     canvas {
       display: block;
       margin: 0 auto;
+    }
+    
+    /* 팬 모드 커서 스타일 */
+    .pan-mode {
+      cursor: grab !important;
+    }
+    
+    .pan-mode:active {
+      cursor: grabbing !important;
     }
 
     /* 팝업 스타일 */
@@ -125,10 +165,100 @@
       border-top: 1px solid #eee;
       padding-top: 10px;
     }
+
+    /* 팬 UI - 브라우저 창 상단 고정 */
+    .pan-ui {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(100, 150, 255, 0.9);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 15px;
+      font-size: 16px;
+      z-index: 100;
+      display: none;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .camera-debug {
+      position: fixed;
+      top: 60px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-size: 12px;
+      font-family: monospace;
+      z-index: 100;
+      display: block;
+      line-height: 1.4;
+      max-width: 300px;
+    }
+
+    /* 무대 리셋 버튼 */
+    .reset-stage-btn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: rgba(255, 100, 100, 0.9);
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      z-index: 100;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+      transition: all 0.2s ease;
+    }
+
+    .reset-stage-btn:hover {
+      background: rgba(255, 100, 100, 1);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    }
+
+    .reset-stage-btn:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .reset-stage-btn:disabled {
+      background: rgba(150, 150, 150, 0.6);
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
+      opacity: 0.6;
+    }
+    
+    .reset-stage-btn:disabled:hover {
+      background: rgba(150, 150, 150, 0.6);
+      transform: none;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
+    }
   </style>
 </head>
 
 <body>
+  <!-- 팬 UI - 브라우저 창 상단 고정 -->
+  <div id="panUI" class="pan-ui">
+    🖐️ 화면 이동 중
+  </div>
+  
+  <!-- 카메라 디버그 정보 -->
+  <div id="cameraDebug" class="camera-debug">
+    카메라: (0, 0)
+  </div>
+
+  <!-- 무대 리셋 버튼 -->
+  <button id="resetStageBtn" class="reset-stage-btn">
+    🎭 무대 리셋
+  </button>
+
   <!-- 팝업 오버레이 -->
   <div id="popupOverlay" class="popup-overlay">
     <div class="popup-content">
