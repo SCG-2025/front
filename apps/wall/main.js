@@ -27,7 +27,7 @@ let stageSlots = [null, null, null, null, null, null];
 let masterClock = {
   isRunning: false,
   startTime: 0,
-  bpm: 120, // 4/4박자, 120 BPM 기준
+  bpm: 110, // 4/4박자, 110 BPM 기준 (실제 음악에 맞춰 조정)
   beatsPerMeasure: 4,
   currentBeat: 0,
   currentMeasure: 0,
@@ -1045,8 +1045,8 @@ function startMasterClockFromPosition(startPosition) {
 // 현재 재생 위치에 맞춰 다음 마디에 동기화
 function scheduleAvatarForCurrentPosition(avatar, sound, currentPosition) {
   // 현재 위치에서 다음 마디 계산
-  const beatsPerSecond = masterClock.bpm / 60.0; // 120 BPM = 2 beats/second
-  const secondsPerMeasure = masterClock.beatsPerMeasure / beatsPerSecond; // 4 beats / 2 = 2 seconds per measure
+  const beatsPerSecond = masterClock.bpm / 60.0; // 110 BPM ≈ 1.83 beats/second
+  const secondsPerMeasure = masterClock.beatsPerMeasure / beatsPerSecond; // 4 beats / 1.83 ≈ 2.18 seconds per measure
   
   // 현재 위치가 몇 번째 마디의 몇 번째 박자인지 계산
   const currentMeasure = Math.floor(currentPosition / secondsPerMeasure);
