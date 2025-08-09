@@ -1110,6 +1110,11 @@ function sortAvatars() {
   console.log('📐 === 아바타 정렬 시작 ===');
   
   try {
+    // 필수 함수들이 존재하는지 확인
+    if (typeof isInStageArea !== 'function') {
+      throw new Error('❌ isInStageArea 함수가 정의되지 않음 (배포 환경 오류)');
+    }
+    
     // 정렬 버튼 비활성화 (중복 실행 방지)
     const sortBtn = document.getElementById('sortAvatarsBtn');
     if (sortBtn) {
@@ -1120,14 +1125,56 @@ function sortAvatars() {
     isSorting = true;
     sortingAnimations = [];
     
-    // 모든 아바타 수집 (무대 아바타 + 일반 아바타)
-    let allAvatars = [...stageAvatars, ...avatars];
-    let sortableAvatars = allAvatars.filter(avatar => avatar.state === 'idle' && !avatar.isOnStage);
+    // 모든 아바타 수집 및 상세 분석
+    let allStageAvatars = [...stageAvatars];
+    let allRegularAvatars = [...avatars];
+    let allAvatars = [...allStageAvatars, ...allRegularAvatars];
+    
+    console.log('📐 아바타 현황 분석:');
+    console.log('   - 무대 아바타 수:', allStageAvatars.length);
+    console.log('   - 일반 아바타 수:', allRegularAvatars.length);
+    console.log('   - 전체 아바타 수:', allAvatars.length);
+    
+    // 배포 환경 디버깅: 전역 변수 상태 확인
+    console.log('📐 전역 변수 상태:');
+    console.log('   - typeof stageAvatars:', typeof stageAvatars, '(length:', stageAvatars?.length, ')');
+    console.log('   - typeof avatars:', typeof avatars, '(length:', avatars?.length, ')');
+    console.log('   - typeof isSorting:', typeof isSorting, '(value:', isSorting, ')');
+    console.log('   - window.location:', window.location.href);
+    
+    // 무대에 있지 않은 idle 상태 아바타만 선별 (무대 아바타는 절대 정렬하지 않음)
+    let sortableAvatars = allAvatars.filter(avatar => {
+      const isIdle = avatar.state === 'idle';
+      const notOnStage = !avatar.isOnStage;
+      const notSorting = avatar.currentAction !== 'sorting';
+      
+      // 추가 안전장치: 무대 영역에 있는 아바타도 제외
+      const inStageArea = isInStageArea(avatar.x, avatar.y);
+      const hasStageSlot = avatar.stageSlot !== undefined && avatar.stageSlot !== -1;
+      
+      // 여러 조건으로 무대 아바타 확실히 제외
+      const isDefinitelyOnStage = avatar.isOnStage || inStageArea || hasStageSlot;
+      
+      // 각 아바타별 상세 로그
+      if (!isIdle || isDefinitelyOnStage) {
+        console.log(`   📍 ${avatar.nickname}: 정렬 제외`);
+        console.log(`      - state: ${avatar.state}, onStage: ${avatar.isOnStage}`);
+        console.log(`      - inStageArea: ${inStageArea}, stageSlot: ${avatar.stageSlot}`);
+        console.log(`      - position: (${Math.round(avatar.x)}, ${Math.round(avatar.y)})`);
+      }
+      
+      return isIdle && !isDefinitelyOnStage && notSorting;
+    });
     
     console.log(`📐 정렬 대상 아바타: ${sortableAvatars.length}개`);
     
+    // 정렬 대상 아바타들 리스트 출력
+    sortableAvatars.forEach((avatar, index) => {
+      console.log(`   ${index + 1}. ${avatar.nickname} (${Math.round(avatar.x)}, ${Math.round(avatar.y)})`);
+    });
+    
     if (sortableAvatars.length === 0) {
-      console.log('⚠️ 정렬할 아바타가 없습니다');
+      console.log('⚠️ 정렬할 아바타가 없습니다 (모든 아바타가 무대에 있거나 다른 상태)');
       finishSorting();
       return;
     }
@@ -1236,7 +1283,19 @@ function sortAvatars() {
     }
     
   } catch (error) {
-    console.error('❌ 아바타 정렬 중 오류:', error);
+    console.error('❌ 아바타 정렬 중 오류 발생:');
+    console.error('   - 오류 메시지:', error.message);
+    console.error('   - 오류 스택:', error.stack);
+    console.error('   - 배포 환경:', window.location.href);
+    console.error('   - 사용자 에이전트:', navigator.userAgent);
+    
+    // 변수 상태 덤프
+    console.error('📊 오류 시점 변수 상태:');
+    console.error('   - stageAvatars 존재:', typeof stageAvatars !== 'undefined');
+    console.error('   - avatars 존재:', typeof avatars !== 'undefined');
+    console.error('   - isInStageArea 존재:', typeof isInStageArea === 'function');
+    console.error('   - isSorting 값:', isSorting);
+    
     finishSorting();
   }
   
@@ -1280,21 +1339,34 @@ function updateSortingAnimations() {
 function finishSorting() {
   console.log('📐 === 아바타 정렬 완료 ===');
   
-  isSorting = false;
-  
-  // 모든 아바타를 idle 상태로 복원
-  sortingAnimations.forEach(animation => {
-    animation.avatar.currentAction = 'idle';
-    animation.avatar.idleTimer = random(30, 120);
-  });
-  
-  sortingAnimations = [];
-  
-  // 버튼 재활성화
-  const sortBtn = document.getElementById('sortAvatarsBtn');
-  if (sortBtn) {
-    sortBtn.disabled = false;
-    sortBtn.textContent = '📐 아바타 정렬';
+  try {
+    isSorting = false;
+    
+    // 모든 아바타를 idle 상태로 복원
+    if (sortingAnimations && Array.isArray(sortingAnimations)) {
+      sortingAnimations.forEach(animation => {
+        if (animation && animation.avatar) {
+          animation.avatar.currentAction = 'idle';
+          animation.avatar.idleTimer = random(30, 120);
+        }
+      });
+    }
+    
+    sortingAnimations = [];
+    
+    // 버튼 재활성화
+    const sortBtn = document.getElementById('sortAvatarsBtn');
+    if (sortBtn) {
+      sortBtn.disabled = false;
+      sortBtn.textContent = '📐 아바타 정렬';
+    }
+    
+    console.log('✅ 정렬 완료 처리 성공');
+  } catch (error) {
+    console.error('❌ finishSorting 오류:', error);
+    // 최소한의 상태 복원
+    isSorting = false;
+    sortingAnimations = [];
   }
 }
 
