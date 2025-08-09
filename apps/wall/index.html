@@ -198,11 +198,20 @@
       max-width: 300px;
     }
 
-    /* 무대 리셋 버튼 */
-    .reset-stage-btn {
+    /* 상단 버튼 컨테이너 */
+    .top-buttons-container {
       position: fixed;
       top: 20px;
       right: 20px;
+      z-index: 100;
+      display: flex;
+      flex-direction: row-reverse; /* 오른쪽부터 왼쪽으로 배치 */
+      gap: 10px; /* 버튼 간 간격 */
+      align-items: center;
+    }
+
+    /* 무대 리셋 버튼 */
+    .reset-stage-btn {
       background: rgba(255, 100, 100, 0.9);
       color: white;
       border: none;
@@ -211,9 +220,10 @@
       font-size: 14px;
       font-weight: bold;
       cursor: pointer;
-      z-index: 100;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
       transition: all 0.2s ease;
+      white-space: nowrap; /* 텍스트 줄바꿈 방지 */
+      min-width: 120px; /* 최소 너비 보장 */
     }
 
     .reset-stage-btn:hover {
@@ -243,9 +253,6 @@
 
     /* 아바타 정렬 버튼 */
     .sort-avatars-btn {
-      position: fixed;
-      top: 20px;
-      right: 140px; /* 리셋 버튼 옆에 위치 */
       background: rgba(100, 150, 255, 0.9);
       color: white;
       border: none;
@@ -254,9 +261,10 @@
       font-size: 14px;
       font-weight: bold;
       cursor: pointer;
-      z-index: 100;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
       transition: all 0.2s ease;
+      white-space: nowrap; /* 텍스트 줄바꿈 방지 */
+      min-width: 120px; /* 최소 너비 보장 */
     }
 
     .sort-avatars-btn:hover {
@@ -297,15 +305,20 @@
     카메라: (0, 0)
   </div>
 
-  <!-- 아바타 정렬 버튼 -->
-  <button id="sortAvatarsBtn" class="sort-avatars-btn">
-    📐 아바타 정렬
-  </button>
-
-  <!-- 무대 리셋 버튼 -->
-  <button id="resetStageBtn" class="reset-stage-btn">
-    🎭 무대 리셋
-  </button>
+  <!-- 상단 버튼들 -->
+  <div class="top-buttons-container">
+    <!-- 무대 리셋 버튼 (오른쪽 끝) -->
+    <button id="resetStageBtn" class="reset-stage-btn">
+      🎭 무대 리셋
+    </button>
+    
+    <!-- 아바타 정렬 버튼 (리셋 버튼 왼쪽) -->
+    <button id="sortAvatarsBtn" class="sort-avatars-btn">
+      📐 아바타 정렬
+    </button>
+    
+    <!-- TODO: 추가 버튼들을 여기에 추가 가능 -->
+  </div>
 
   <!-- 팝업 오버레이 -->
   <div id="popupOverlay" class="popup-overlay">

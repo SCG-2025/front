@@ -79,6 +79,13 @@ let panStart = { x: 0, y: 0 };
 let isSorting = false;
 let sortingAnimations = []; // 정렬 애니메이션 정보 저장
 
+// 배포 환경 디버깅용 - 전역 변수 상태 확인
+console.log('🔧 아바타 정렬 시스템 초기화:', {
+  isSorting: isSorting,
+  sortingAnimations: sortingAnimations.length,
+  timestamp: new Date().toISOString()
+});
+
 // 음원 관련 변수들
 let musicSamples = {};
 let tonePlayers = {}; // Tone.js 플레이어들
@@ -682,8 +689,18 @@ function mousePressed() {
     
     // 정렬 버튼인 경우 직접 실행
     if (elementUnderMouse.id === 'sortAvatarsBtn' && !elementUnderMouse.disabled && !isSorting) {
-      console.log('🎯 정렬 버튼 직접 실행');
-      sortAvatars();
+      console.log('🎯 정렬 버튼 직접 실행 (mousePressed)');
+      console.log('   - 버튼 상태:', { disabled: elementUnderMouse.disabled, isSorting: isSorting });
+      try {
+        sortAvatars();
+      } catch (error) {
+        console.error('❌ mousePressed에서 sortAvatars 실행 중 오류:', error);
+      }
+    } else if (elementUnderMouse.id === 'sortAvatarsBtn') {
+      console.warn('⚠️ 정렬 버튼 클릭했지만 실행 조건 불충족:', {
+        disabled: elementUnderMouse.disabled,
+        isSorting: isSorting
+      });
     }
     
     return;
@@ -1313,18 +1330,40 @@ window.addEventListener('DOMContentLoaded', function() {
   const sortBtn = document.getElementById('sortAvatarsBtn');
   if (sortBtn) {
     console.log('✅ 정렬 버튼 찾음, 이벤트 리스너 등록');
+    console.log('🔧 정렬 버튼 현재 상태:', {
+      disabled: sortBtn.disabled,
+      isSorting: typeof isSorting !== 'undefined' ? isSorting : '정의되지않음',
+      sortAvatars함수: typeof sortAvatars !== 'undefined' ? '정의됨' : '정의되지않음'
+    });
     
     sortBtn.addEventListener('click', function(e) {
-      console.log('🎯 정렬 버튼 클릭됨, disabled:', this.disabled);
+      console.log('🎯 정렬 버튼 클릭 이벤트 발생!');
+      console.log('   - disabled:', this.disabled);
+      console.log('   - isSorting:', isSorting);
+      console.log('   - sortAvatars 함수 존재:', typeof sortAvatars === 'function');
       
       if (!this.disabled && !isSorting) {
-        console.log('🚀 sortAvatars() 실행 시작');
-        sortAvatars();
+        console.log('🚀 sortAvatars() 실행 조건 충족, 실행 시작');
+        try {
+          sortAvatars();
+        } catch (error) {
+          console.error('❌ sortAvatars 실행 중 오류:', error);
+        }
+      } else {
+        console.warn('⚠️ sortAvatars 실행 조건 불충족:', {
+          disabled: this.disabled,
+          isSorting: isSorting
+        });
       }
     });
     
   } else {
     console.error('❌ 정렬 버튼을 찾을 수 없음!');
+    console.log('🔍 현재 DOM에서 버튼 검색 결과:', {
+      byId: document.getElementById('sortAvatarsBtn'),
+      byQuery: document.querySelector('#sortAvatarsBtn'),
+      allButtons: document.querySelectorAll('button').length
+    });
   }
 });
 
