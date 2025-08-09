@@ -190,8 +190,8 @@ function updateAvatar(avatar) {
       avatar.y = constrain(avatar.y, 480, 1760);
     }
     
-    // 무대에 배치되지 않은 모든 아바타는 무대 영역에서 밀어내기 (드래그 중이 아닐 때만)
-    if (!avatar.isOnStage && !avatar.isDragged) {
+    // 일반 아바타는 무대 영역에서 밀어내기
+    if (!avatar.isSpecial) {
       const stageLeft = 853, stageRight = 1707, stageTop = 480, stageBottom = 800;
       if (avatar.y >= stageTop && avatar.y <= stageBottom && 
           avatar.x >= stageLeft && avatar.x <= stageRight) {
@@ -400,12 +400,6 @@ function mousePressed() {
       let distance = dist(mouseX, mouseY, avatar.x, avatar.y);
       if (distance <= 32) {
         selectedAvatar = avatar;
-        console.log('무대아바타 선택됨:', {
-          nickname: avatar.nickname, 
-          isSpecial: avatar.isSpecial,
-          id: avatar.id,
-          properties: Object.keys(avatar)
-        });
         isDragging = false;
         dragOffset.x = mouseX - avatar.x;
         dragOffset.y = mouseY - avatar.y;
@@ -453,17 +447,10 @@ function mouseDragged() {
     selectedAvatar.y = mouseY - dragOffset.y;
     
     selectedAvatar.x = constrain(selectedAvatar.x, 0, 2560);
+    selectedAvatar.y = constrain(selectedAvatar.y, 480, 1760);
     
-    // 무대아바타는 더 자유로운 y 범위, 일반 아바타는 기존 제한
-    if (selectedAvatar.isSpecial) {
-      selectedAvatar.y = constrain(selectedAvatar.y, 450, 1760); // 무대 위까지 갈 수 있게
-    } else {
-      selectedAvatar.y = constrain(selectedAvatar.y, 480, 1760); // 기존 제한
-    }
-    
-    // 일반 아바타(특수 아바타가 아닌)는 드래그 중에도 무대 영역에서 밀어내기
+    // 특수 아바타(무대아바타)가 아니면 무대 영역에서 밀어내기
     if (!selectedAvatar.isSpecial) {
-      console.log('일반 아바타 드래그 중, 무대에서 밀어냄');
       const stageLeft = 853, stageRight = 1707, stageTop = 480, stageBottom = 800;
       if (selectedAvatar.y >= stageTop && selectedAvatar.y <= stageBottom && 
           selectedAvatar.x >= stageLeft && selectedAvatar.x <= stageRight) {
@@ -474,14 +461,6 @@ function mouseDragged() {
           selectedAvatar.x = stageRight + 32;
         }
       }
-    } else {
-      // 무대아바타의 현재 위치 로그
-      const stageLeft = 853, stageRight = 1707, stageTop = 480, stageBottom = 800;
-      const inStage = (selectedAvatar.y >= stageTop && selectedAvatar.y <= stageBottom && 
-                      selectedAvatar.x >= stageLeft && selectedAvatar.x <= stageRight);
-      console.log('무대 아바타 드래그 중, 무대 접근 허용. 현재 위치:', 
-                  Math.round(selectedAvatar.x), Math.round(selectedAvatar.y), 
-                  '무대 안:', inStage);
     }
   }
 }
@@ -506,7 +485,7 @@ function mouseReleased() {
             stageSlots[selectedAvatar.stageSlot] = null;
           }
           
-          // 새 슬롯에 배치 (거리 제한 없이)
+          // 새 슬롯에 배치
           const slotPos = getStageSlotPosition(nearestSlot);
           selectedAvatar.x = slotPos.x;
           selectedAvatar.y = slotPos.y;

@@ -6,8 +6,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PC 아바타 월드 - 크기 미리보기</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.3/p5.min.js"></script>
-  <style>
-    body {
+  <styl        // 드래그 관련 애니메이션 업데이트
+        if (avatar.isClicked) {
+          avatar.clickTimer++;
+          
+          // 클릭 후 6프레임(약 0.1초) 후에 들어올리기 시작
+          if (avatar.clickTimer > 6 && avatar.isDragged) {
+            // 드래그 중일 때 빠르게 들어올리기 효과 (속도 증가)
+            if (avatar.dragElevation < 12) {
+              avatar.dragElevation += 4; // 2 → 4로 속도 증가
+            }
+          }
+        } else {{
       margin: 0;
       background: #222;
       display: flex;
@@ -163,6 +173,9 @@
     let popupAvatar = null;
     let dragOffset = { x: 0, y: 0 };
 
+    // 무대 슬롯 관리 (6개 슬롯: 0, 1, 2, 3, 4, 5)
+    let stageSlots = [null, null, null, null, null, null];
+
     function preload() {
       avatarImage = loadImage('avatar_sample.jpeg');
     }
@@ -182,6 +195,18 @@
           walkTimer: random(60, 240),
           idleTimer: 0,
           currentAction: 'walking',
+          // 드래그 관련 속성 추가
+          isDragged: false,
+          dragElevation: 0,
+          dropBounce: 0,
+          dropBounceVel: 0,
+          baseY: 0,
+          clickTimer: 0,
+          isClicked: false,
+          // 무대 관련 속성 추가
+          isOnStage: false,
+          stageSlot: -1,
+          isSpecial: (`삐삐${i + 1}`.includes('삐삐1') || `삐삐${i + 1}`.includes('삐삐2') || `삐삐${i + 1}`.includes('삐삐3') || `삐삐${i + 1}`.includes('삐삐4')), // 삐삐1~4만 특수 아바타
           // 임시 데이터 추가
           nickname: '삐삐' + (i + 1), // 각각 다른 닉네임
           category: ['사진', '음악', '영화', '음식', '여행'][i], // 다양한 카테고리
@@ -199,11 +224,59 @@
       drawMainScreen();
     }
 
+    // 무대 슬롯 위치 계산
+    function getStageSlotPosition(slotIndex) {
+      const stageW = 2560 / 3;
+      const stageX = (2560 - stageW) / 2;
+      const stageY = 640;
+      const spacing = stageW / 7; // 6개 슬롯이므로 7등분
+      
+      return {
+        x: stageX + spacing * (slotIndex + 1),
+        y: stageY
+      };
+    }
+
+    // 가장 가까운 빈 무대 슬롯 찾기
+    function findNearestEmptyStageSlot(x, y) {
+      let nearestSlot = -1;
+      let minDistance = Infinity;
+      
+      for (let i = 0; i < 6; i++) {
+        if (stageSlots[i] === null) { // 빈 슬롯인 경우
+          const slotPos = getStageSlotPosition(i);
+          const distance = dist(x, y, slotPos.x, slotPos.y);
+          if (distance < minDistance) {
+            minDistance = distance;
+            nearestSlot = i;
+          }
+        }
+      }
+      
+      return nearestSlot;
+    }
+
+    // 무대 영역에 있는지 확인
+    function isInStageArea(x, y) {
+      const stageLeft = 853;
+      const stageRight = 1707;
+      const stageTop = 480;
+      const stageBottom = 800;
+      
+      return x >= stageLeft && x <= stageRight && y >= stageTop && y <= stageBottom;
+    }
+
     function draw() {
       drawMainScreen();
       
       // 테스트 아바타들 애니메이션
       testAvatars.forEach(avatar => {
+        // 무대 위 아바타는 움직이지 않음
+        if (avatar.isOnStage) {
+          // 무대 위에서는 정적으로 유지
+          return;
+        }
+        
         // 멈춘 상태면 움직이지 않음
         if (avatar.currentAction === 'stopped') {
           // 아무것도 하지 않음
@@ -264,9 +337,52 @@
           }
         }
 
+        // 드래그 관련 애니메이션 업데이트
+        if (avatar.isClicked) {
+          avatar.clickTimer++;
+          
+          // 클릭 후 10프레임(약 0.17초) 후에 들어올리기 시작
+          if (avatar.clickTimer > 10 && avatar.isDragged) {
+            // 드래그 중일 때 빠르게 들어올리기 효과 (속도 증가)
+            if (avatar.dragElevation < 12) {
+              avatar.dragElevation += 4; // 2 → 4로 속도 증가
+            }
+          }
+        } else {
+          // 클릭 해제 시 바운스 효과
+          if (avatar.dropBounce !== 0) {
+            avatar.dropBounce += avatar.dropBounceVel;
+            avatar.dropBounceVel += 1.2; // 중력 강화 (0.8 → 1.2)
+            if (avatar.dropBounce >= 0) {
+              avatar.dropBounce = 0;
+              avatar.dropBounceVel *= -0.4; // 바운스 감쇠 강화 (-0.6 → -0.4)
+              if (Math.abs(avatar.dropBounceVel) < 0.5) { // 종료 조건 강화
+                avatar.dropBounceVel = 0;
+              }
+            }
+          }
+          // 들어올린 효과 빠르게 원상복구
+          if (avatar.dragElevation > 0) {
+            avatar.dragElevation -= 3; // 속도 증가 (1 → 3)
+            if (avatar.dragElevation < 0) avatar.dragElevation = 0;
+          }
+        }
+
+        // 현재 Y 위치 계산 (들어올림 + 바운스 효과 적용)
+        const currentY = avatar.y - avatar.dragElevation + avatar.dropBounce;
+
+        // 드래그 중일 때 그림자 그리기 (딜레이 후에만 표시)
+        if (avatar.isClicked && avatar.clickTimer > 6 && avatar.dragElevation > 0) {
+          push();
+          fill(0, 0, 0, 50); // 반투명 검은색 그림자
+          noStroke();
+          ellipse(avatar.x, avatar.y + 32, 50 - avatar.dragElevation, 15 - avatar.dragElevation/3); // 그림자 크기 조정
+          pop();
+        }
+
         // 아바타 그리기
         push();
-        translate(avatar.x, avatar.y);
+        translate(avatar.x, currentY);
         if (avatar.direction === -1) {
           scale(-1, 1);
         }
@@ -283,6 +399,24 @@
           // 일반 아바타
           image(avatarImage, 0, 0, 64, 64);
         }
+        pop();
+
+        // 닉네임 표시 (아바타 위에)
+        push();
+        // 텍스트 설정
+        textAlign(CENTER, BOTTOM);
+        textSize(12);
+        fill(255); // 흰색 텍스트
+        stroke(0); // 검은색 외곽선
+        strokeWeight(3);
+        
+        // 닉네임 표시 (아바타 위쪽 5px, 드래그/바운스 효과 적용)
+        text(avatar.nickname || '사용자', avatar.x, currentY - 37);
+        
+        // 외곽선 없는 텍스트 한번 더 그리기 (깔끔한 표시를 위해)
+        noStroke();
+        fill(255);
+        text(avatar.nickname || '사용자', avatar.x, currentY - 37);
         pop();
       });
       
@@ -317,26 +451,25 @@
       }
       noStroke();
 
-      // 무대 아바타들 (6명)
+      // 빈 무대 슬롯 표시 (6개)
       const spacing = stageW / 7;
       for (let i = 0; i < 6; i++) {
-        const x = stageX + spacing * (i + 1);
-        push();
-        translate(x, 640);
-        imageMode(CENTER);
-        
-        // 선택된 무대 아바타는 더 크게 표시하고 하이라이트 효과 추가 (팝업이 열렸을 때만)
-        if (showPopup && popupAvatar && popupAvatar.isStageAvatar && popupAvatar.stageIndex === i) {
-          // 배경 원 (하이라이트 효과)
-          fill(255, 215, 0, 150); // 골드 색상, 반투명
-          ellipse(0, 0, 90, 90);
-          // 선택된 아바타는 1.25배 크기
-          image(avatarImage, 0, 0, 80, 80);
-        } else {
-          // 일반 아바타
-          image(avatarImage, 0, 0, 64, 64);
+        if (stageSlots[i] === null) { // 빈 슬롯인 경우에만
+          const slotPos = getStageSlotPosition(i);
+          push();
+          fill(255, 255, 255, 30); // 매우 연한 흰색 원
+          noStroke();
+          ellipse(slotPos.x, slotPos.y, 70, 70); // 슬롯 위치 표시
+          pop();
+          
+          // 슬롯 번호 표시
+          push();
+          textAlign(CENTER, CENTER);
+          textSize(10);
+          fill(255, 255, 255, 100);
+          text(`SLOT ${i + 1}`, slotPos.x, slotPos.y);
+          pop();
         }
-        pop();
       }
 
       // 화면 정보 표시
@@ -366,10 +499,14 @@
           dragOffset.x = mouseX - avatar.x;
           dragOffset.y = mouseY - avatar.y;
           
-          // 아바타 멈추기
+          // 아바타 멈추기 및 클릭 상태 초기화
           avatar.currentAction = 'stopped';
           avatar.vx = 0;
           avatar.vy = 0;
+          avatar.isClicked = true;
+          avatar.clickTimer = 0;
+          avatar.isDragged = false; // 아직 드래그가 아님
+          avatar.baseY = avatar.y; // 원래 위치 저장
           return;
         }
       }
@@ -413,6 +550,14 @@
           walkTimer: random(60, 240),
           idleTimer: 0,
           currentAction: 'walking',
+          // 드래그 관련 속성 추가
+          isDragged: false,
+          dragElevation: 0,
+          dropBounce: 0,
+          dropBounceVel: 0,
+          baseY: mouseY,
+          clickTimer: 0,
+          isClicked: false,
           nickname: '삐삐' + testAvatars.length,
           category: '일반',
           memory: '초등학생 때 부모님과 함께 함덕해수욕장에 간 기억이 있어요',
@@ -424,6 +569,7 @@
     function mouseDragged() {
       if (selectedAvatar) {
         isDragging = true;
+        selectedAvatar.isDragged = true; // 실제 드래그 시작
         selectedAvatar.x = mouseX - dragOffset.x;
         selectedAvatar.y = mouseY - dragOffset.y;
         
@@ -450,11 +596,61 @@
       if (selectedAvatar) {
         if (!isDragging) {
           // 드래그하지 않고 클릭만 했으면 팝업 표시
+          selectedAvatar.isClicked = false; // 클릭 상태 해제
+          selectedAvatar.isDragged = false;
           showPopupFor(selectedAvatar);
         } else {
-          // 드래그 완료 - 아바타 다시 움직이게 함
-          selectedAvatar.currentAction = 'idle';
-          selectedAvatar.idleTimer = random(30, 120);
+          // 드래그 완료 처리
+          selectedAvatar.isClicked = false;
+          selectedAvatar.isDragged = false;
+          
+          // 특수 아바타이고 무대 영역에 드롭한 경우
+          if (selectedAvatar.isSpecial && isInStageArea(selectedAvatar.x, selectedAvatar.y)) {
+            // 가장 가까운 빈 슬롯 찾기
+            const nearestSlot = findNearestEmptyStageSlot(selectedAvatar.x, selectedAvatar.y);
+            
+            if (nearestSlot !== -1) {
+              // 기존 슬롯에서 제거
+              if (selectedAvatar.isOnStage && selectedAvatar.stageSlot !== -1) {
+                stageSlots[selectedAvatar.stageSlot] = null;
+              }
+              
+              // 새 슬롯에 배치
+              const slotPos = getStageSlotPosition(nearestSlot);
+              selectedAvatar.x = slotPos.x;
+              selectedAvatar.y = slotPos.y;
+              selectedAvatar.isOnStage = true;
+              selectedAvatar.stageSlot = nearestSlot;
+              stageSlots[nearestSlot] = selectedAvatar.id;
+              
+              // 무대 위에서는 움직이지 않도록
+              selectedAvatar.currentAction = 'stopped';
+            } else {
+              // 빈 슬롯이 없으면 무대 밖으로
+              selectedAvatar.y = 850; // 무대 아래로
+              selectedAvatar.isOnStage = false;
+              if (selectedAvatar.stageSlot !== -1) {
+                stageSlots[selectedAvatar.stageSlot] = null;
+                selectedAvatar.stageSlot = -1;
+              }
+              selectedAvatar.currentAction = 'idle';
+              selectedAvatar.idleTimer = random(30, 120);
+            }
+          } else {
+            // 무대 밖으로 드래그한 경우
+            if (selectedAvatar.isOnStage && selectedAvatar.stageSlot !== -1) {
+              stageSlots[selectedAvatar.stageSlot] = null;
+              selectedAvatar.isOnStage = false;
+              selectedAvatar.stageSlot = -1;
+            }
+            
+            // 바운스 효과와 함께 일반 모드로
+            selectedAvatar.dropBounce = -6;
+            selectedAvatar.dropBounceVel = -1.5;
+            selectedAvatar.baseY = selectedAvatar.y;
+            selectedAvatar.currentAction = 'idle';
+            selectedAvatar.idleTimer = random(30, 120);
+          }
         }
         selectedAvatar = null;
         isDragging = false;
