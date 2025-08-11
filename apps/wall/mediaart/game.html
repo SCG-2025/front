@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>BPM Groups Media Art</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.9.2/lib/p5.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.9.2/lib/addons/p5.sound.min.js"></script>
+  <style>
+    html,body{margin:0;height:100%;background:#1a131c;overflow:hidden;font-family:system-ui}
+    .ui{position:fixed;left:12px;top:12px;display:flex;gap:8px;align-items:center;background:#0008;color:#eee;padding:8px 10px;border-radius:10px;backdrop-filter:blur(6px)}
+    .ui button{padding:6px 10px;border:0;border-radius:8px;background:#2b2b2b;color:#fff;cursor:pointer}
+    .pill{display:flex;gap:6px}
+    .pill > label{background:#ffffff12;padding:4px 8px;border-radius:999px;display:flex;align-items:center;gap:6px}
+    .legend{position:fixed;left:12px;bottom:12px;color:#ddd;font-size:12px;line-height:1.4;background:#0008;padding:8px 10px;border-radius:10px}
+    .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
+  </style>
+</head>
+<body>
+<div class="ui">
+  <button id="start">Start</button>
+  <div class="pill">
+    <label><input type="checkbox" id="lead" checked>Lead</label>
+    <label><input type="checkbox" id="drum" checked>Drum</label>
+    <label><input type="checkbox" id="bass" checked>Bass</label>
+    <label><input type="checkbox" id="others" checked>Others</label>
+  </div>
+</div>
+<div class="legend">
+  <div><span class="dot" style="background:#7c6bff"></span>110 BPM — Nebula Rings</div>
+  <div><span class="dot" style="background:#ff7b6b"></span>120 BPM — Hex Grid</div>
+  <div><span class="dot" style="background:#6bffb8"></span>95 BPM — Wave Ribbons</div>
+</div>
+
+<script>
+/* ===================== 오디오 로드 & 트랙 정의 ===================== */
+const tracks = {
+  lead:   { file:'Music%20Sample_Lead.mp3',   snd:null, fft:null, amp:null, on:true,  bpmGroup:110 },
+  drum:   { file:'Music%20Sample_Drum.mp3',   snd:null, fft:null, amp:null, on:true,  bpmGroup:120 },
+  bass:   { file:'Music%20Sample_Bass.mp3',   snd:null, fft:null, amp:null, on:true,  bpmGroup:110 },
+  others: { file:'Music%20Sample_Others.mp3', snd:null, fft:null, amp:null, on:true,  bpmGroup:95  }
+};
+
+/* ===================== BPM 그룹(색/패턴/클럭) ===================== */
+const bpmGroups = {
+  110: {
+    name:'110', palette:{ base:'#7c6bff', glow:'#9fa3ff' },
+    pattern:'rings',
+    clock:{ bpm:110, beatsPerMeasure:4, startTime:0, isRunning:false }
+  },
+  120: {
+    name:'120', palette:{ base:'#ff7b6b', glow:'#ffd1c7' },
+    pattern:'hex',
+    clock:{ bpm:120, beatsPerMeasure:4, startTime:0, isRunning:false }
+  },
+  95: {
+    name:'95',  palette:{ base:'#6bffb8', glow:'#c0ffdf' },
+    pattern:'waves',
+    clock:{ bpm:95, beatsPerMeasure:4, startTime:0, isRunning:false }
+  }
+};
+
+let blobs=[], stars=[], t=0;
+
+function preload(){
+  for (const k in tracks){
+    const tr = tracks[k];
+    tr.snd = loadSound(tr.file, ()=>console.log('loaded', tr.file),
+                               e=>console.warn('load fail', tr.file, e));
+  }
+}
+
+function setup(){
+  createCanvas(window.innerWidth, window.innerHeight);
+  colorMode(HSB,360,100,100,1);
+  noStroke();
+
+  // 시각 요소 배치
+  const s = min(width,height);
+  blobs = [
+    makeBlob(0, width*0.18, height*0.75, s*0.58, 110),
+    makeBlob(1, width*0.75, height*0.30, s*0.50, 120),
+    makeBlob(2, width*0.48, height*0.55, s*0.45, 95)
+  ];
+  stars = [
+    makeStar(width*0.27, height*0.22, s*0.10, 'lead'),
+    makeStar(width*0.55, height*0.48, s*0.13, 'drum'),
+    makeStar(width*0.28, height*0.80, s*0.10, 'bass')
+  ];
+
+  // 분석기
+  for (const k in tracks){
+    tracks[k].fft = new p5.FFT(0.8, 64);
+    tracks[k].amp = new p5.Amplitude();
+  }
+
+  // UI
+  document.getElementById('start').onclick = startAll;
+  ;['lead','drum','bass','others'].forEach(id=>{
+    const el = document.getElementById(id);
+    el.onchange = ()=>{ tracks[id].on = el.checked; if (tracks[id].snd) tracks[id].snd.setVolume(el.checked?1:0); };
+  });
+}
+
+function windowResized(){ resizeCanvas(window.innerWidth, window.innerHeight); }
+
+async function startAll(){
+  const ac = getAudioContext(); if (ac.state!=='running') await ac.resume();
+  // 오디오 루프 시작
+  for (const k in tracks){
+    const tr = tracks[k];
+    if (tr.snd && !tr.snd.isPlaying()){
+      tr.snd.loop();
+      tr.snd.setVolume(tr.on?1:0);
+      tr.fft.setInput(tr.snd);
+      tr.amp.setInput(tr.snd);
+    }
+  }
+  // 그룹 클럭 시작
+  const now = millis()/1000;
+  Object.values(bpmGroups).forEach(g=>{
+    g.clock.startTime = now;
+    g.clock.isRunning = true;
+  });
+}
+
+/* ===================== 메인 드로잉 ===================== */
+function draw(){
+  background(280,25,8);
+
+  // 1) 그룹 패턴 배경(가벼운 밀도) + 마디 펄스
+  for (const key in bpmGroups){
+    drawGroupBackground(bpmGroups[key]);
+  }
+
+  // 2) 트랙별 에너지
+  const energy = {}; // id -> {bass, mid, treb, level}
+  for (const id in tracks){
+    const tr = tracks[id];
+    if (!tr.snd) continue;
+    energy[id] = {
+      bass: tr.fft.getEnergy('bass'),
+      mid:  tr.fft.getEnergy('mid'),
+      treb: tr.fft.getEnergy('treble'),
+      level: tr.amp.getLevel()
+    };
+  }
+
+  // 3) 블롭: 그룹별 색/펄스, 전체 밴드 평균에 반응
+  for (const b of blobs){
+    const groupEnergy = avgEnergyForGroup(b.group);
+    const bassPush = map(groupEnergy.bass,0,255, 0, 0.9);
+    const midTwist = map(groupEnergy.mid, 0,255, 0, 0.006);
+    const trebFlick= map(groupEnergy.treb,0,255, 0, 0.004);
+    b.rot += midTwist;
+    b.x += (noise(b.seed + t)*2 - 1) * (0.3 + trebFlick*6);
+    b.y += (noise(b.seed + 10 + t)*2 - 1) * (0.3 + trebFlick*6);
+
+    // 마디 펄스: 그룹 클럭의 펄스값(0~1)
+    const pulse = measurePulse(bpmGroups[b.group].clock);
+    b.scale = 0.92 + 0.06*pulse + 0.10*bassPush;
+
+    drawBlob(b);
+  }
+
+  // 4) 별: 매핑된 트랙의 레벨/트레블 + 그룹 펄스
+  for (const st of stars){
+    const e = energy[st.mapType] || {level:0, treb:0};
+    const group = tracks[st.mapType].bpmGroup;
+    const pulse = measurePulse(bpmGroups[group].clock);
+    drawGlowStar(st, e.level, e.treb, group, pulse);
+  }
+
+  t += 0.004;
+}
+
+/* ===================== 도우미들 ===================== */
+function avgEnergyForGroup(group){
+  let bass=0, mid=0, treb=0, level=0, n=0;
+  for (const id in tracks){
+    const tr = tracks[id];
+    if (tr.bpmGroup!==group || !tr.snd) continue;
+    const e = { bass: tr.fft.getEnergy('bass'),
+                mid:  tr.fft.getEnergy('mid'),
+                treb: tr.fft.getEnergy('treble'),
+                level: tr.amp.getLevel() };
+    bass+=e.bass; mid+=e.mid; treb+=e.treb; level+=e.level; n++;
+  }
+  if (n>0){ bass/=n; mid/=n; treb/=n; level/=n; }
+  return {bass, mid, treb, level};
+}
+
+function measurePulse(clock){
+  if (!clock.isRunning) return 0;
+  const now = millis()/1000;
+  const sPerBeat = 60/clock.bpm;
+  const sPerMeasure = sPerBeat * clock.beatsPerMeasure;
+  const phase = ((now - clock.startTime) % sPerMeasure) / sPerMeasure; // 0~1
+  // 마디 시작 근처에서 강하게, 이후 빠르게 감소하는 부드러운 종모양
+  const edge = 0.12; // 펄스 폭
+  const d = min(phase, 1-phase);              // 양 끝에 봉우리
+  const k = constrain(map(d, 0, edge, 1, 0), 0, 1);
+  return pow(k, 1.5);
+}
+
+/* ===================== 비주얼 프리미티브 ===================== */
+function makeBlob(seed,x,y,r,group){
+  return {seed,x,y,r,group,
+          hueBase:random(0,360),rot:random(TWO_PI),scale:1};
+}
+function drawBlob(b){
+  const pal = bpmGroups[b.group].palette;
+  // 팔레트 보정: base~glow 사이를 HSL 보간처럼 흉내
+  const base = color(pal.base), glow = color(pal.glow);
+  push(); translate(b.x,b.y); rotate(b.rot); noStroke();
+  const layers=18;
+  for (let i=0;i<layers;i++){
+    const pct=1 - i/(layers-1);
+    const rr=b.r*b.scale*(0.45 + pct*0.7);
+    const al=0.04 + 0.08*pct;
+    const c = lerpColor(base, glow, pct*0.8);
+    fill(hue(c), saturation(c), brightness(c), al);
+    ellipse(0,0, rr*1.35, rr);
+  }
+  pop();
+}
+
+function makeStar(x,y,size,mapType){ return {x,y,size,mapType,phase:random(TWO_PI)}; }
+function drawGlowStar(st, level, treb, group, pulse){
+  const pal = bpmGroups[group].palette;
+  push(); translate(st.x,st.y);
+  const sparkle = map(treb,0,255, 0, 0.18);
+  const baseSize = st.size * (1 + 0.06*sin(frameCount*0.02 + st.phase) + 0.4*level + 0.18*pulse);
+
+  // Glow
+  blendMode(ADD);
+  for (let r=1.9;r>=1.0;r-=0.12){
+    const a = map(r,1.0,1.9, 0.14, 0.03) + sparkle*0.25 + 0.15*pulse;
+    starShape(baseSize*r, a, true, pal);
+  }
+  // Core
+  starShape(baseSize, 0.9, false, pal);
+  pop();
+}
+function starShape(size, alpha, thick, pal){
+  const base=color(pal.base), glow=color(pal.glow);
+  const steps = thick ? 28 : 8;
+  for (let i=0;i<steps;i++){
+    const pct=i/(steps-1);
+    const w = size*(1 - pct*0.85);
+    const a = alpha*(thick ? (0.03 + 0.9*(1-pct)) : (0.4 + 0.6*(1-pct)));
+    const c = lerpColor(base, glow, pct);
+    fill(hue(c), saturation(c), brightness(c), a);
+    rectMode(CENTER); noStroke();
+    rect(0,0, w*1.8, w*0.15, w*0.1);
+    rect(0,0, w*0.15, w*1.8, w*0.1);
+    push(); rotate(PI/4);
+    rect(0,0, w*1.3, w*0.12, w*0.08);
+    rect(0,0, w*0.12, w*1.3, w*0.08);
+    pop();
+  }
+  if (!thick){
+    fill(40,20,100,0.9);
+    ellipse(0,0, size*0.22, size*0.22);
+  }
+}
+
+/* ===================== 그룹 배경 패턴 & 펄스 ===================== */
+function drawGroupBackground(group){
+  const {pattern, palette, clock} = group;
+  const pulse = measurePulse(clock);
+  push();
+  // 패턴 투명도는 낮게 깔고, 펄스 순간에만 살짝 강화
+  const baseAlpha = 0.06 + 0.10*pulse;
+  const col = color(palette.base);
+  const glw = color(palette.glow);
+
+  if (pattern==='rings'){
+    // 화면 중심에서 다중 링 (+ 펄스에서 한두 개가 확장)
+    noFill(); stroke(hue(glw), saturation(glw), brightness(glw), baseAlpha*2);
+    const s = max(width, height);
+    const step = s*0.08;
+    for (let r=step*0.5; r<=s*0.9; r+=step){
+      strokeWeight(1.5);
+      ellipse(width*0.33, height*0.38, r*(1+0.12*pulse), r*(1+0.05*pulse));
+    }
+  } else if (pattern==='hex'){
+    // 헥사 그리드
+    stroke(hue(col), saturation(col), brightness(col), baseAlpha*1.4);
+    const a = 14; // hex apothem
+    const R = a / cos(PI/6);
+    const dy = a*2;
+    const dx = R*1.5;
+    for (let y=-dy; y<height+dy; y+=dy){
+      const offset = ((y/dy)|0)%2 ? 0 : dx/2;
+      for (let x=-dx; x<width+dx; x+=dx){
+        push(); translate(x+offset, y);
+        drawHex(R*(1+0.1*pulse));
+        pop();
+      }
+    }
+  } else if (pattern==='waves'){
+    // 리본 웨이브
+    noFill(); stroke(hue(glw), saturation(glw), brightness(glw), baseAlpha*2);
+    strokeWeight(1.5);
+    const rows = 6;
+    for (let j=0;j<rows;j++){
+      beginShape();
+      const y0 = map(j,0,rows-1, height*0.15, height*0.85);
+      for (let x=0; x<=width; x+=16){
+        const y = y0 + 22*sin(0.004*x + t*1.4 + j*0.9) + 30*pulse*sin(0.012*x + j);
+        vertex(x, y);
+      }
+      endShape();
+    }
+  }
+  pop();
+}
+function drawHex(R){
+  beginShape();
+  for (let i=0;i<6;i++){
+    const th = PI/6 + i*PI/3;
+    vertex(R*cos(th), R*sin(th));
+  }
+  endShape(CLOSE);
+}
+</script>
+</body>
+</html>
