@@ -1,329 +1,340 @@
 <!doctype html>
 <html lang="ko">
+
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>BPM Groups Media Art</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pixel Media Art — Beat Snap</title>
   <script src="https://cdn.jsdelivr.net/npm/p5@1.9.2/lib/p5.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/p5@1.9.2/lib/addons/p5.sound.min.js"></script>
   <style>
-    html,body{margin:0;height:100%;background:#1a131c;overflow:hidden;font-family:system-ui}
-    .ui{position:fixed;left:12px;top:12px;display:flex;gap:8px;align-items:center;background:#0008;color:#eee;padding:8px 10px;border-radius:10px;backdrop-filter:blur(6px)}
-    .ui button{padding:6px 10px;border:0;border-radius:8px;background:#2b2b2b;color:#fff;cursor:pointer}
-    .pill{display:flex;gap:6px}
-    .pill > label{background:#ffffff12;padding:4px 8px;border-radius:999px;display:flex;align-items:center;gap:6px}
-    .legend{position:fixed;left:12px;bottom:12px;color:#ddd;font-size:12px;line-height:1.4;background:#0008;padding:8px 10px;border-radius:10px}
-    .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
+    html,
+    body {
+      margin: 0;
+      height: 100%;
+      background: #0f0f13;
+      overflow: hidden
+    }
+
+    canvas {
+      image-rendering: pixelated;
+      image-rendering: crisp-edges
+    }
+
+    .ui {
+      position: fixed;
+      left: 12px;
+      top: 12px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      background: #0008;
+      color: #eee;
+      padding: 8px 10px;
+      border-radius: 10px;
+      backdrop-filter: blur(6px);
+      font: 12px system-ui
+    }
+
+    .ui label {
+      background: #ffffff12;
+      padding: 4px 8px;
+      border-radius: 999px;
+      display: flex;
+      gap: 6px;
+      align-items: center
+    }
+
+    .ui input[type=range] {
+      width: 120px
+    }
+
+    .pill {
+      display: flex;
+      gap: 6px
+    }
   </style>
 </head>
+
 <body>
-<div class="ui">
-  <button id="start">Start</button>
-  <div class="pill">
-    <label><input type="checkbox" id="lead" checked>Lead</label>
-    <label><input type="checkbox" id="drum" checked>Drum</label>
-    <label><input type="checkbox" id="bass" checked>Bass</label>
-    <label><input type="checkbox" id="others" checked>Others</label>
+  <div class="ui">
+    <button id="start">Start</button>
+    <div class="pill">
+      <label><input type="checkbox" id="lead" checked>Lead</label>
+      <label><input type="checkbox" id="drum" checked>Drum</label>
+      <label><input type="checkbox" id="bass" checked>Bass</label>
+      <label><input type="checkbox" id="others" checked>Others</label>
+    </div>
+    <label>sens <input id="sens" type="range" min="0.6" max="2.0" step="0.05" value="1.15"></label>
+    <label>grid <input id="grid" type="range" min="6" max="30" step="1" value="14"></label>
+    <span id="bpm" style="opacity:.85"></span>
   </div>
-</div>
-<div class="legend">
-  <div><span class="dot" style="background:#7c6bff"></span>110 BPM — Nebula Rings</div>
-  <div><span class="dot" style="background:#ff7b6b"></span>120 BPM — Hex Grid</div>
-  <div><span class="dot" style="background:#6bffb8"></span>95 BPM — Wave Ribbons</div>
-</div>
 
-<script>
-/* ===================== 오디오 로드 & 트랙 정의 ===================== */
-const tracks = {
-  lead:   { file:'Music%20Sample_Lead.mp3',   snd:null, fft:null, amp:null, on:true,  bpmGroup:110 },
-  drum:   { file:'Music%20Sample_Drum.mp3',   snd:null, fft:null, amp:null, on:true,  bpmGroup:120 },
-  bass:   { file:'Music%20Sample_Bass.mp3',   snd:null, fft:null, amp:null, on:true,  bpmGroup:110 },
-  others: { file:'Music%20Sample_Others.mp3', snd:null, fft:null, amp:null, on:true,  bpmGroup:95  }
-};
-
-/* ===================== BPM 그룹(색/패턴/클럭) ===================== */
-const bpmGroups = {
-  110: {
-    name:'110', palette:{ base:'#7c6bff', glow:'#9fa3ff' },
-    pattern:'rings',
-    clock:{ bpm:110, beatsPerMeasure:4, startTime:0, isRunning:false }
-  },
-  120: {
-    name:'120', palette:{ base:'#ff7b6b', glow:'#ffd1c7' },
-    pattern:'hex',
-    clock:{ bpm:120, beatsPerMeasure:4, startTime:0, isRunning:false }
-  },
-  95: {
-    name:'95',  palette:{ base:'#6bffb8', glow:'#c0ffdf' },
-    pattern:'waves',
-    clock:{ bpm:95, beatsPerMeasure:4, startTime:0, isRunning:false }
-  }
-};
-
-let blobs=[], stars=[], t=0;
-
-function preload(){
-  for (const k in tracks){
-    const tr = tracks[k];
-    tr.snd = loadSound(tr.file, ()=>console.log('loaded', tr.file),
-                               e=>console.warn('load fail', tr.file, e));
-  }
-}
-
-function setup(){
-  createCanvas(window.innerWidth, window.innerHeight);
-  colorMode(HSB,360,100,100,1);
-  noStroke();
-
-  // 시각 요소 배치
-  const s = min(width,height);
-  blobs = [
-    makeBlob(0, width*0.18, height*0.75, s*0.58, 110),
-    makeBlob(1, width*0.75, height*0.30, s*0.50, 120),
-    makeBlob(2, width*0.48, height*0.55, s*0.45, 95)
-  ];
-  stars = [
-    makeStar(width*0.27, height*0.22, s*0.10, 'lead'),
-    makeStar(width*0.55, height*0.48, s*0.13, 'drum'),
-    makeStar(width*0.28, height*0.80, s*0.10, 'bass')
-  ];
-
-  // 분석기
-  for (const k in tracks){
-    tracks[k].fft = new p5.FFT(0.8, 64);
-    tracks[k].amp = new p5.Amplitude();
-  }
-
-  // UI
-  document.getElementById('start').onclick = startAll;
-  ;['lead','drum','bass','others'].forEach(id=>{
-    const el = document.getElementById(id);
-    el.onchange = ()=>{ tracks[id].on = el.checked; if (tracks[id].snd) tracks[id].snd.setVolume(el.checked?1:0); };
-  });
-}
-
-function windowResized(){ resizeCanvas(window.innerWidth, window.innerHeight); }
-
-async function startAll(){
-  const ac = getAudioContext(); if (ac.state!=='running') await ac.resume();
-  // 오디오 루프 시작
-  for (const k in tracks){
-    const tr = tracks[k];
-    if (tr.snd && !tr.snd.isPlaying()){
-      tr.snd.loop();
-      tr.snd.setVolume(tr.on?1:0);
-      tr.fft.setInput(tr.snd);
-      tr.amp.setInput(tr.snd);
-    }
-  }
-  // 그룹 클럭 시작
-  const now = millis()/1000;
-  Object.values(bpmGroups).forEach(g=>{
-    g.clock.startTime = now;
-    g.clock.isRunning = true;
-  });
-}
-
-/* ===================== 메인 드로잉 ===================== */
-function draw(){
-  background(280,25,8);
-
-  // 1) 그룹 패턴 배경(가벼운 밀도) + 마디 펄스
-  for (const key in bpmGroups){
-    drawGroupBackground(bpmGroups[key]);
-  }
-
-  // 2) 트랙별 에너지
-  const energy = {}; // id -> {bass, mid, treb, level}
-  for (const id in tracks){
-    const tr = tracks[id];
-    if (!tr.snd) continue;
-    energy[id] = {
-      bass: tr.fft.getEnergy('bass'),
-      mid:  tr.fft.getEnergy('mid'),
-      treb: tr.fft.getEnergy('treble'),
-      level: tr.amp.getLevel()
+  <script>
+    /* ====== Tracks ====== */
+    const tracks = {
+      lead: { file: 'Music%20Sample_Lead.mp3', snd: null, fft: null, amp: null, on: true },
+      drum: { file: 'Music%20Sample_Drum.mp3', snd: null, fft: null, amp: null, on: true },
+      bass: { file: 'Music%20Sample_Bass.mp3', snd: null, fft: null, amp: null, on: true },
+      others: { file: 'Music%20Sample_Others.mp3', snd: null, fft: null, amp: null, on: true },
     };
-  }
-
-  // 3) 블롭: 그룹별 색/펄스, 전체 밴드 평균에 반응
-  for (const b of blobs){
-    const groupEnergy = avgEnergyForGroup(b.group);
-    const bassPush = map(groupEnergy.bass,0,255, 0, 0.9);
-    const midTwist = map(groupEnergy.mid, 0,255, 0, 0.006);
-    const trebFlick= map(groupEnergy.treb,0,255, 0, 0.004);
-    b.rot += midTwist;
-    b.x += (noise(b.seed + t)*2 - 1) * (0.3 + trebFlick*6);
-    b.y += (noise(b.seed + 10 + t)*2 - 1) * (0.3 + trebFlick*6);
-
-    // 마디 펄스: 그룹 클럭의 펄스값(0~1)
-    const pulse = measurePulse(bpmGroups[b.group].clock);
-    b.scale = 0.92 + 0.06*pulse + 0.10*bassPush;
-
-    drawBlob(b);
-  }
-
-  // 4) 별: 매핑된 트랙의 레벨/트레블 + 그룹 펄스
-  for (const st of stars){
-    const e = energy[st.mapType] || {level:0, treb:0};
-    const group = tracks[st.mapType].bpmGroup;
-    const pulse = measurePulse(bpmGroups[group].clock);
-    drawGlowStar(st, e.level, e.treb, group, pulse);
-  }
-
-  t += 0.004;
-}
-
-/* ===================== 도우미들 ===================== */
-function avgEnergyForGroup(group){
-  let bass=0, mid=0, treb=0, level=0, n=0;
-  for (const id in tracks){
-    const tr = tracks[id];
-    if (tr.bpmGroup!==group || !tr.snd) continue;
-    const e = { bass: tr.fft.getEnergy('bass'),
-                mid:  tr.fft.getEnergy('mid'),
-                treb: tr.fft.getEnergy('treble'),
-                level: tr.amp.getLevel() };
-    bass+=e.bass; mid+=e.mid; treb+=e.treb; level+=e.level; n++;
-  }
-  if (n>0){ bass/=n; mid/=n; treb/=n; level/=n; }
-  return {bass, mid, treb, level};
-}
-
-function measurePulse(clock){
-  if (!clock.isRunning) return 0;
-  const now = millis()/1000;
-  const sPerBeat = 60/clock.bpm;
-  const sPerMeasure = sPerBeat * clock.beatsPerMeasure;
-  const phase = ((now - clock.startTime) % sPerMeasure) / sPerMeasure; // 0~1
-  // 마디 시작 근처에서 강하게, 이후 빠르게 감소하는 부드러운 종모양
-  const edge = 0.12; // 펄스 폭
-  const d = min(phase, 1-phase);              // 양 끝에 봉우리
-  const k = constrain(map(d, 0, edge, 1, 0), 0, 1);
-  return pow(k, 1.5);
-}
-
-/* ===================== 비주얼 프리미티브 ===================== */
-function makeBlob(seed,x,y,r,group){
-  return {seed,x,y,r,group,
-          hueBase:random(0,360),rot:random(TWO_PI),scale:1};
-}
-function drawBlob(b){
-  const pal = bpmGroups[b.group].palette;
-  // 팔레트 보정: base~glow 사이를 HSL 보간처럼 흉내
-  const base = color(pal.base), glow = color(pal.glow);
-  push(); translate(b.x,b.y); rotate(b.rot); noStroke();
-  const layers=18;
-  for (let i=0;i<layers;i++){
-    const pct=1 - i/(layers-1);
-    const rr=b.r*b.scale*(0.45 + pct*0.7);
-    const al=0.04 + 0.08*pct;
-    const c = lerpColor(base, glow, pct*0.8);
-    fill(hue(c), saturation(c), brightness(c), al);
-    ellipse(0,0, rr*1.35, rr);
-  }
-  pop();
-}
-
-function makeStar(x,y,size,mapType){ return {x,y,size,mapType,phase:random(TWO_PI)}; }
-function drawGlowStar(st, level, treb, group, pulse){
-  const pal = bpmGroups[group].palette;
-  push(); translate(st.x,st.y);
-  const sparkle = map(treb,0,255, 0, 0.18);
-  const baseSize = st.size * (1 + 0.06*sin(frameCount*0.02 + st.phase) + 0.4*level + 0.18*pulse);
-
-  // Glow
-  blendMode(ADD);
-  for (let r=1.9;r>=1.0;r-=0.12){
-    const a = map(r,1.0,1.9, 0.14, 0.03) + sparkle*0.25 + 0.15*pulse;
-    starShape(baseSize*r, a, true, pal);
-  }
-  // Core
-  starShape(baseSize, 0.9, false, pal);
-  pop();
-}
-function starShape(size, alpha, thick, pal){
-  const base=color(pal.base), glow=color(pal.glow);
-  const steps = thick ? 28 : 8;
-  for (let i=0;i<steps;i++){
-    const pct=i/(steps-1);
-    const w = size*(1 - pct*0.85);
-    const a = alpha*(thick ? (0.03 + 0.9*(1-pct)) : (0.4 + 0.6*(1-pct)));
-    const c = lerpColor(base, glow, pct);
-    fill(hue(c), saturation(c), brightness(c), a);
-    rectMode(CENTER); noStroke();
-    rect(0,0, w*1.8, w*0.15, w*0.1);
-    rect(0,0, w*0.15, w*1.8, w*0.1);
-    push(); rotate(PI/4);
-    rect(0,0, w*1.3, w*0.12, w*0.08);
-    rect(0,0, w*0.12, w*1.3, w*0.08);
-    pop();
-  }
-  if (!thick){
-    fill(40,20,100,0.9);
-    ellipse(0,0, size*0.22, size*0.22);
-  }
-}
-
-/* ===================== 그룹 배경 패턴 & 펄스 ===================== */
-function drawGroupBackground(group){
-  const {pattern, palette, clock} = group;
-  const pulse = measurePulse(clock);
-  push();
-  // 패턴 투명도는 낮게 깔고, 펄스 순간에만 살짝 강화
-  const baseAlpha = 0.06 + 0.10*pulse;
-  const col = color(palette.base);
-  const glw = color(palette.glow);
-
-  if (pattern==='rings'){
-    // 화면 중심에서 다중 링 (+ 펄스에서 한두 개가 확장)
-    noFill(); stroke(hue(glw), saturation(glw), brightness(glw), baseAlpha*2);
-    const s = max(width, height);
-    const step = s*0.08;
-    for (let r=step*0.5; r<=s*0.9; r+=step){
-      strokeWeight(1.5);
-      ellipse(width*0.33, height*0.38, r*(1+0.12*pulse), r*(1+0.05*pulse));
-    }
-  } else if (pattern==='hex'){
-    // 헥사 그리드
-    stroke(hue(col), saturation(col), brightness(col), baseAlpha*1.4);
-    const a = 14; // hex apothem
-    const R = a / cos(PI/6);
-    const dy = a*2;
-    const dx = R*1.5;
-    for (let y=-dy; y<height+dy; y+=dy){
-      const offset = ((y/dy)|0)%2 ? 0 : dx/2;
-      for (let x=-dx; x<width+dx; x+=dx){
-        push(); translate(x+offset, y);
-        drawHex(R*(1+0.1*pulse));
-        pop();
+    function preload() {
+      for (const k in tracks) {
+        const tr = tracks[k];
+        tr.snd = loadSound(tr.file, () => console.log('loaded', tr.file), e => console.warn('fail', tr.file, e));
       }
     }
-  } else if (pattern==='waves'){
-    // 리본 웨이브
-    noFill(); stroke(hue(glw), saturation(glw), brightness(glw), baseAlpha*2);
-    strokeWeight(1.5);
-    const rows = 6;
-    for (let j=0;j<rows;j++){
-      beginShape();
-      const y0 = map(j,0,rows-1, height*0.15, height*0.85);
-      for (let x=0; x<=width; x+=16){
-        const y = y0 + 22*sin(0.004*x + t*1.4 + j*0.9) + 30*pulse*sin(0.012*x + j);
-        vertex(x, y);
-      }
-      endShape();
+
+    /* ====== Low-res pixel canvas ====== */
+    let pg, gridW = 192, gridH = 128, scaleX = 1, scaleY = 1;
+    function setupOffscreen() {
+      gridH = Math.round(gridW * (height / width));
+      pg = createGraphics(gridW, gridH);
+      pg.noSmooth();
+      pg.colorMode(HSB, 360, 100, 100, 1);
+      scaleX = width / gridW; scaleY = height / gridH;
     }
-  }
-  pop();
-}
-function drawHex(R){
-  beginShape();
-  for (let i=0;i<6;i++){
-    const th = PI/6 + i*PI/3;
-    vertex(R*cos(th), R*sin(th));
-  }
-  endShape(CLOSE);
-}
-</script>
+
+    /* ====== Beat detector (drum bass band) ====== */
+    class BeatSnap {
+      constructor() {
+        this.prevSpec = new Array(32).fill(0);
+        this.threshold = 0.0;
+        this.gain = 0.9;           // adaptive threshold EMA
+        this.lastHit = 0;
+        this.minGap = 0.12;        // seconds (debounce)
+        this.ivalEMA = null;       // avg inter-beat interval
+        this.lastTime = null;
+        this.flash = 0;            // for strobe
+        this.subDivPhase = 0;      // 0..1
+      }
+      update(drFFt) {
+        // spectral flux (bass bins only)
+        const spec = drFFt.analyze(64); // 64 bins
+        const N = 12;                   // use first ~12 bins ≈ low/bass
+        let flux = 0;
+        for (let i = 0; i < N; i++) {
+          const v = spec[i] / 255;
+          const d = Math.max(0, v - this.prevSpec[i] / 255);
+          flux += d;
+          this.prevSpec[i] = spec[i];
+        }
+        // adaptive threshold
+        this.threshold = this.threshold * this.gain + flux * (1 - this.gain);
+
+        const now = millis() / 1000;
+        const sens = parseFloat(document.getElementById('sens').value);
+        const passed = (flux > this.threshold * sens) && (now - this.lastHit > this.minGap);
+
+        let hit = false;
+        if (passed) {
+          hit = true;
+          this.flash = 1;
+          if (this.lastTime) {
+            const ival = now - this.lastTime;
+            this.ivalEMA = this.ivalEMA == null ? ival : lerp(this.ivalEMA, ival, 0.2);
+          }
+          this.lastTime = now;
+          this.lastHit = now;
+        }
+        // decay flash
+        this.flash = lerp(this.flash, 0, 0.25);
+
+        // sub-step clock from EMA (1/4 notes)
+        if (this.ivalEMA) {
+          const beat = this.ivalEMA;
+          const q = (now - (this.lastTime || now)) / beat;
+          this.subDivPhase = (q * 4) % 1; // quarter notes phase 0..1
+        }
+        return hit;
+      }
+      bpm() {
+        return this.ivalEMA ? (60 / this.ivalEMA) : 0;
+      }
+    }
+    let snap;
+
+    /* ====== Visual State (snappy) ====== */
+    let blobs, stars, palette, paletteStep = 0, flashAlpha = 0;
+    const gradHex = ['#ff6b88', '#ffb35a', '#d9ff63', '#6de1ff', '#a88bff']; // 핫→쿨 오색 (무지개X)
+    function hexCol(h) { const v = h.replace('#', ''); return color(parseInt(v.slice(0, 2), 16), parseInt(v.slice(2, 4), 16), parseInt(v.slice(4, 6), 16)); }
+    function sampleGradIdx(i) { // hard step palette
+      const a = constrain(i, 0, gradHex.length - 1) | 0;
+      const c = hexCol(gradHex[a]);
+      pg.fill(hue(c), saturation(c), brightness(c), 1);
+      return c;
+    }
+
+    function setup() {
+      createCanvas(window.innerWidth, window.innerHeight);
+      noSmooth();
+      setupOffscreen();
+      snap = new BeatSnap();
+
+      // analyzers
+      for (const k in tracks) { tracks[k].fft = new p5.FFT(0.8, 64); tracks[k].amp = new p5.Amplitude(); }
+
+      // visual objects
+      const s = min(gridW, gridH);
+      blobs = [
+        { x: 0.22 * gridW, y: 0.72 * gridH, r: 0.42 * s, hue: 320, tx: 0, ty: 0, scale: 1 },
+        { x: 0.72 * gridW, y: 0.30 * gridH, r: 0.34 * s, hue: 25, tx: 0, ty: 0, scale: 1 },
+        { x: 0.48 * gridW, y: 0.55 * gridH, r: 0.31 * s, hue: 200, tx: 0, ty: 0, scale: 1 },
+      ];
+      stars = [
+        { x: 0.26 * gridW, y: 0.20 * gridH, size: 0.12 * s, map: 'lead', rot: 0, thick: 3 },
+        { x: 0.55 * gridW, y: 0.48 * gridH, size: 0.14 * s, map: 'drum', rot: 0, thick: 3 },
+        { x: 0.28 * gridW, y: 0.80 * gridH, size: 0.11 * s, map: 'bass', rot: 0, thick: 3 },
+      ];
+      palette = gradHex.map(hexCol);
+
+      // UI
+      document.getElementById('start').onclick = async () => {
+        const ac = getAudioContext(); if (ac.state !== 'running') await ac.resume();
+        for (const k in tracks) {
+          const tr = tracks[k];
+          if (tr.snd && !tr.snd.isPlaying()) {
+            tr.snd.loop(); tr.snd.setVolume(tr.on ? 1 : 0);
+            tr.fft.setInput(tr.snd); tr.amp.setInput(tr.snd);
+          }
+        }
+      };
+      ['lead', 'drum', 'bass', 'others'].forEach(id => {
+        const el = document.getElementById(id);
+        el.onchange = () => { tracks[id].on = el.checked; if (tracks[id].snd) tracks[id].snd.setVolume(el.checked ? 1 : 0); };
+      });
+    }
+
+    function windowResized() { resizeCanvas(window.innerWidth, window.innerHeight); setupOffscreen(); }
+
+    /* ====== Draw ====== */
+    function draw() {
+      // energies
+      const E = {};
+      for (const id in tracks) {
+        const tr = tracks[id];
+        E[id] = tr.snd ? { bass: tr.fft.getEnergy('bass'), mid: tr.fft.getEnergy('mid'), treb: tr.fft.getEnergy('treble'), lvl: tr.amp.getLevel() }
+          : { bass: 0, mid: 0, treb: 0, lvl: 0 };
+      }
+
+      // beat update from DRUM
+      const hit = snap.update(tracks.drum.fft);
+      const bpmEl = document.getElementById('bpm'); bpmEl.textContent = snap.bpm() ? `BPM ${snap.bpm().toFixed(0)}` : 'BPM --';
+
+      // on beat: hard snap targets
+      if (hit) {
+        paletteStep = (paletteStep + 1) % palette.length;
+        flashAlpha = 1;
+
+        // blobs pick new snapped target on grid
+        const gs = parseInt(document.getElementById('grid').value, 10); // grid size (px on low-res)
+        blobs.forEach((b, i) => {
+          const gx = Math.round(random(0.18 * gridW, 0.82 * gridW) / gs) * gs;
+          const gy = Math.round(random(0.22 * gridH, 0.85 * gridH) / gs) * gs;
+          b.tx = gx; b.ty = gy;
+          b.tscale = 0.92 + 0.35 * E.bass.lvl + 0.25 * E.drum.lvl; // size step
+        });
+
+        // stars toggle rotation/thickness
+        stars.forEach((s, i) => {
+          s.rot = (s.rot + PI / 4) % TWO_PI;
+          s.thick = (s.thick === 3) ? 5 : 3;
+        });
+      }
+
+      // between beats: decay flash and ease motion
+      flashAlpha = lerp(flashAlpha, 0, 0.25);
+      blobs.forEach(b => {
+        b.x = (b.tx) ? lerp(b.x, b.tx, 0.45) : b.x;
+        b.y = (b.ty) ? lerp(b.y, b.ty, 0.45) : b.y;
+        b.scale = b.tscale ? lerp(b.scale || 1, b.tscale, 0.35) : (b.scale || 1);
+      });
+
+      // low-res render
+      pg.background(280, 25, 10);
+
+      // background strobe on beat & quarter-phase bars
+      if (flashAlpha > 0.02) {
+        pg.noStroke();
+        pg.fill(0, 0, 100, 0.18 * flashAlpha);
+        pg.rect(0, 0, gridW, gridH);
+      }
+      drawQuarterBars();
+
+      // blobs (pixel discs)
+      blobs.forEach((b, idx) => drawPixelBlob(b, sampleGradIdx(paletteStep)));
+
+      // stars (snappy crosses)
+      stars.forEach(s => {
+        const tr = tracks[s.map];
+        const lvl = tr.amp.getLevel(), treb = tr.fft.getEnergy('treble');
+        drawPixelStar(s, lvl, treb);
+      });
+
+      // up-scale
+      background(10);
+      image(pg, 0, 0, width, height);
+
+
+    }
+
+    function drawQuarterBars() {
+      if (!snap.ivalEMA) return;
+      const phase = snap.subDivPhase; // 0..1 within a 1/4
+      const bars = 4;
+      const w = Math.ceil(gridW / bars);
+      for (let i = 0; i < bars; i++) {
+        const a = (i === 0) ? 0.08 + 0.12 * snap.flash : 0.05;
+        pg.noStroke(); pg.fill(0, 0, 100, a * (i === 0 ? 1 : 0.6));
+        pg.rect(i * w, 0, w, 2);                // top
+        pg.rect(i * w, gridH - 2, w, 2);          // bottom
+      }
+    }
+
+    /* === Pixel primitives === */
+    function drawPixelBlob(b, col) {
+      const rr = (b.r * 0.22) * b.scale;
+      const step = 2;
+      pg.noStroke();
+      for (let y = -rr; y <= rr; y += step) {
+        const span = Math.sqrt(rr * rr - y * y);
+        for (let x = -span; x <= span; x += step) {
+          const d = (Math.abs(x) + Math.abs(y)) / rr;
+          const a = (1 - d) * 0.8;
+          pg.fill(hue(col), saturation(col), brightness(col), a);
+          pg.rect(Math.floor(b.x + x), Math.floor(b.y + y), step, step);
+        }
+      }
+    }
+    function drawPixelStar(s, lvl, treb) {
+      const base = s.size * (1 + 0.6 * lvl);
+      const size = Math.floor(base);
+      const th = s.thick;
+      const cx = Math.floor(s.x), cy = Math.floor(s.y);
+
+      pg.push();
+      pg.translate(cx, cy);
+      pg.rotate(s.rot);
+
+      // glow (blocky)
+      for (let r = 3; r >= 1; r--) {
+        const w = Math.floor(size * (1 + r * 0.35));
+        const a = 0.10 + 0.06 * r + 0.002 * treb;
+        pg.noStroke(); pg.fill(200 + r * 25, 70, 100, a);
+        // horiz
+        pg.rect(-w / 2, -th / 2, w, th);
+        // vert
+        pg.rect(-th / 2, -w / 2, th, w);
+      }
+      // core
+      pg.noStroke(); pg.fill(40, 20, 100, 0.95);
+      pg.rect(-size / 2, -th / 2, size, th);
+      pg.rect(-th / 2, -size / 2, th, size);
+
+      pg.pop();
+    }
+
+  </script>
 </body>
+
 </html>
