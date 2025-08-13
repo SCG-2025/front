@@ -301,7 +301,7 @@ function setup() {
   for (let i = 0; i < 4; i++) {
     stageAvatars.push({
       id: 'verification_avatar_' + i,
-      nickname: `${verificationLabels[i]} (검증용)`, // 포지션 + 검증용
+      nickname: `검증용 (${verificationLabels[i]})`, // 검증용 + 포지션
       x: random(200, 1200),
       y: random(900, 1500),
       vx: random(-1, 1),
