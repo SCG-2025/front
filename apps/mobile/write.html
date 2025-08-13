@@ -29,9 +29,6 @@
 </head>
 
 <body>
-    <!-- 뒤로 가기 버튼 -->
-    <button id="backBtn" …>이전</button>
-
     <!-- ✅ 확인 모달 추가 -->
     <div id="confirmModal" style="
       display:none;                 /* 기본은 숨김 */
@@ -61,12 +58,103 @@
         </div>
     </div>
 
-    <!-- 스크립트는 모달 아래쪽에 두어야 DOM을 찾을 수 있습니다 -->
-    <script>
-        document.getElementById('backBtn').onclick = () => {
-            location.href = 'customizing.html';
-        };
-    </script>
+    <!-- AI 조합법 추천 모달 추가 -->
+    <div id="recipeModal" style="
+        display: none;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(0,0,0,0.5);
+        align-items: center;
+        justify-content: center;
+        z-index: 2500;
+        padding: 20px;
+        box-sizing: border-box;
+    ">
+        <div style="
+            background: #fff;
+            border-radius: 16px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 24px;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.2);
+        ">
+            <h3 style="margin: 0 0 16px 0; color: #333; text-align: center;">🎵 AI 음악 조합법 추천</h3>
+            
+            <div style="margin-bottom: 20px;">
+                <h4 style="margin: 0 0 8px 0; color: #666; font-size: 0.9rem;">추출된 키워드</h4>
+                <div id="keywordsList" style="padding: 12px; background: #f8f9fa; border-radius: 8px; min-height: 40px;"></div>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <h4 style="margin: 0 0 12px 0; color: #666; font-size: 0.9rem;">추천 조합법</h4>
+                <div id="recipeOptions"></div>
+            </div>
+            
+            <div id="positionSection" style="margin-bottom: 20px;">
+                <h4 style="margin: 0 0 12px 0; color: #666; font-size: 0.9rem;">현재 선택된 포지션</h4>
+                <div id="positionOptions" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
+            </div>
+            
+            <div style="text-align: center; padding-top: 16px; border-top: 1px solid #eee;">
+                <button id="confirmRecipeBtn" style="
+                    padding: 12px 24px;
+                    border: none;
+                    border-radius: 8px;
+                    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+                    color: white;
+                    font-size: 1rem;
+                    font-weight: bold;
+                    cursor: pointer;
+                    margin-right: 8px;
+                ">확인</button>
+                <button id="cancelRecipeBtn" style="
+                    padding: 12px 24px;
+                    border: none;
+                    border-radius: 8px;
+                    background: #6c757d;
+                    color: white;
+                    font-size: 1rem;
+                    cursor: pointer;
+                ">취소</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 로딩 모달 추가 -->
+    <div id="loadingModal" style="
+        display: none;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(0,0,0,0.7);
+        align-items: center;
+        justify-content: center;
+        z-index: 3000;
+        color: white;
+        font-size: 1.2rem;
+    ">
+        <div style="text-align: center;">
+            <div style="
+                width: 40px; height: 40px;
+                border: 3px solid #f3f3f3;
+                border-top: 3px solid #2196F3;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+                margin: 0 auto 20px auto;
+            "></div>
+            <p>AI가 추억을 분석하고 있습니다...</p>
+        </div>
+    </div>
+
+    <style>
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 
     <script type="module" src="firebase-init.js"></script>
     <script type="module" src="write.js"></script>
