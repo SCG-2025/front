@@ -156,6 +156,7 @@ let avatarBpmMapping = new Map();
 
 let playingAvatars = new Set(); // 현재 재생 중인 아바타들
 let pendingAvatars = new Map(); // 다음 마디 대기 중인 아바타들
+let currentBpm = 197; // 현재 BPM (검증용 기본값)
 
 // 현재 무대 아바타들의 실제 재생 위치 추적
 function getCurrentPlaybackPosition() {
@@ -213,23 +214,48 @@ function getCurrentPlaybackPosition() {
 function preload() {
   avatarImage = loadImage('avatar_sample.jpeg');
   
-  // p5.sound와 Tone.js 둘 다 로드
-  // p5.sound 음원 파일들 로드 (파일명의 공백을 %20으로 인코딩)
-  musicSamples.lead = loadSound('Music%20Sample_Lead.mp3', 
-    () => console.log('✅ Lead 음원 로드 성공'),
-    (err) => console.error('❌ Lead 음원 로드 실패:', err)
+  // 검증용 음원들 직접 로드
+  musicSamples['Music Sample_Bass.mp3'] = loadSound('Music%20Sample_Bass.mp3', 
+    () => console.log('✅ 검증용 Bass 음원 로드 완료'),
+    () => console.error('❌ 검증용 Bass 음원 로드 실패')
   );
-  musicSamples.drum = loadSound('Music%20Sample_Drum.mp3',
-    () => console.log('✅ Drum 음원 로드 성공'),
-    (err) => console.error('❌ Drum 음원 로드 실패:', err)
+  musicSamples['Music Sample_Drum.mp3'] = loadSound('Music%20Sample_Drum.mp3',
+    () => console.log('✅ 검증용 Drum 음원 로드 완료'),
+    () => console.error('❌ 검증용 Drum 음원 로드 실패')
   );
-  musicSamples.bass = loadSound('Music%20Sample_Bass.mp3',
-    () => console.log('✅ Bass 음원 로드 성공'),
-    (err) => console.error('❌ Bass 음원 로드 실패:', err)
+  musicSamples['Music Sample_Lead.mp3'] = loadSound('Music%20Sample_Lead.mp3',
+    () => console.log('✅ 검증용 Lead 음원 로드 완료'),
+    () => console.error('❌ 검증용 Lead 음원 로드 실패')
   );
-  musicSamples.others = loadSound('Music%20Sample_Others.mp3',
-    () => console.log('✅ Others 음원 로드 성공'),
-    (err) => console.error('❌ Others 음원 로드 실패:', err)
+  musicSamples['Music Sample_Others.mp3'] = loadSound('Music%20Sample_Others.mp3',
+    () => console.log('✅ 검증용 Others 음원 로드 완료'),
+    () => console.error('❌ 검증용 Others 음원 로드 실패')
+  );
+  
+  // PC룸 게임용 음원들 로드
+  musicSamples['set1_pcroom_gaming_bass.wav'] = loadSound('music/set1_pcroom_gaming_bass.wav',
+    () => console.log('✅ PC룸 Bass 음원 로드 완료'),
+    () => console.error('❌ PC룸 Bass 음원 로드 실패')
+  );
+  musicSamples['set1_pcroom_gaming_chord.wav'] = loadSound('music/set1_pcroom_gaming_chord.wav',
+    () => console.log('✅ PC룸 Chord 음원 로드 완료'),
+    () => console.error('❌ PC룸 Chord 음원 로드 실패')
+  );
+  musicSamples['set1_pcroom_gaming_drum.wav'] = loadSound('music/set1_pcroom_gaming_drum.wav',
+    () => console.log('✅ PC룸 Drum 음원 로드 완료'),
+    () => console.error('❌ PC룸 Drum 음원 로드 실패')
+  );
+  musicSamples['set1_pcroom_gaming_fx.wav'] = loadSound('music/set1_pcroom_gaming_fx.wav',
+    () => console.log('✅ PC룸 FX 음원 로드 완료'),
+    () => console.error('❌ PC룸 FX 음원 로드 실패')
+  );
+  musicSamples['set1_pcroom_gaming_lead.wav'] = loadSound('music/set1_pcroom_gaming_lead.wav',
+    () => console.log('✅ PC룸 Lead 음원 로드 완료'),
+    () => console.error('❌ PC룸 Lead 음원 로드 실패')
+  );
+  musicSamples['set1_pcroom_gaming_sub.wav'] = loadSound('music/set1_pcroom_gaming_sub.wav',
+    () => console.log('✅ PC룸 Sub 음원 로드 완료'),
+    () => console.error('❌ PC룸 Sub 음원 로드 실패')
   );
 }
 
@@ -268,15 +294,15 @@ function setup() {
   // Tone.js 플레이어 초기화
   initTonePlayers();
   
-  // 임의의 무대아바타 4개 생성
-  const musicTypes = ['lead', 'drum', 'bass', 'others'];
-  const musicLabels = ['Lead', 'Drum', 'Bass', 'Others'];
+  // 검증용 아바타 4개 생성 (Music Sample)
+  const verificationTypes = ['Music Sample_Lead.mp3', 'Music Sample_Drum.mp3', 'Music Sample_Bass.mp3', 'Music Sample_Others.mp3'];
+  const verificationLabels = ['Lead', 'Drum', 'Bass', 'Others'];
   
   for (let i = 0; i < 4; i++) {
     stageAvatars.push({
-      id: 'stage_avatar_' + i,
-      nickname: `무대아바타${i + 1} (${musicLabels[i]})`,
-      x: random(200, 2360),
+      id: 'verification_avatar_' + i,
+      nickname: `검증용${i + 1} (${verificationLabels[i]})`,
+      x: random(200, 1200),
       y: random(900, 1500),
       vx: random(-1, 1),
       vy: random(-1, 1),
@@ -286,8 +312,8 @@ function setup() {
       currentAction: 'walking',
       state: 'idle',
       category: '공연',
-      memory: `무대아바타 ${i + 1}번입니다. ${musicLabels[i]} 파트를 담당합니다!`,
-      keywords: ['공연', '무대', '음악', musicLabels[i].toLowerCase()],
+      memory: `검증용 아바타 ${i + 1}번입니다. ${verificationLabels[i]} 파트를 담당합니다!`,
+      keywords: ['검증', '무대', '음악', verificationLabels[i].toLowerCase()],
       
       // 드래그 관련 속성
       isDragged: false,
@@ -301,14 +327,65 @@ function setup() {
       // 무대 관련 속성
       isOnStage: false,
       stageSlot: -1,
-      isSpecial: true, // 무대에 올릴 수 있음
+      isSpecial: true,
       
       // 음원 관련 속성
-      musicType: musicTypes[i], // lead, drum, bass, others 순서로 할당
+      musicType: verificationTypes[i],
       
       // 음악 동기화 속성
-      isPending: false, // 다음 마디 대기 중인지
-      pendingStartTime: 0 // 재생 시작 예정 시간
+      isPending: false,
+      pendingStartTime: 0
+    });
+  }
+  
+  // PC룸 게임용 아바타 6개 생성 (set1_pcroom_gaming)
+  const pcRoomTypes = [
+    'set1_pcroom_gaming_bass.wav',
+    'set1_pcroom_gaming_chord.wav', 
+    'set1_pcroom_gaming_drum.wav',
+    'set1_pcroom_gaming_fx.wav',
+    'set1_pcroom_gaming_lead.wav',
+    'set1_pcroom_gaming_sub.wav'
+  ];
+  const pcRoomLabels = ['Bass', 'Chord', 'Drum', 'FX', 'Lead', 'Sub'];
+  
+  for (let i = 0; i < 6; i++) {
+    stageAvatars.push({
+      id: 'pcroom_avatar_' + i,
+      nickname: `PC룸${i + 1} (${pcRoomLabels[i]})`,
+      x: random(1400, 2360),
+      y: random(900, 1500),
+      vx: random(-1, 1),
+      vy: random(-1, 1),
+      direction: random() > 0.5 ? 1 : -1,
+      walkTimer: random(60, 240),
+      idleTimer: 0,
+      currentAction: 'walking',
+      state: 'idle',
+      category: '게임',
+      memory: `PC룸 게임용 아바타 ${i + 1}번입니다. ${pcRoomLabels[i]} 파트를 담당합니다!`,
+      keywords: ['게임', 'PC룸', '음악', pcRoomLabels[i].toLowerCase()],
+      
+      // 드래그 관련 속성
+      isDragged: false,
+      dragElevation: 0,
+      dropBounce: 0,
+      dropBounceVel: 0,
+      baseY: 0,
+      clickTimer: 0,
+      isClicked: false,
+      
+      // 무대 관련 속성
+      isOnStage: false,
+      stageSlot: -1,
+      isSpecial: true,
+      
+      // 음원 관련 속성
+      musicType: pcRoomTypes[i],
+      
+      // 음악 동기화 속성  
+      isPending: false,
+      pendingStartTime: 0
     });
   }
 }
@@ -1746,6 +1823,27 @@ function keyPressed() {
     resetMasterClock();
     return false; // 기본 동작 방지
   }
+  
+  if (key === ' ') { // spacebar 입력
+    console.log('🎵 스페이스바 입력 - 음악 재생 시작');
+    
+    // 무대에 있는 모든 아바타의 음원을 재생
+    const onStageAvatars = stageAvatars.filter(avatar => avatar.isOnStage);
+    
+    if (onStageAvatars.length === 0) {
+      console.log('❌ 무대에 아바타가 없습니다');
+      return false;
+    }
+    
+    console.log(`🎭 무대 아바타 ${onStageAvatars.length}개 음원 재생 시작`);
+    
+    // 각 아바타별로 음원 재생
+    onStageAvatars.forEach(avatar => {
+      startMusicForAvatar(avatar);
+    });
+    
+    return false; // 기본 동작 방지
+  }
 }
 
 // 음악 정지 함수
@@ -1869,3 +1967,96 @@ window.keyPressed = keyPressed;
 window.closePopup = closePopup;
 window.resetStage = resetStage;
 window.sortAvatars = sortAvatars;
+
+// ==========================================
+// p5.js 사운드 시스템 함수들
+// ==========================================
+
+// 개별 아바타 음악 재생 함수
+function startMusicForAvatar(avatar) {
+  if (!avatar.musicType) {
+    console.warn(`⚠️ ${avatar.nickname}: musicType이 없습니다`);
+    return;
+  }
+  
+  console.log(`🎵 ${avatar.nickname}의 음원 재생 시작: ${avatar.musicType}`);
+  
+  // p5.js 사운드 시스템으로 재생
+  if (musicSamples[avatar.musicType]) {
+    const sound = musicSamples[avatar.musicType];
+    
+    // 이미 재생 중이면 중지 후 다시 시작
+    if (sound.isPlaying()) {
+      sound.stop();
+    }
+    
+    // 볼륨 설정
+    sound.setVolume(0.7);
+    
+    // 루프 재생 시작
+    sound.loop();
+    
+    // 재생 중인 아바타 목록에 추가
+    playingAvatars.add(avatar.id);
+    
+    console.log(`✅ ${avatar.nickname} 음원 재생 시작됨`);
+  } else {
+    console.warn(`⚠️ ${avatar.nickname}의 음원 파일을 찾을 수 없음: ${avatar.musicType}`);
+  }
+}
+
+// PC룸 게임용 음악 시스템 (p5.js 사용)
+function playPCRoomMusicSystem() {
+  console.log('🎵 PC룸 음악 시스템 시작');
+  
+  // 현재 무대에 있는 PC룸 게임용 아바타들 찾기
+  const pcRoomAvatars = stageAvatars.filter(avatar => 
+    avatar.isOnStage && avatar.musicType && avatar.musicType.includes('_gaming_')
+  );
+  
+  if (pcRoomAvatars.length === 0) {
+    console.log('❌ PC룸 게임용 아바타가 무대에 없습니다');
+    return;
+  }
+  
+  console.log(`🎮 PC룸 게임용 아바타 ${pcRoomAvatars.length}개 발견`);
+  
+  // 각 아바타의 음원을 동시에 재생
+  pcRoomAvatars.forEach(avatar => {
+    startPCRoomMusic(avatar);
+  });
+}
+
+function startPCRoomMusic(avatar) {
+  if (!avatar.musicType) return;
+  
+  console.log(`🎵 ${avatar.nickname}의 PC룸 음원 재생 시작: ${avatar.musicType}`);
+  
+  // p5.js 사운드 시스템으로 재생
+  if (musicSamples[avatar.musicType]) {
+    const sound = musicSamples[avatar.musicType];
+    
+    // 이미 재생 중이면 중지 후 다시 시작
+    if (sound.isPlaying()) {
+      sound.stop();
+    }
+    
+    // 볼륨 설정
+    sound.setVolume(0.7);
+    
+    // 루프 재생 시작
+    sound.loop();
+    
+    // 재생 중인 아바타 목록에 추가
+    playingAvatars.add(avatar.id);
+    
+    console.log(`✅ ${avatar.nickname} PC룸 음원 재생 시작됨`);
+  } else {
+    console.warn(`⚠️ ${avatar.nickname}의 음원 파일을 찾을 수 없음: ${avatar.musicType}`);
+  }
+}
+
+// 전역 함수로 노출
+window.playPCRoomMusicSystem = playPCRoomMusicSystem;
+window.startPCRoomMusic = startPCRoomMusic;
+window.startMusicForAvatar = startMusicForAvatar;
