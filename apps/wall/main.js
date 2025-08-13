@@ -233,27 +233,27 @@ function preload() {
   );
   
   // PC룸 게임용 음원들 로드
-  musicSamples['set1_pcroom_gaming_bass.wav'] = loadSound('music/set1_pcroom_gaming_bass.wav',
+  musicSamples['set1_pcroom_gaming_bass.wav'] = loadSound('Music/set1_pcroom_gaming_bass.wav',
     () => console.log('✅ PC룸 Bass 음원 로드 완료'),
     () => console.error('❌ PC룸 Bass 음원 로드 실패')
   );
-  musicSamples['set1_pcroom_gaming_chord.wav'] = loadSound('music/set1_pcroom_gaming_chord.wav',
+  musicSamples['set1_pcroom_gaming_chord.wav'] = loadSound('Music/set1_pcroom_gaming_chord.wav',
     () => console.log('✅ PC룸 Chord 음원 로드 완료'),
     () => console.error('❌ PC룸 Chord 음원 로드 실패')
   );
-  musicSamples['set1_pcroom_gaming_drum.wav'] = loadSound('music/set1_pcroom_gaming_drum.wav',
+  musicSamples['set1_pcroom_gaming_drum.wav'] = loadSound('Music/set1_pcroom_gaming_drum.wav',
     () => console.log('✅ PC룸 Drum 음원 로드 완료'),
     () => console.error('❌ PC룸 Drum 음원 로드 실패')
   );
-  musicSamples['set1_pcroom_gaming_fx.wav'] = loadSound('music/set1_pcroom_gaming_fx.wav',
+  musicSamples['set1_pcroom_gaming_fx.wav'] = loadSound('Music/set1_pcroom_gaming_fx.wav',
     () => console.log('✅ PC룸 FX 음원 로드 완료'),
     () => console.error('❌ PC룸 FX 음원 로드 실패')
   );
-  musicSamples['set1_pcroom_gaming_lead.wav'] = loadSound('music/set1_pcroom_gaming_lead.wav',
+  musicSamples['set1_pcroom_gaming_lead.wav'] = loadSound('Music/set1_pcroom_gaming_lead.wav',
     () => console.log('✅ PC룸 Lead 음원 로드 완료'),
     () => console.error('❌ PC룸 Lead 음원 로드 실패')
   );
-  musicSamples['set1_pcroom_gaming_sub.wav'] = loadSound('music/set1_pcroom_gaming_sub.wav',
+  musicSamples['set1_pcroom_gaming_sub.wav'] = loadSound('Music/set1_pcroom_gaming_sub.wav',
     () => console.log('✅ PC룸 Sub 음원 로드 완료'),
     () => console.error('❌ PC룸 Sub 음원 로드 실패')
   );
