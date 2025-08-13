@@ -331,6 +331,7 @@ function setup() {
       
       // 음원 관련 속성
       musicType: verificationTypes[i],
+      musicSet: 'verification', // 음악 세트 식별자
       
       // 음악 동기화 속성
       isPending: false,
@@ -382,6 +383,7 @@ function setup() {
       
       // 음원 관련 속성
       musicType: pcRoomTypes[i],
+      musicSet: 'pcroom_gaming', // 음악 세트 식별자
       
       // 음악 동기화 속성  
       isPending: false,
@@ -480,6 +482,12 @@ function draw() {
   
   // UI 요소들은 카메라 변환 없이 그리기
   updatePanningUI();
+  
+  // 음악 세트 정보 표시
+  drawMusicSetInfo();
+  
+  // 경고 메시지 표시 (가장 위에)
+  drawWarningMessage();
   
   // 디버그 정보 표시 (개발 중에만)
   if (masterClock.isRunning) {
@@ -926,6 +934,24 @@ function mouseReleased() {
       
       // 특수 아바타(무대아바타)이고 무대 영역에 드롭한 경우
       if (selectedAvatar.isSpecial && isInStageArea(selectedAvatar.x, selectedAvatar.y)) {
+        // 음악 세트 호환성 검사
+        const musicSetCompatibility = checkMusicSetCompatibility(selectedAvatar);
+        
+        if (!musicSetCompatibility.compatible) {
+          // 호환되지 않는 세트가 있을 때
+          console.log(`🚫 음악 세트 충돌: ${selectedAvatar.nickname}(${selectedAvatar.musicSet}) vs 기존 무대(${musicSetCompatibility.currentSet})`);
+          showMusicSetWarning(selectedAvatar, musicSetCompatibility.currentSet);
+          
+          // 무대 밖으로 이동
+          selectedAvatar.y = 850;
+          selectedAvatar.currentAction = 'idle';
+          selectedAvatar.idleTimer = random(30, 120);
+          
+          selectedAvatar = null;
+          isDragging = false;
+          return;
+        }
+        
         const nearestSlot = findNearestEmptyStageSlot(selectedAvatar.x, selectedAvatar.y);
         
         if (nearestSlot !== -1) {
@@ -943,6 +969,8 @@ function mouseReleased() {
           stageSlots[nearestSlot] = selectedAvatar.id;
           
           selectedAvatar.currentAction = 'stopped';
+          
+          console.log(`✅ ${selectedAvatar.nickname} 무대 배치 성공 (세트: ${selectedAvatar.musicSet})`);
           
           // 음악 재생
           playAvatarMusic(selectedAvatar);
@@ -2060,3 +2088,196 @@ function startPCRoomMusic(avatar) {
 window.playPCRoomMusicSystem = playPCRoomMusicSystem;
 window.startPCRoomMusic = startPCRoomMusic;
 window.startMusicForAvatar = startMusicForAvatar;
+
+// ==========================================
+// 음악 세트 호환성 검사 시스템
+// ==========================================
+
+// 현재 무대에 있는 아바타들의 음악 세트 확인
+function getCurrentStageSet() {
+  const onStageAvatars = [...stageAvatars, ...avatars].filter(avatar => avatar.isOnStage);
+  
+  if (onStageAvatars.length === 0) {
+    return null; // 무대가 비어있으면 null
+  }
+  
+  // 첫 번째 아바타의 세트를 기준으로 함
+  return onStageAvatars[0].musicSet;
+}
+
+// 음악 세트 호환성 검사
+function checkMusicSetCompatibility(newAvatar) {
+  const currentSet = getCurrentStageSet();
+  
+  // 무대가 비어있으면 무엇이든 올릴 수 있음
+  if (!currentSet) {
+    return { compatible: true, currentSet: null };
+  }
+  
+  // 같은 세트면 호환됨
+  if (newAvatar.musicSet === currentSet) {
+    return { compatible: true, currentSet: currentSet };
+  }
+  
+  // 다른 세트면 호환되지 않음
+  return { compatible: false, currentSet: currentSet };
+}
+
+// 음악 세트 충돌 경고 표시
+let warningMessage = null;
+let warningTimer = 0;
+
+function showMusicSetWarning(avatar, currentSet) {
+  // 음악 세트 이름을 한국어로 변환
+  const setNames = {
+    'verification': '검증용 Music Sample',
+    'pcroom_gaming': 'PC룸 게임용'
+  };
+  
+  const avatarSetName = setNames[avatar.musicSet] || avatar.musicSet;
+  const currentSetName = setNames[currentSet] || currentSet;
+  
+  console.log(`🚫 === 음악 세트 충돌 경고 ===`);
+  console.log(`시도한 아바타: ${avatar.nickname} (${avatarSetName})`);
+  console.log(`현재 무대 세트: ${currentSetName}`);
+  console.log(`해결 방법: 무대를 리셋하거나 같은 세트의 아바타만 올려주세요.`);
+  
+  // 웹 내부 경고 메시지 설정 (토스트 스타일)
+  warningMessage = {
+    title: '음악 세트 충돌',
+    content: `${avatar.nickname}은(는) ${currentSetName} 세트와 호환되지 않습니다.\n같은 세트 아바타만 함께 올려주세요.`,
+    timestamp: Date.now()
+  };
+  
+  warningTimer = 180; // 3초 동안 표시 (60fps 기준)
+}
+
+// 무대의 현재 음악 세트 정보를 화면에 표시
+function drawMusicSetInfo() {
+  const currentSet = getCurrentStageSet();
+  
+  if (currentSet) {
+    const setNames = {
+      'verification': '검증용 Music Sample',
+      'pcroom_gaming': 'PC룸 게임용'
+    };
+    
+    const setName = setNames[currentSet] || currentSet;
+    const onStageCount = [...stageAvatars, ...avatars].filter(avatar => avatar.isOnStage).length;
+    
+    push();
+    fill(255, 255, 255, 200);
+    rect(20, height - 120, 350, 80);
+    
+    fill(50);
+    textAlign(LEFT);
+    textSize(14);
+    text('🎵 현재 무대 세트:', 30, height - 95);
+    text(`${setName}`, 30, height - 75);
+    text(`무대 아바타: ${onStageCount}개`, 30, height - 55);
+    pop();
+  }
+}
+
+// 경고 메시지를 화면에 표시 (하단 토스트 스타일)
+function drawWarningMessage() {
+  if (warningMessage && warningTimer > 0) {
+    warningTimer--;
+    
+    // 슬라이드 업 애니메이션 + 페이드 효과
+    const slideProgress = warningTimer > 150 ? 1 : (warningTimer < 30 ? warningTimer / 30 : 1);
+    const alpha = slideProgress * 255;
+    
+    push();
+    
+    // 현재 창 크기 기준
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    
+    // 토스트 박스 크기 (컴팩트하게)
+    const lines = warningMessage.content.split('\n').filter(line => line.trim() !== '');
+    const boxWidth = Math.min(400, viewportWidth - 40); // 좌우 여백 20px씩
+    const lineHeight = 18;
+    const boxHeight = 80 + (lines.length * lineHeight); // 제목 + 내용 + 패딩
+    
+    // 하단에서 슬라이드 업 위치 계산
+    const boxX = (viewportWidth - boxWidth) / 2;
+    const targetY = viewportHeight - boxHeight - 30; // 하단에서 30px 위
+    const slideOffset = (1 - slideProgress) * 50; // 50px 아래에서 시작
+    const boxY = targetY + slideOffset;
+    
+    // 토스트 박스 배경 (그림자 효과)
+    fill(0, 0, 0, alpha * 0.1);
+    rect(boxX + 4, boxY + 4, boxWidth, boxHeight, 8); // 그림자
+    
+    // 메인 박스 (경고색 좌측 테두리)
+    fill(255, 255, 255, alpha);
+    rect(boxX, boxY, boxWidth, boxHeight, 8);
+    
+    // 좌측 경고색 테두리
+    fill(255, 100, 100, alpha);
+    rect(boxX, boxY, 4, boxHeight, 8, 0, 0, 8);
+    
+    // 제목 (아이콘 + 텍스트)
+    fill(255, 80, 80, alpha);
+    textAlign(LEFT);
+    textSize(16);
+    text('🚫 음악 세트 충돌', boxX + 15, boxY + 25);
+    
+    // 내용 (간결하게)
+    fill(80, 80, 80, alpha);
+    textSize(13);
+    let yOffset = boxY + 50;
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (line) {
+        // 긴 줄은 줄바꿈
+        if (line.length > 45) {
+          const words = line.split(' ');
+          let currentLine = '';
+          
+          for (let j = 0; j < words.length; j++) {
+            const testLine = currentLine + (currentLine ? ' ' : '') + words[j];
+            
+            if (testLine.length > 45 && currentLine) {
+              text(currentLine, boxX + 15, yOffset);
+              yOffset += lineHeight;
+              currentLine = words[j];
+            } else {
+              currentLine = testLine;
+            }
+          }
+          
+          if (currentLine) {
+            text(currentLine, boxX + 15, yOffset);
+            yOffset += lineHeight;
+          }
+        } else {
+          text(line, boxX + 15, yOffset);
+          yOffset += lineHeight;
+        }
+      }
+    }
+    
+    // 닫기 버튼 (X)
+    fill(150, 150, 150, alpha);
+    textAlign(CENTER);
+    textSize(14);
+    text('×', boxX + boxWidth - 20, boxY + 20);
+    
+    // 진행 바 (시간 표시)
+    const progressWidth = (warningTimer / 180) * (boxWidth - 20);
+    fill(255, 100, 100, alpha * 0.3);
+    rect(boxX + 10, boxY + boxHeight - 6, boxWidth - 20, 2);
+    fill(255, 100, 100, alpha);
+    rect(boxX + 10, boxY + boxHeight - 6, progressWidth, 2);
+    
+    pop();
+    
+    // 타이머가 끝나면 메시지 제거
+    if (warningTimer <= 0) {
+      warningMessage = null;
+    }
+  }
+}
