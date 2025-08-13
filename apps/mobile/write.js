@@ -564,13 +564,13 @@
         
         console.log('단어 빈도:', wordFreq);
         
-        // 빈도순 정렬하여 상위 키워드 반환
+        // 빈도순 정렬하여 모든 키워드 반환 (제한 없음)
         const keywords = Object.entries(wordFreq)
             .sort(([,a], [,b]) => b - a)
-            .slice(0, 10) // 상위 10개로 증가
             .map(([word]) => word);
             
-        console.log('최종 추출된 키워드:', keywords);
+        console.log('최종 추출된 키워드 (전체):', keywords);
+        console.log('전체 키워드 개수:', keywords.length);
         return keywords;
     }
 
@@ -1067,16 +1067,20 @@
         extractedKeywords = keywords;
         
         try {
-            // 키워드 표시 (모든 키워드 표시)
+            // 주요 키워드만 UI에 표시 (상위 5개), 하지만 조합법 추천에는 모든 키워드 사용
             const keywordsList = document.getElementById('keywordsList');
             if (!keywordsList) {
                 console.error('keywordsList 요소를 찾을 수 없음');
                 return;
             }
             
-            keywordsList.innerHTML = keywords.length > 0 
-                ? keywords.map(k => `<span style="display:inline-block; margin:3px; padding:6px 12px; background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); color:white; border-radius:20px; font-size:0.85rem; box-shadow:0 2px 4px rgba(0,0,0,0.1);">#${k}</span>`).join('')
+            const mainKeywords = keywords.slice(0, 5); // UI 표시용 주요 키워드 (상위 5개)
+            keywordsList.innerHTML = mainKeywords.length > 0 
+                ? mainKeywords.map(k => `<span style="display:inline-block; margin:3px; padding:6px 12px; background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); color:white; border-radius:20px; font-size:0.85rem; box-shadow:0 2px 4px rgba(0,0,0,0.1);">#${k}</span>`).join('')
                 : '<span style="color:#999;">키워드가 추출되지 않았습니다.</span>';
+            
+            console.log('UI에 표시된 주요 키워드:', mainKeywords);
+            console.log('조합법 추천에 사용될 전체 키워드:', keywords);
             
             // 로딩 표시
             const recipeOptions = document.getElementById('recipeOptions');

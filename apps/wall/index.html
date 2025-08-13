@@ -152,6 +152,21 @@
       font-weight: 500;
     }
 
+    .music-info {
+      margin: 10px 0;
+      color: #666;
+      font-size: 14px;
+    }
+
+    .memory-text {
+      margin-top: 15px;
+      color: #888;
+      font-size: 12px;
+      line-height: 1.4;
+      border-top: 1px solid #eee;
+      padding-top: 10px;
+    }
+
     .avatar-details p {
       margin: 5px 0;
       color: #666;
@@ -334,8 +349,10 @@
               <!-- 키워드 태그들이 여기에 동적으로 추가됩니다 -->
             </div>
           </div>
-          <p><strong>카테고리:</strong> <span id="popupCategory">-</span></p>
-          <p><strong>추억:</strong> <span id="popupMemory">-</span></p>
+          <div class="music-info">
+            <span id="popupMusicPosition">-</span> | <span id="popupSelectedRecipe">-</span>
+          </div>
+          <div class="memory-text" id="popupMemory">-</div>
         </div>
       </div>
       <div class="help-text">

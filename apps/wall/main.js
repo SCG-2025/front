@@ -301,7 +301,7 @@ function setup() {
   for (let i = 0; i < 4; i++) {
     stageAvatars.push({
       id: 'verification_avatar_' + i,
-      nickname: `검증용${i + 1} (${verificationLabels[i]})`,
+      nickname: `${verificationLabels[i]} (검증용)`, // 포지션 + 검증용
       x: random(200, 1200),
       y: random(900, 1500),
       vx: random(-1, 1),
@@ -314,6 +314,14 @@ function setup() {
       category: '공연',
       memory: `검증용 아바타 ${i + 1}번입니다. ${verificationLabels[i]} 파트를 담당합니다!`,
       keywords: ['검증', '무대', '음악', verificationLabels[i].toLowerCase()],
+      
+      // 데이터베이스 구조에 맞는 새로운 필드들
+      musicPosition: verificationLabels[i], // 음악 포지션
+      selectedRecipe: {
+        name: '실험용',
+        description: '검증 및 실험을 위한 레시피'
+      },
+      extractedKeywords: ['검증', '무대', '음악', verificationLabels[i].toLowerCase()],
       
       // 드래그 관련 속성
       isDragged: false,
@@ -353,7 +361,7 @@ function setup() {
   for (let i = 0; i < 6; i++) {
     stageAvatars.push({
       id: 'pcroom_avatar_' + i,
-      nickname: `PC룸${i + 1} (${pcRoomLabels[i]})`,
+      nickname: `PC방 (${pcRoomLabels[i]})`, // PC방 + 포지션
       x: random(1400, 2360),
       y: random(900, 1500),
       vx: random(-1, 1),
@@ -364,8 +372,16 @@ function setup() {
       currentAction: 'walking',
       state: 'idle',
       category: '게임',
-      memory: `PC룸 게임용 아바타 ${i + 1}번입니다. ${pcRoomLabels[i]} 파트를 담당합니다!`,
-      keywords: ['게임', 'PC룸', '음악', pcRoomLabels[i].toLowerCase()],
+      memory: `PC방에서 게임하며 만든 추억입니다. ${pcRoomLabels[i]} 파트를 담당합니다!`,
+      keywords: ['게임', 'PC방', '음악', pcRoomLabels[i].toLowerCase()],
+      
+      // 데이터베이스 구조에 맞는 새로운 필드들
+      musicPosition: pcRoomLabels[i], // 음악 포지션
+      selectedRecipe: {
+        name: 'PC방 조합법',
+        description: '게임과 어울리는 디지털 사운드'
+      },
+      extractedKeywords: ['게임', 'PC방', '디지털', '사운드', pcRoomLabels[i].toLowerCase()],
       
       // 드래그 관련 속성
       isDragged: false,
@@ -1049,27 +1065,44 @@ function showPopupFor(avatar) {
   showPopup = true;
   
   document.getElementById('popupNickname').textContent = avatar.nickname || '사용자';
-  document.getElementById('popupCategory').textContent = avatar.category || '일반';
+  
+  // 음악 포지션과 선택된 레시피를 한 줄에 표시
+  let musicPosition = avatar.musicPosition || '-';
+  let recipeText = '-';
+  if (avatar.selectedRecipe) {
+    const recipe = avatar.selectedRecipe;
+    if (recipe.name) {
+      recipeText = recipe.name;
+    }
+  }
+  document.getElementById('popupMusicPosition').textContent = musicPosition;
+  document.getElementById('popupSelectedRecipe').textContent = recipeText;
+  
+  // 추억 텍스트 표시 (작은 글씨체)
   document.getElementById('popupMemory').textContent = avatar.memory || '소중한 추억을 간직하고 있습니다.';
   
+  // 키워드 표시 (extractedKeywords 사용)
   const keywordsContainer = document.getElementById('popupKeywords');
   keywordsContainer.innerHTML = '';
   
-  if (avatar.keywords) {
-    let keywords = [];
+  let keywords = [];
+  if (avatar.extractedKeywords && Array.isArray(avatar.extractedKeywords)) {
+    keywords = avatar.extractedKeywords.slice(0, 5); // 상위 5개만 표시
+  } else if (avatar.keywords) {
+    // 기존 keywords도 지원
     if (Array.isArray(avatar.keywords)) {
-      keywords = avatar.keywords;
+      keywords = avatar.keywords.slice(0, 5);
     } else if (typeof avatar.keywords === 'string') {
-      keywords = avatar.keywords.split(/[,\s]+/).filter(k => k.trim().length > 0);
+      keywords = avatar.keywords.split(/[,\s]+/).filter(k => k.trim().length > 0).slice(0, 5);
     }
-    
-    keywords.forEach(keyword => {
-      const keywordTag = document.createElement('span');
-      keywordTag.className = 'keyword-tag';
-      keywordTag.textContent = '#' + keyword.trim();
-      keywordsContainer.appendChild(keywordTag);
-    });
   }
+  
+  keywords.forEach(keyword => {
+    const keywordTag = document.createElement('span');
+    keywordTag.className = 'keyword-tag';
+    keywordTag.textContent = '#' + keyword.trim();
+    keywordsContainer.appendChild(keywordTag);
+  });
   
   document.getElementById('popupOverlay').style.display = 'block';
   
