@@ -397,6 +397,15 @@ import { getFirestore, addDoc, collection, serverTimestamp } from 'https://www.g
       timestamp: serverTimestamp()
     });
 
+    // 저장할 데이터 디버깅 로그
+    console.log('💾 Firebase에 저장할 데이터:');
+    console.log('nickname:', data.nickname);
+    console.log('avatar 데이터:', JSON.stringify(data.avatar, null, 2));
+    console.log('musicPosition:', data.musicPosition);
+    console.log('selectedRecipe:', data.selectedRecipe);
+    console.log('extractedKeywords:', data.extractedKeywords);
+    console.log('전체 data:', JSON.stringify(data, null, 2));
+
     try {
       if (db && typeof addDoc !== 'undefined' && typeof collection !== 'undefined') {
         await addDoc(collection(db, 'memories'), data);

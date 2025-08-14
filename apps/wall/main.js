@@ -415,13 +415,35 @@ onSnapshot(collection(db, 'memories'), (snapshot) => {
       const docData = change.doc.data();
       const avatar = docData.avatar;
       
+      // 닉네임 "x"인 아바타의 데이터 로그 출력
+      if (docData.nickname === 'x') {
+        console.log('🔍 닉네임 "x" 아바타 데이터 확인:');
+        console.log('전체 docData:', JSON.stringify(docData, null, 2));
+        console.log('avatar 데이터:', JSON.stringify(docData.avatar, null, 2));
+        console.log('musicPosition:', docData.musicPosition);
+        console.log('selectedRecipe:', docData.selectedRecipe);
+        console.log('extractedKeywords:', docData.extractedKeywords);
+      }
+      
       avatar.id = change.doc.id;
       avatar.nickname = docData.nickname;
       avatar.memory = docData.memory;
       avatar.category = docData.category;
       
+      // 음악 포지션 정보 추가
+      avatar.musicPosition = docData.musicPosition || '-';
+      
+      // 선택된 레시피 정보 추가
+      avatar.selectedRecipe = docData.selectedRecipe || null;
+      
+      // 추출된 키워드 정보 추가
+      avatar.extractedKeywords = docData.extractedKeywords || null;
+      
       if (docData.keywords) {
         avatar.keywords = docData.keywords;
+      } else if (docData.extractedKeywords) {
+        // extractedKeywords가 있으면 사용
+        avatar.keywords = docData.extractedKeywords;
       } else {
         const categoryKeywords = {
           '사진': ['추억', '순간', '소중함'],
@@ -646,22 +668,38 @@ function drawAvatar(avatar) {
     pop();
   }
 
-  // 아바타 이미지
-  push();
-  translate(avatar.x, currentY);
-  if (avatar.direction === -1) {
-    scale(-1, 1);
-  }
-  imageMode(CENTER);
-  
-  if (showPopup && popupAvatar && popupAvatar.id === avatar.id) {
-    fill(255, 215, 0, 150);
-    ellipse(0, 0, 90, 90);
-    image(avatarImage, 0, 0, 80, 80);
+  // 아바타 그리기 - 모바일에서 커스터마이징한 아바타인지 확인
+  if (avatar.avatar && typeof avatar.avatar === 'object') {
+    // 닉네임 "x"인 아바타의 경우 디버깅 로그
+    if (avatar.nickname === 'x') {
+      console.log('🎨 닉네임 "x" 아바타 렌더링 - 커스터마이징 데이터 사용');
+      console.log('avatar.avatar 데이터:', avatar.avatar);
+    }
+    // 모바일에서 커스터마이징한 아바타 렌더링
+    drawCustomAvatar(avatar.x, currentY, avatar.avatar, avatar.direction, showPopup && popupAvatar && popupAvatar.id === avatar.id);
   } else {
-    image(avatarImage, 0, 0, 64, 64);
+    // 닉네임 "x"인 아바타의 경우 디버깅 로그
+    if (avatar.nickname === 'x') {
+      console.log('🎨 닉네임 "x" 아바타 렌더링 - 기본 이미지 사용');
+      console.log('avatar.avatar가 없거나 객체가 아님:', avatar.avatar);
+    }
+    // 기본 아바타 이미지 사용
+    push();
+    translate(avatar.x, currentY);
+    if (avatar.direction === -1) {
+      scale(-1, 1);
+    }
+    imageMode(CENTER);
+    
+    if (showPopup && popupAvatar && popupAvatar.id === avatar.id) {
+      fill(255, 215, 0, 150);
+      ellipse(0, 0, 90, 90);
+      image(avatarImage, 0, 0, 80, 80);
+    } else {
+      image(avatarImage, 0, 0, 64, 64);
+    }
+    pop();
   }
-  pop();
 
   // 닉네임 표시
   push();
@@ -674,6 +712,71 @@ function drawAvatar(avatar) {
   noStroke();
   fill(255);
   text(avatar.nickname || '사용자', avatar.x, currentY - 37);
+  pop();
+}
+
+// 커스터마이징된 아바타를 그리는 함수
+function drawCustomAvatar(x, y, avatarData, direction, isHighlighted) {
+  push();
+  translate(x, y);
+  if (direction === -1) {
+    scale(-1, 1);
+  }
+  
+  // 하이라이트 효과
+  if (isHighlighted) {
+    fill(255, 215, 0, 150);
+    ellipse(0, 0, 90, 90);
+  }
+  
+  const scale_factor = 0.3; // wall에서는 작게 표시
+  
+  // 스킨 색상으로 기본 몸체 그리기
+  const skinColor = avatarData.skin || '#ffdbac';
+  fill(skinColor);
+  noStroke();
+  
+  // 몸통 (타원형)
+  ellipse(0, 5, 50 * scale_factor, 60 * scale_factor);
+  
+  // 머리 (원형)
+  ellipse(0, -20, 40 * scale_factor, 40 * scale_factor);
+  
+  // 눈 그리기
+  const eyeColor = avatarData.eyes || '#000';
+  fill(eyeColor);
+  const eyeSize = 3 * scale_factor;
+  ellipse(-8 * scale_factor, -22 * scale_factor, eyeSize, eyeSize);
+  ellipse(8 * scale_factor, -22 * scale_factor, eyeSize, eyeSize);
+  
+  // 성별에 따른 몸체 스타일
+  if (avatarData.gender === 'female') {
+    // 여성형 몸체 (더 곡선적)
+    fill(skinColor);
+    ellipse(0, 5, 45 * scale_factor, 55 * scale_factor);
+  } else {
+    // 남성형 몸체 (더 각진)
+    fill(skinColor);
+    rect(-22.5 * scale_factor, -12.5 * scale_factor, 45 * scale_factor, 50 * scale_factor);
+  }
+  
+  // 간단한 옷 표현 (몸체 하부를 다른 색으로)
+  fill(100, 150, 200); // 기본 옷 색상
+  if (avatarData.gender === 'female') {
+    ellipse(0, 15, 40 * scale_factor, 30 * scale_factor);
+  } else {
+    rect(-20 * scale_factor, 2.5 * scale_factor, 40 * scale_factor, 25 * scale_factor);
+  }
+  
+  // 팔 그리기
+  fill(skinColor);
+  ellipse(-25 * scale_factor, 0, 12 * scale_factor, 40 * scale_factor);
+  ellipse(25 * scale_factor, 0, 12 * scale_factor, 40 * scale_factor);
+  
+  // 다리 그리기
+  ellipse(-12 * scale_factor, 35, 15 * scale_factor, 35 * scale_factor);
+  ellipse(12 * scale_factor, 35, 15 * scale_factor, 35 * scale_factor);
+  
   pop();
 }
 
