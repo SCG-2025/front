@@ -45,6 +45,17 @@ import { collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.0.
 let avatars = []; // Firebase에서 가져온 아바타 데이터
 let stageAvatars = []; // 무대 전용 아바타들
 
+// 아바타 이미지 로딩을 위한 변수들
+let avatarAssets = {
+  female: [],
+  male: [],
+  heads: [],
+  wing: null
+};
+
+// 아바타 이미지 로딩 상태
+let assetsLoaded = false;
+
 // TODO: 다중 BPM 지원을 위한 아바타 데이터 구조 확장 필요
 // 현재 아바타 객체 구조:
 // {
@@ -212,7 +223,32 @@ function getCurrentPlaybackPosition() {
 }
 
 function preload() {
-  avatarImage = loadImage('avatar_sample.jpeg');
+  avatarImage = loadImage('avatar_sample.jpeg'); // 기본 이미지는 유지 (폴백용)
+  
+  // 커스터마이징 아바타 assets 로드
+  // Female avatars (fe.png ~ fe(5).png)
+  avatarAssets.female = [];
+  avatarAssets.female.push(loadImage('../mobile/assets/fe.png'));
+  for (let i = 2; i <= 5; i++) {
+    avatarAssets.female.push(loadImage(`../mobile/assets/fe(${i}).png`));
+  }
+  
+  // Male avatars (ma.png ~ ma(4).png)
+  avatarAssets.male = [];
+  avatarAssets.male.push(loadImage('../mobile/assets/ma.png'));
+  for (let i = 2; i <= 4; i++) {
+    avatarAssets.male.push(loadImage(`../mobile/assets/ma(${i}).png`));
+  }
+  
+  // Head accessories (head.png ~ head(8).png)
+  avatarAssets.heads = [];
+  avatarAssets.heads.push(loadImage('../mobile/assets/head.png'));
+  for (let i = 2; i <= 8; i++) {
+    avatarAssets.heads.push(loadImage(`../mobile/assets/head(${i}).png`));
+  }
+  
+  // Wing
+  avatarAssets.wing = loadImage('../mobile/assets/wing.png');
   
   // 검증용 음원들 직접 로드
   musicSamples['Music Sample_Bass.mp3'] = loadSound('Music%20Sample_Bass.mp3', 
@@ -413,22 +449,16 @@ onSnapshot(collection(db, 'memories'), (snapshot) => {
   snapshot.docChanges().forEach(change => {
     if (change.type === 'added') {
       const docData = change.doc.data();
-      const avatar = docData.avatar;
       
-      // 닉네임 "x"인 아바타의 데이터 로그 출력
-      if (docData.nickname === 'x') {
-        console.log('🔍 닉네임 "x" 아바타 데이터 확인:');
-        console.log('전체 docData:', JSON.stringify(docData, null, 2));
-        console.log('avatar 데이터:', JSON.stringify(docData.avatar, null, 2));
-        console.log('musicPosition:', docData.musicPosition);
-        console.log('selectedRecipe:', docData.selectedRecipe);
-        console.log('extractedKeywords:', docData.extractedKeywords);
-      }
+      const avatar = docData.avatar || {}; // 빈 객체로 초기화
       
       avatar.id = change.doc.id;
       avatar.nickname = docData.nickname;
       avatar.memory = docData.memory;
       avatar.category = docData.category;
+      
+      // ✨ 중요: 원본 아바타 커스터마이징 데이터를 별도 필드로 저장
+      avatar.customData = docData.avatar; // 여기에 커스터마이징 정보가 있어야 함
       
       // 음악 포지션 정보 추가
       avatar.musicPosition = docData.musicPosition || '-';
@@ -669,20 +699,10 @@ function drawAvatar(avatar) {
   }
 
   // 아바타 그리기 - 모바일에서 커스터마이징한 아바타인지 확인
-  if (avatar.avatar && typeof avatar.avatar === 'object') {
-    // 닉네임 "x"인 아바타의 경우 디버깅 로그
-    if (avatar.nickname === 'x') {
-      console.log('🎨 닉네임 "x" 아바타 렌더링 - 커스터마이징 데이터 사용');
-      console.log('avatar.avatar 데이터:', avatar.avatar);
-    }
+  if (avatar.customData && typeof avatar.customData === 'object') {
     // 모바일에서 커스터마이징한 아바타 렌더링
-    drawCustomAvatar(avatar.x, currentY, avatar.avatar, avatar.direction, showPopup && popupAvatar && popupAvatar.id === avatar.id);
+    drawCustomAvatar(avatar.x, currentY, avatar.customData, avatar.direction, showPopup && popupAvatar && popupAvatar.id === avatar.id);
   } else {
-    // 닉네임 "x"인 아바타의 경우 디버깅 로그
-    if (avatar.nickname === 'x') {
-      console.log('🎨 닉네임 "x" 아바타 렌더링 - 기본 이미지 사용');
-      console.log('avatar.avatar가 없거나 객체가 아님:', avatar.avatar);
-    }
     // 기본 아바타 이미지 사용
     push();
     translate(avatar.x, currentY);
@@ -726,56 +746,34 @@ function drawCustomAvatar(x, y, avatarData, direction, isHighlighted) {
   // 하이라이트 효과
   if (isHighlighted) {
     fill(255, 215, 0, 150);
-    ellipse(0, 0, 90, 90);
+    ellipse(0, 0, 90, 90); // 하이라이트 크기 조정
   }
   
-  const scale_factor = 0.3; // wall에서는 작게 표시
+  const scale_factor = 0.5; // 크기를 절반으로 줄임
   
-  // 스킨 색상으로 기본 몸체 그리기
-  const skinColor = avatarData.skin || '#ffdbac';
-  fill(skinColor);
-  noStroke();
+  // 이미지 모드를 CENTER로 설정
+  imageMode(CENTER);
   
-  // 몸통 (타원형)
-  ellipse(0, 5, 50 * scale_factor, 60 * scale_factor);
-  
-  // 머리 (원형)
-  ellipse(0, -20, 40 * scale_factor, 40 * scale_factor);
-  
-  // 눈 그리기
-  const eyeColor = avatarData.eyes || '#000';
-  fill(eyeColor);
-  const eyeSize = 3 * scale_factor;
-  ellipse(-8 * scale_factor, -22 * scale_factor, eyeSize, eyeSize);
-  ellipse(8 * scale_factor, -22 * scale_factor, eyeSize, eyeSize);
-  
-  // 성별에 따른 몸체 스타일
-  if (avatarData.gender === 'female') {
-    // 여성형 몸체 (더 곡선적)
-    fill(skinColor);
-    ellipse(0, 5, 45 * scale_factor, 55 * scale_factor);
-  } else {
-    // 남성형 몸체 (더 각진)
-    fill(skinColor);
-    rect(-22.5 * scale_factor, -12.5 * scale_factor, 45 * scale_factor, 50 * scale_factor);
+  // Wing (뒤에 그리기)
+  if (avatarData.wingOn && avatarAssets.wing) {
+    const wingOffsetX = avatarData.gender === 'female' ? -3 : -2;
+    const wingOffsetY = avatarData.gender === 'female' ? -5 : -4;
+    image(avatarAssets.wing, wingOffsetX, wingOffsetY, 190 * scale_factor, 190 * scale_factor);
   }
   
-  // 간단한 옷 표현 (몸체 하부를 다른 색으로)
-  fill(100, 150, 200); // 기본 옷 색상
-  if (avatarData.gender === 'female') {
-    ellipse(0, 15, 40 * scale_factor, 30 * scale_factor);
-  } else {
-    rect(-20 * scale_factor, 2.5 * scale_factor, 40 * scale_factor, 25 * scale_factor);
+  // Body (성별과 bodyIdx에 따라)
+  const bodyImages = avatarData.gender === 'female' ? avatarAssets.female : avatarAssets.male;
+  if (bodyImages && bodyImages[avatarData.bodyIdx]) {
+    const bodyOffsetY = 0; // 몸체는 중앙에
+    image(bodyImages[avatarData.bodyIdx], 0, bodyOffsetY, 176 * scale_factor, 176 * scale_factor);
   }
   
-  // 팔 그리기
-  fill(skinColor);
-  ellipse(-25 * scale_factor, 0, 12 * scale_factor, 40 * scale_factor);
-  ellipse(25 * scale_factor, 0, 12 * scale_factor, 40 * scale_factor);
-  
-  // 다리 그리기
-  ellipse(-12 * scale_factor, 35, 15 * scale_factor, 35 * scale_factor);
-  ellipse(12 * scale_factor, 35, 15 * scale_factor, 35 * scale_factor);
+  // Head (앞에 그리기)
+  if (avatarData.headIdx !== null && avatarData.headIdx !== undefined && avatarAssets.heads[avatarData.headIdx]) {
+    const headOffsetX = 0;
+    const headOffsetY = avatarData.gender === 'female' ? -8 : -8;
+    image(avatarAssets.heads[avatarData.headIdx], headOffsetX, headOffsetY, 176 * scale_factor, 176 * scale_factor);
+  }
   
   pop();
 }
@@ -876,13 +874,19 @@ function drawSampleAvatars() {
 
 // 마우스 이벤트 처리
 function mousePressed() {
+  console.log('🖱️ mousePressed 호출됨', mouseX, mouseY);
+  
   if (showPopup) {
+    console.log('🚫 팝업이 열려있어서 클릭 무시');
     return;
   }
 
   // DOM 요소(버튼 등) 위에서 클릭한 경우 패닝 방지
   const elementUnderMouse = document.elementFromPoint(mouseX, mouseY);
-  if (elementUnderMouse && elementUnderMouse !== document.querySelector('canvas')) {
+  console.log('🎯 클릭한 요소:', elementUnderMouse?.tagName, elementUnderMouse?.id);
+  
+  // 캔버스가 아닌 UI 요소를 클릭한 경우에만 패닝 방지
+  if (elementUnderMouse && elementUnderMouse.tagName !== 'CANVAS') {
     console.log('🚫 UI 요소 클릭 감지, 패닝 방지:', elementUnderMouse.tagName);
     
     // 리셋 버튼인 경우 직접 실행 (첫 번째 방법 복원)
@@ -909,6 +913,8 @@ function mousePressed() {
     
     return;
   }
+
+  console.log('✅ 캔버스 클릭으로 판정, 계속 진행');
 
   // 첫 클릭 시 오디오 컨텍스트 활성화 (브라우저 정책 때문에 필요)
   if (getAudioContext().state === 'suspended') {
@@ -1163,9 +1169,72 @@ function mouseWheel(event) {
   return false;
 }
 
+// 팝업용 아바타 그리기 함수
+function drawPopupAvatar(canvas, avatarData) {
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+  // 캔버스 중앙 좌표
+  const centerX = canvas.width / 2;
+  const centerY = canvas.height / 2;
+  const scale = 0.6; // 팝업용 스케일
+  
+  // Wing (뒤에 그리기)
+  if (avatarData.wingOn && avatarAssets.wing && avatarAssets.wing.width > 0) {
+    const wingOffsetX = avatarData.gender === 'female' ? -6 : -4;
+    const wingOffsetY = avatarData.gender === 'female' ? -10 : -8;
+    const wingSize = 190 * scale;
+    ctx.drawImage(avatarAssets.wing.canvas, 
+      centerX + wingOffsetX - wingSize/2, 
+      centerY + wingOffsetY - wingSize/2, 
+      wingSize, wingSize);
+  }
+  
+  // Body (성별과 bodyIdx에 따라)
+  const bodyImages = avatarData.gender === 'female' ? avatarAssets.female : avatarAssets.male;
+  if (bodyImages && bodyImages[avatarData.bodyIdx] && bodyImages[avatarData.bodyIdx].width > 0) {
+    const bodySize = 176 * scale;
+    ctx.drawImage(bodyImages[avatarData.bodyIdx].canvas,
+      centerX - bodySize/2,
+      centerY - bodySize/2,
+      bodySize, bodySize);
+  }
+  
+  // Head (앞에 그리기)
+  if (avatarData.headIdx !== null && avatarData.headIdx !== undefined && 
+      avatarAssets.heads[avatarData.headIdx] && avatarAssets.heads[avatarData.headIdx].width > 0) {
+    const headOffsetY = avatarData.gender === 'female' ? -15 : -16;
+    const headSize = 176 * scale;
+    ctx.drawImage(avatarAssets.heads[avatarData.headIdx].canvas,
+      centerX - headSize/2,
+      centerY + headOffsetY - headSize/2,
+      headSize, headSize);
+  }
+}
+
 function showPopupFor(avatar) {
   popupAvatar = avatar;
   showPopup = true;
+  
+  // 팝업 아바타 이미지 업데이트
+  const popupCanvas = document.getElementById('popupAvatarCanvas');
+  if (avatar.customData && typeof avatar.customData === 'object') {
+    // 커스터마이징된 아바타 그리기
+    drawPopupAvatar(popupCanvas, avatar.customData);
+  } else {
+    // 기본 아바타 이미지 그리기
+    const ctx = popupCanvas.getContext('2d');
+    ctx.clearRect(0, 0, popupCanvas.width, popupCanvas.height);
+    
+    const img = new Image();
+    img.onload = function() {
+      const size = Math.min(popupCanvas.width, popupCanvas.height) * 0.8;
+      const x = (popupCanvas.width - size) / 2;
+      const y = (popupCanvas.height - size) / 2;
+      ctx.drawImage(img, x, y, size, size);
+    };
+    img.src = 'avatar_sample.jpeg';
+  }
   
   document.getElementById('popupNickname').textContent = avatar.nickname || '사용자';
   

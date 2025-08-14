@@ -26,15 +26,26 @@
         }
       }, false);
       
-      // 터치 스크롤 방지 (모바일)
+      // 터치 스크롤 방지 (모바일) - 수정: 단일 터치는 허용
       document.addEventListener('touchstart', function(e) {
         if(e.touches.length > 1) {
           e.preventDefault();
         }
       }, { passive: false });
       
+      // touchmove만 방지하고 touchend는 허용 (클릭을 위해)
       document.addEventListener('touchmove', function(e) {
-        e.preventDefault();
+        // 스크롤만 방지하고 클릭은 허용
+        if(e.touches.length === 1) {
+          const touch = e.touches[0];
+          const canvas = document.querySelector('canvas');
+          if(canvas && canvas.contains(e.target)) {
+            // 캔버스 내에서만 터치 이동 방지
+            e.preventDefault();
+          }
+        } else {
+          e.preventDefault();
+        }
       }, { passive: false });
     });
   </script>
@@ -118,6 +129,13 @@
       height: 80px;
       border-radius: 50%;
       flex-shrink: 0;
+      object-fit: cover; /* 캔버스에는 적용되지 않지만, 일관성을 위해 유지 */
+      background: #f5f5f5; /* 로딩 중 배경색 */
+    }
+    
+    /* 캔버스 전용 스타일 */
+    canvas.avatar-image {
+      border: 2px solid #eee;
     }
 
     .avatar-details h3 {
@@ -340,7 +358,7 @@
     <div class="popup-content">
       <button class="popup-close" onclick="closePopup()">×</button>
       <div class="avatar-info">
-        <img id="popupAvatarImage" class="avatar-image" src="avatar_sample.jpeg" alt="아바타">
+        <canvas id="popupAvatarCanvas" class="avatar-image" width="80" height="80"></canvas>
         <div class="avatar-details">
           <h3>아바타 정보</h3>
           <div class="nickname-row">
