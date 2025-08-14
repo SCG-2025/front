@@ -1148,34 +1148,7 @@ function renderMediaArtScreens() {
     pop();
   }
 }
->>>>>>> Stashed changes
 
-// 빈 슬롯 표시
-function drawSampleAvatars() {
-  for (let i = 0; i < 6; i++) {
-    if (stageSlots[i] === null) {
-      const slotPos = getStageSlotPosition(i);
-      push();
-      fill(255, 255, 255, 30);
-      noStroke();
-      ellipse(slotPos.x, slotPos.y, 70, 70);
-      pop();
-
-      push();
-      textAlign(CENTER, CENTER);
-      textSize(10);
-      fill(255, 255, 255, 100);
-      text(`SLOT ${i + 1}`, slotPos.x, slotPos.y);
-      pop();
-    }
-  }
-}
-// 음악 6개라고 가정
-const MUSIC_SHAPES = ['star', 'diamond', 'triangle', 'square', 'circle', 'pentagon'];
-const MUSIC_HUES   = [40, 200, 310, 0, 160, 260]; // 음악별 고정 색상(H)
-
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
 function initMediaArt(w, h) {
   mediaArt.w = w;
   mediaArt.h = h;
@@ -1385,12 +1358,6 @@ function drawPixelPolygon(g, sides, r) {
   }
 }
 // 마우스 이벤트 처리
-=======
-// 마우스 이벤트
->>>>>>> Stashed changes
-=======
-// 마우스 이벤트
->>>>>>> Stashed changes
 function mousePressed() {
   console.log('🖱️ mousePressed 호출됨', mouseX, mouseY);
 
