@@ -1,10 +1,13 @@
-// customizing.js  – 모든 UI·로직을 p5.js DOM으로 생성
+// customizing.js  – 모든 UI·로직을 p5.js DOM으로 생성 (ESM)
+import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js';
+import { getFirestore, addDoc, collection, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js';
+
 (() => {
   /* ---------- 전역 상태 ---------- */
   const musicPositions = ['리드 멜로디', '서브 멜로디', '코드', '베이스', '드럼/퍼커션', '효과음/FX'];
   const categories = ['성별', '바디', '헤드', '윙', '피부색', '눈색']; // 하단 카테고리
 
-  // 색상 팔레트 (items 의존 제거)
+  // 색상 팔레트
   const SKIN_COLORS = [
     '#ffdbac','#d3a871ff','#c58b3fff','#d4851dff','#e8f4fd','#b3d9f2','#85c1e9',
     '#5dade2','#fdf2e9','#fae5d3','#f8c471','#f39c12','#ebf5fb','#d6eaf8','#3498db',
@@ -18,7 +21,7 @@
 
   // write.js에서 전달받은 메모리 데이터
   let memoryData = null;
-  let selPosition = '리드 멜로디'; // 기본값, localStorage에서 받아와서 업데이트됨
+  let selPosition = '리드 멜로디'; // 기본값
 
   // Firebase 관련 변수
   let db;
@@ -65,8 +68,7 @@
     IMG.wing   = loadImage(Catalog.wing);
   }
 
-  /* ---------- 오프셋(레イヤ 보정) ---------- */
-  // 이미지 중심(CENTER) 기준 오프셋(px)과 스케일(정사각 픽셀 크기)
+  /* ---------- 오프셋(레이어 보정) ---------- */
   const OFFSETS = {
     body: { s: 96 }, // 공통 바디 크기
     wing: {
@@ -78,14 +80,21 @@
       male:   { x:  0, y: -18, s: 96 }
     }
   };
-  // 바디 변형별 미세 보정(필요 시 조정)
   const BODY_VARIANT_OFFSET = {
     female: { 0:{x:0,y:0}, 1:{x:1,y:-1}, 2:{x:0,y:0}, 3:{x:-1,y:0}, 4:{x:0,y:1} },
     male:   { 0:{x:0,y:0}, 1:{x:0,y:-1}, 2:{x:1,y:0}, 3:{x:0,y:0} }
   };
 
+  /* ---------- 유틸 ---------- */
+  function stripUndefined(obj) {
+    return JSON.parse(JSON.stringify(obj));
+  }
+  function saveAvatarToLocal() {
+    try { localStorage.setItem('avatarData', JSON.stringify(avatar)); } catch {}
+  }
+
   /* ---------- p5 기본 ---------- */
-  function setup() {
+  async function setup() {
     // localStorage에서 메모리 데이터 받아오기
     const storedData = localStorage.getItem('memoryData');
     if (storedData) {
@@ -99,17 +108,22 @@
     }
 
     // Firebase 초기화
-    if (typeof firebaseConfig !== 'undefined' && typeof initializeApp !== 'undefined') {
-      try {
-        const app = initializeApp(firebaseConfig);
-        db = getFirestore(app);
-        console.log('Firebase 초기화 완료');
-      } catch (error) {
-        console.error('Firebase 초기화 오류:', error);
-      }
-    } else {
-      console.warn('Firebase 설정이 로드되지 않았습니다.');
+    try {
+      if (!window.firebaseConfig) throw new Error('firebaseConfig가 없습니다.');
+      const app = getApps().length ? getApp() : initializeApp(window.firebaseConfig);
+      db = getFirestore(app);
+      console.log('Firebase 초기화 완료');
+    } catch (error) {
+      console.error('Firebase 초기화 오류:', error);
     }
+
+    // 이전에 저장된 아바타가 있으면 복원 (있을 때만 덮어쓰기)
+    try {
+      const savedAvatar = JSON.parse(localStorage.getItem('avatarData') || 'null');
+      if (savedAvatar && typeof savedAvatar === 'object') {
+        Object.assign(avatar, savedAvatar);
+      }
+    } catch {}
 
     // 캔버스(아바타 영역)
     const cv = createCanvas(windowWidth, windowHeight * 0.45);
@@ -119,8 +133,7 @@
     buildUI();
 
     // 첫 렌더
-    renderAvatar();
-
+    renderAvatar(); // center에 크게
     noLoop(); // 기본 draw 멈춤, 애니메이션 시작 시 loop()
   }
 
@@ -159,7 +172,7 @@
       .style('font-size', '0.9rem').style('cursor', 'pointer')
       .mousePressed(showConfirmationModal);
 
-    /* 음악 포지션 선택 바 (상단) - 숨김 처리 */
+    /* 음악 포지션 선택 바 (상단) - 숨김 */
     const positionBar = createDiv('').id('position-bar')
       .style('display', 'none')
       .style('flex-wrap', 'wrap')
@@ -168,7 +181,11 @@
     musicPositions.forEach(position => {
       createButton(position)
         .parent(positionBar)
-        .mousePressed(() => { selPosition = position; fillInventory(); })
+        .mousePressed(() => {
+          selPosition = position;
+          try { localStorage.setItem('musicPosition', selPosition); } catch {}
+          fillInventory();
+        })
         .style('flex', '1').style('min-width', '70px');
     });
 
@@ -220,6 +237,7 @@
         card.mousePressed(() => {
           avatar.gender = item.gender;
           avatar.bodyIdx = 0; // 성별 바꾸면 바디 인덱스 리셋
+          saveAvatarToLocal();
           renderAvatar(); refreshSummary();
         });
       });
@@ -232,7 +250,8 @@
       pool.forEach((imgPath, idx) => {
         const card = createDiv('').parent(inventoryDiv)
           .style(commonCard()).mousePressed(() => {
-            avatar.bodyIdx = idx; renderAvatar(); refreshSummary();
+            avatar.bodyIdx = idx; saveAvatarToLocal();
+            renderAvatar(); refreshSummary();
           });
         createImg(imgPath, '').parent(card).style('width', '70%');
       });
@@ -242,12 +261,14 @@
     // 3) 헤드(없음 + 목록)
     if (selCat === '헤드') {
       createDiv('없음').parent(inventoryDiv).style(commonCard()).mousePressed(() => {
-        avatar.headIdx = null; renderAvatar(); refreshSummary();
+        avatar.headIdx = null; saveAvatarToLocal();
+        renderAvatar(); refreshSummary();
       });
       Catalog.heads.forEach((imgPath, idx) => {
         const card = createDiv('').parent(inventoryDiv)
           .style(commonCard()).mousePressed(() => {
-            avatar.headIdx = idx; renderAvatar(); refreshSummary();
+            avatar.headIdx = idx; saveAvatarToLocal();
+            renderAvatar(); refreshSummary();
           });
         createImg(imgPath, '').parent(card).style('width', '70%');
       });
@@ -257,10 +278,12 @@
     // 4) 윙(OFF/ON)
     if (selCat === '윙') {
       createDiv('OFF').parent(inventoryDiv).style(commonCard()).mousePressed(() => {
-        avatar.wingOn = false; renderAvatar(); refreshSummary();
+        avatar.wingOn = false; saveAvatarToLocal();
+        renderAvatar(); refreshSummary();
       });
       const on = createDiv('').parent(inventoryDiv).style(commonCard()).mousePressed(() => {
-        avatar.wingOn = true; renderAvatar(); refreshSummary();
+        avatar.wingOn = true; saveAvatarToLocal();
+        renderAvatar(); refreshSummary();
       });
       createImg(Catalog.wing, '').parent(on).style('width', '70%');
       return;
@@ -272,7 +295,10 @@
       colors.forEach(col => {
         const card = createDiv('').parent(inventoryDiv).style(commonCard());
         card.style('background', col).attribute('title', col);
-        card.mousePressed(() => equip(selCat, { color: col }));
+        card.mousePressed(() => {
+          equip(selCat, { color: col });
+          saveAvatarToLocal();
+        });
       });
       return;
     }
@@ -297,24 +323,29 @@
       헤드: ${headName}<br>
       윙: ${wingName}<br>
       피부: ${avatar.skin}<br>
-      눈: ${avatar.eyes}
+      눈: ${avatar.eyes}<br>
+      포지션: ${selPosition}
     `);
   }
 
-  /* ---------- 렌더 ---------- */
+  /* ---------- 렌더: 중앙 or 임의 위치 ---------- */
   function renderAvatar() {
     clear();
-
     const cx = width / 2, cy = height / 2;
+    renderAvatarAt(cx, cy, 1.0);
+  }
+
+  // ✅ 애니메이션에서도 커스텀 아바타 그대로 사용
+  function renderAvatarAt(px, py, scaleFactor = 1.0) {
     const bodyPool = avatar.gender === 'female' ? IMG.female : IMG.male;
     const bodyImg  = bodyPool[avatar.bodyIdx];
-
     const baseS = OFFSETS.body.s;
     const vOff  = BODY_VARIANT_OFFSET[avatar.gender]?.[avatar.bodyIdx] ?? { x: 0, y: 0 };
 
     push();
     imageMode(CENTER);
-    translate(cx, cy);
+    translate(px, py);
+    scale(scaleFactor);
 
     // WING (뒤)
     if (avatar.wingOn && IMG.wing) {
@@ -335,27 +366,34 @@
     }
 
     pop();
+
+    // 참고: 스프라이트라서 피부/눈 색상은 이미지로 표현됩니다(틴트 미적용).
+    // 피부/눈 컬러는 요약/선택 상태로만 유지합니다.
   }
 
   /* ---------- 제출/애니메이션 ---------- */
+  let isSubmitting = false;
+
   async function proceedWithSubmission() {
     if (!memoryData) {
       alert('메모리 데이터가 없습니다.');
       return;
     }
+    if (isSubmitting) return;
+    isSubmitting = true;
 
-    const data = {
-      nickname: memoryData.nickname,
-      memory: memoryData.memory,
-      avatar: avatar,
+    const data = stripUndefined({
+      nickname: memoryData.nickname ?? '',
+      memory: memoryData.memory ?? '',
+      avatar: avatar, // 순수 JSON
       sound: null,
       musicPosition: selPosition,
-      musicFilePath: memoryData.musicFilePath,
-      musicBpm: memoryData.musicBpm,
-      extractedKeywords: memoryData.extractedKeywords,
-      selectedRecipe: memoryData.selectedRecipe,
-      timestamp: new Date()
-    };
+      musicFilePath: memoryData.musicFilePath ?? null,
+      musicBpm: memoryData.musicBpm ?? null,
+      extractedKeywords: memoryData.extractedKeywords ?? null,
+      selectedRecipe: memoryData.selectedRecipe ?? null,
+      timestamp: serverTimestamp()
+    });
 
     try {
       if (db && typeof addDoc !== 'undefined' && typeof collection !== 'undefined') {
@@ -368,6 +406,7 @@
     } catch (err) {
       console.error('Firestore 저장 오류:', err);
       alert('저장 중 문제가 발생했습니다. 다시 시도해 주세요.');
+      isSubmitting = false;
     }
   }
 
@@ -441,7 +480,7 @@
       avatarX = width / 2;
       if (jumpProgress >= 1) {
         animationState = 'ride';
-        avatarY = planeY - 80; // 비행기 위에 탑승
+        avatarY = planeY - 20; // 비행기 위에 탑승
         avatarX = planeX + 30;
       }
     }
@@ -451,13 +490,13 @@
       planeX += 18; // 비행기 속도 증가
       avatarX = planeX + 30;
       planeY -= 2;
-      avatarY = planeY - 80;
+      avatarY = planeY ;
       if (planeX > width + 160) {
         animationState = 'fly-out';
         setTimeout(() => {
           animationState = 'idle';
           alert('제출되었습니다!');
-          localStorage.removeItem('memoryData');
+          try { localStorage.removeItem('memoryData'); } catch {}
           window.location.href = 'index.html';
         }, 500);
       }
@@ -470,25 +509,9 @@
     triangle(0, -40, 160, 0, 0, 40);
     pop();
 
-    // 아바타(애니메이션 중에는 도형 미니버전 사용)
-    if (animationState !== 'idle') {
-      push();
-      const size = 32;
-      translate(avatarX - size / 2, avatarY - size * 0.25);
-      scale(3);
-      drawAvatarShape(size);
-      pop();
-    }
-  }
-
-  // 아바타 도형만(애니메이션용 간단 버전)
-  function drawAvatarShape(size) {
-    fill(avatar.skin);
-    ellipse(size / 2, size * 0.25, size * 0.5);
-    rect(size * 0.2, size * 0.45, size * 0.6, size * 0.5, 10);
-    fill(avatar.eyes);
-    ellipse(size * 0.4, size * 0.23, size * 0.06);
-    ellipse(size * 0.6, size * 0.23, size * 0.06);
+    // ✅ 애니메이션 중에도 실제 커스텀 아바타 스프라이트로 렌더
+    // 너무 크게 보이지 않도록 축소 렌더(필요시 조절)
+    renderAvatarAt(avatarX, avatarY - 8, 0.9);
   }
 
   /* p5 필수 export */
