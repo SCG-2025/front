@@ -399,6 +399,7 @@ async function initTonePlayers() {
   }
 }
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 // === 픽셀 미디어아트 전역 ===
 let mediaArt = {
   enabled: true,
@@ -415,6 +416,8 @@ let mediaArt = {
 };
 mediaArt.activeShapes = [[], [], []]; // 각 요소는 {ownerId, musicType, shape, hue, x, y, baseSize}
 
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
 
@@ -802,10 +805,13 @@ function drawAvatar(avatar) {
   }
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
   // 아바타 그리기 - Stage 아바타와 사용자 아바타 구분
   if (avatar.musicType) {
     // Stage 아바타들 (musicType이 있는 경우) - avatar_sample.jpeg 사용
 =======
+=======
+>>>>>>> Stashed changes
 <<<<<<< HEAD
   // 커스터마이징 아바타면 이미지 합성 렌더, 아니면 기본 이미지
   if (avatar.customData && typeof avatar.customData === 'object') {
@@ -816,6 +822,9 @@ function drawAvatar(avatar) {
   if (avatar.musicType) {
     // Stage 아바타들 (musicType이 있는 경우) - avatar_sample.jpeg 사용
 >>>>>>> fc9b42c0aec4b7ab0a037f3b4f6815143baede90
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
     push();
     translate(avatar.x, currentY);
@@ -882,7 +891,10 @@ function drawCustomAvatar(x, y, avatarData, direction, isHighlighted) {
   if (isHighlighted) {
     fill(255, 215, 0, 150);
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 =======
+=======
+>>>>>>> Stashed changes
 <<<<<<< HEAD
     ellipse(0, 0, 90, 90); // 강조
   }
@@ -890,6 +902,9 @@ function drawCustomAvatar(x, y, avatarData, direction, isHighlighted) {
   const scale_factor = 0.5;
 
   // Wing (뒤)
+=======
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
     ellipse(0, 0, 77, 77); // 하이라이트 크기도 1.1배 증가 (70 * 1.1 = 77)
@@ -991,7 +1006,10 @@ function drawSpaces() {
 }
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 =======
+=======
+>>>>>>> Stashed changes
 // === 세트/테마별 픽셀 미디어아트 ===
 function renderMediaArtScreens() {
   if (!mediaArt.enabled) return;
@@ -1156,6 +1174,7 @@ function drawSampleAvatars() {
 const MUSIC_SHAPES = ['star', 'diamond', 'triangle', 'square', 'circle', 'pentagon'];
 const MUSIC_HUES   = [40, 200, 310, 0, 160, 260]; // 음악별 고정 색상(H)
 
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 function initMediaArt(w, h) {
   mediaArt.w = w;
@@ -1366,6 +1385,9 @@ function drawPixelPolygon(g, sides, r) {
   }
 }
 // 마우스 이벤트 처리
+=======
+// 마우스 이벤트
+>>>>>>> Stashed changes
 =======
 // 마우스 이벤트
 >>>>>>> Stashed changes
@@ -1613,11 +1635,17 @@ function drawPopupAvatar(canvas, avatarData) {
   const centerX = canvas.width / 2;
   const centerY = canvas.height / 2;
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 =======
+=======
+>>>>>>> Stashed changes
 <<<<<<< HEAD
   const scale = 0.6;
 
   // Wing (뒤)
+=======
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
   const scale = 1.0; // 팝업용 스케일 (더 크게)
@@ -1662,7 +1690,10 @@ function showPopupFor(avatar) {
 
   // 팝업 아바타 이미지 업데이트
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 =======
+=======
+>>>>>>> Stashed changes
 <<<<<<< HEAD
   const popupCanvas = document.getElementById('popupAvatarCanvas');
   if (popupCanvas) {
@@ -1681,6 +1712,9 @@ function showPopupFor(avatar) {
       img.src = 'avatar_sample.jpeg';
     }
 =======
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
   const popupImage = document.getElementById('popupAvatarImage');
   if (avatar.customData && typeof avatar.customData === 'object') {
@@ -1696,6 +1730,10 @@ function showPopupFor(avatar) {
     // 기본 아바타 이미지 사용
     popupImage.src = 'avatar_sample.jpeg';
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+>>>>>>> fc9b42c0aec4b7ab0a037f3b4f6815143baede90
+>>>>>>> Stashed changes
 =======
 >>>>>>> fc9b42c0aec4b7ab0a037f3b4f6815143baede90
 >>>>>>> Stashed changes
@@ -1826,9 +1864,12 @@ function resetStage() {
     }
   }
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
   // 모든 도형 비우기
 mediaArt.activeShapes = [[], [], []]; // ✅
 
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
   console.log('🎭 === 무대 리셋 종료 ===');
