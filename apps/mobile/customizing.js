@@ -5,7 +5,7 @@ import { db } from './firebase-init.js';
 (() => {
   /* ---------- 전역 상태 ---------- */
   const musicPositions = ['리드 멜로디', '서브 멜로디', '코드', '베이스', '드럼/퍼커션', '효과음/FX'];
-  const categories = ['성별', '바디', '헤드', '윙', '피부색', '눈색']; // 하단 카테고리
+  const categories = ['바디', '헤드', '윙', '피부색', '눈색']; // 하단 카테고리 (성별 제거)
 
   // 색상 팔레트
   const SKIN_COLORS = [
@@ -33,7 +33,7 @@ import { db } from './firebase-init.js';
   let jumpProgress = 0;
 
   // UI 상태
-  let selCat = '성별'; // 현재 선택된 카테고리
+  let selCat = '바디'; // 현재 선택된 카테고리 (성별 제거로 바디가 첫 번째)
   let summaryDiv, inventoryDiv;
 
   /* ---------- 스프라이트 카탈로그/아바타/프리로드 ---------- */
@@ -50,13 +50,16 @@ import { db } from './firebase-init.js';
     wing:   'assets/wing.png'
   };
 
+  // localStorage에서 기존 아바타 데이터를 가져오거나 기본값 사용
+  const savedAvatar = JSON.parse(localStorage.getItem('avatarData') || 'null');
+  
   const avatar = {
-    gender: 'female',   // 'female' | 'male'
-    bodyIdx: 0,
-    headIdx: null,      // null=off, 0..N 선택
-    wingOn: false,      // on/off
-    skin: '#ffdbac',
-    eyes: '#000'
+    gender: (savedAvatar && savedAvatar.gender) || 'female',   // write.html에서 선택된 성별 사용
+    bodyIdx: (savedAvatar && savedAvatar.bodyIdx !== undefined) ? savedAvatar.bodyIdx : 0,
+    headIdx: (savedAvatar && savedAvatar.headIdx !== undefined) ? savedAvatar.headIdx : null,      // null=off, 0..N 선택
+    wingOn: (savedAvatar && savedAvatar.wingOn !== undefined) ? savedAvatar.wingOn : false,      // on/off
+    skin: (savedAvatar && savedAvatar.skin) || '#ffdbac',
+    eyes: (savedAvatar && savedAvatar.eyes) || '#000'
   };
 
   // 이미지 캐시
@@ -228,22 +231,7 @@ import { db } from './firebase-init.js';
   function fillInventory() {
     inventoryDiv.html('');
 
-    // 1) 성별
-    if (selCat === '성별') {
-      [{ label: '여성', gender: 'female' }, { label: '남성', gender: 'male' }].forEach(item => {
-        const card = createDiv(item.label).parent(inventoryDiv).style(commonCard());
-        card.style('font-weight','600');
-        card.mousePressed(() => {
-          avatar.gender = item.gender;
-          avatar.bodyIdx = 0; // 성별 바꾸면 바디 인덱스 리셋
-          saveAvatarToLocal();
-          renderAvatar(); refreshSummary();
-        });
-      });
-      return;
-    }
-
-    // 2) 바디(성별별 변형)
+    // 1) 바디(성별별 변형)
     if (selCat === '바디') {
       const pool = avatar.gender === 'female' ? Catalog.female : Catalog.male;
       pool.forEach((imgPath, idx) => {

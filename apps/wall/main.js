@@ -460,6 +460,30 @@ onSnapshot(collection(db, 'memories'), (snapshot) => {
       // ✨ 중요: 원본 아바타 커스터마이징 데이터를 별도 필드로 저장
       avatar.customData = docData.avatar; // 여기에 커스터마이징 정보가 있어야 함
       
+      // 커스텀 데이터가 있는지 확인하고, bodyIdx가 없는 경우에만 몸체 배정
+      if (avatar.customData && typeof avatar.customData === 'object') {
+        // bodyIdx가 없거나 유효하지 않은 경우에만 몸체 배정
+        if (avatar.customData.bodyIdx === null || avatar.customData.bodyIdx === undefined || 
+            avatar.customData.bodyIdx < 0 || avatar.customData.bodyIdx > 4) {
+          avatar.customData.bodyIdx = Math.floor(Math.random() * 5);
+          console.log('🔧 몸체만 수정:', avatar.nickname, 'bodyIdx:', avatar.customData.bodyIdx);
+        }
+        
+        // gender가 없는 경우에만 기본값 설정 (몸체 렌더링에 필요)
+        if (!avatar.customData.gender || (avatar.customData.gender !== 'male' && avatar.customData.gender !== 'female')) {
+          avatar.customData.gender = Math.random() > 0.5 ? 'female' : 'male';
+          console.log('🔧 성별만 수정:', avatar.nickname, 'gender:', avatar.customData.gender);
+        }
+      } else if (!avatar.customData || typeof avatar.customData !== 'object') {
+        // customData가 아예 없는 경우에만 기본 몸체만 설정
+        avatar.customData = {
+          gender: Math.random() > 0.5 ? 'female' : 'male',
+          bodyIdx: Math.floor(Math.random() * 5), // 몸체만 설정
+          // headIdx, wingOn 등은 설정하지 않음
+        };
+        console.log('🎭 기본 몸체만 추가:', avatar.nickname, avatar.customData);
+      }
+      
       // 음악 포지션 정보 추가
       avatar.musicPosition = docData.musicPosition || '-';
       
@@ -698,12 +722,9 @@ function drawAvatar(avatar) {
     pop();
   }
 
-  // 아바타 그리기 - 모바일에서 커스터마이징한 아바타인지 확인
-  if (avatar.customData && typeof avatar.customData === 'object') {
-    // 모바일에서 커스터마이징한 아바타 렌더링
-    drawCustomAvatar(avatar.x, currentY, avatar.customData, avatar.direction, showPopup && popupAvatar && popupAvatar.id === avatar.id);
-  } else {
-    // 기본 아바타 이미지 사용
+  // 아바타 그리기 - Stage 아바타와 사용자 아바타 구분
+  if (avatar.musicType) {
+    // Stage 아바타들 (musicType이 있는 경우) - avatar_sample.jpeg 사용
     push();
     translate(avatar.x, currentY);
     if (avatar.direction === -1) {
@@ -719,6 +740,33 @@ function drawAvatar(avatar) {
       image(avatarImage, 0, 0, 64, 64);
     }
     pop();
+  } else if (avatar.customData && typeof avatar.customData === 'object') {
+    // 모바일에서 커스터마이징한 아바타 렌더링
+    drawCustomAvatar(avatar.x, currentY, avatar.customData, avatar.direction, showPopup && popupAvatar && popupAvatar.id === avatar.id);
+  } else {
+    // customData가 없는 사용자 아바타의 경우 기본 아바타 데이터 생성 (ID 기반으로 고정)
+    if (!avatar.defaultCustomData) {
+      // 아바타 ID를 기반으로 한 간단한 해시 생성
+      let hash = 0;
+      const idStr = avatar.id || 'default';
+      for (let i = 0; i < idStr.length; i++) {
+        hash = ((hash << 5) - hash + idStr.charCodeAt(i)) & 0xffffffff;
+      }
+      
+      // 해시를 기반으로 고정된 랜덤값 생성
+      const seedRandom = (seed) => {
+        const x = Math.sin(seed) * 10000;
+        return x - Math.floor(x);
+      };
+      
+      avatar.defaultCustomData = {
+        gender: seedRandom(hash) > 0.5 ? 'female' : 'male',
+        bodyIdx: Math.floor(seedRandom(hash + 2) * 5), // 몸체만 설정
+        // headIdx, wingOn 등은 설정하지 않음 (기본 몸체만)
+      };
+    }
+    // 기본 아바타 데이터로 렌더링
+    drawCustomAvatar(avatar.x, currentY, avatar.defaultCustomData, avatar.direction, showPopup && popupAvatar && popupAvatar.id === avatar.id);
   }
 
   // 닉네임 표시
@@ -746,18 +794,18 @@ function drawCustomAvatar(x, y, avatarData, direction, isHighlighted) {
   // 하이라이트 효과
   if (isHighlighted) {
     fill(255, 215, 0, 150);
-    ellipse(0, 0, 90, 90); // 하이라이트 크기 조정
+    ellipse(0, 0, 77, 77); // 하이라이트 크기도 1.1배 증가 (70 * 1.1 = 77)
   }
   
-  const scale_factor = 0.5; // 크기를 절반으로 줄임
+  const scale_factor = 0.418; // 크기를 1.1배 증가 (0.38 * 1.1 ≈ 0.418)
   
   // 이미지 모드를 CENTER로 설정
   imageMode(CENTER);
   
   // Wing (뒤에 그리기)
   if (avatarData.wingOn && avatarAssets.wing) {
-    const wingOffsetX = avatarData.gender === 'female' ? -3 : -2;
-    const wingOffsetY = avatarData.gender === 'female' ? -5 : -4;
+    const wingOffsetX = avatarData.gender === 'female' ? -2.3 : -1.5;
+    const wingOffsetY = avatarData.gender === 'female' ? -4 : -3;
     image(avatarAssets.wing, wingOffsetX, wingOffsetY, 190 * scale_factor, 190 * scale_factor);
   }
   
@@ -771,7 +819,7 @@ function drawCustomAvatar(x, y, avatarData, direction, isHighlighted) {
   // Head (앞에 그리기)
   if (avatarData.headIdx !== null && avatarData.headIdx !== undefined && avatarAssets.heads[avatarData.headIdx]) {
     const headOffsetX = 0;
-    const headOffsetY = avatarData.gender === 'female' ? -8 : -8;
+    const headOffsetY = avatarData.gender === 'female' ? -6 : -6;
     image(avatarAssets.heads[avatarData.headIdx], headOffsetX, headOffsetY, 176 * scale_factor, 176 * scale_factor);
   }
   
@@ -1177,7 +1225,7 @@ function drawPopupAvatar(canvas, avatarData) {
   // 캔버스 중앙 좌표
   const centerX = canvas.width / 2;
   const centerY = canvas.height / 2;
-  const scale = 0.6; // 팝업용 스케일
+  const scale = 1.0; // 팝업용 스케일 (더 크게)
   
   // Wing (뒤에 그리기)
   if (avatarData.wingOn && avatarAssets.wing && avatarAssets.wing.width > 0) {
@@ -1203,7 +1251,7 @@ function drawPopupAvatar(canvas, avatarData) {
   // Head (앞에 그리기)
   if (avatarData.headIdx !== null && avatarData.headIdx !== undefined && 
       avatarAssets.heads[avatarData.headIdx] && avatarAssets.heads[avatarData.headIdx].width > 0) {
-    const headOffsetY = avatarData.gender === 'female' ? -15 : -16;
+    const headOffsetY = avatarData.gender === 'female' ? -10 : -10; // 모자가 잘리지 않도록 위치 조정
     const headSize = 176 * scale;
     ctx.drawImage(avatarAssets.heads[avatarData.headIdx].canvas,
       centerX - headSize/2,
@@ -1217,23 +1265,19 @@ function showPopupFor(avatar) {
   showPopup = true;
   
   // 팝업 아바타 이미지 업데이트
-  const popupCanvas = document.getElementById('popupAvatarCanvas');
+  const popupImage = document.getElementById('popupAvatarImage');
   if (avatar.customData && typeof avatar.customData === 'object') {
-    // 커스터마이징된 아바타 그리기
-    drawPopupAvatar(popupCanvas, avatar.customData);
-  } else {
-    // 기본 아바타 이미지 그리기
-    const ctx = popupCanvas.getContext('2d');
-    ctx.clearRect(0, 0, popupCanvas.width, popupCanvas.height);
+    // 커스터마이징된 아바타를 임시 캔버스에 그린 후 이미지로 변환
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = 200;  // 캔버스 크기 증가
+    tempCanvas.height = 200; // 캔버스 크기 증가
+    drawPopupAvatar(tempCanvas, avatar.customData);
     
-    const img = new Image();
-    img.onload = function() {
-      const size = Math.min(popupCanvas.width, popupCanvas.height) * 0.8;
-      const x = (popupCanvas.width - size) / 2;
-      const y = (popupCanvas.height - size) / 2;
-      ctx.drawImage(img, x, y, size, size);
-    };
-    img.src = 'avatar_sample.jpeg';
+    // 캔버스를 이미지 URL로 변환해서 img에 적용
+    popupImage.src = tempCanvas.toDataURL();
+  } else {
+    // 기본 아바타 이미지 사용
+    popupImage.src = 'avatar_sample.jpeg';
   }
   
   document.getElementById('popupNickname').textContent = avatar.nickname || '사용자';

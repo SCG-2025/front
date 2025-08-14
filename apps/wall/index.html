@@ -125,17 +125,10 @@
     }
 
     .avatar-image {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
+      width: 85px;  /* 68px에서 85px로 증가 (약 1.25배) */
+      height: 85px; /* 68px에서 85px로 증가 (약 1.25배) */
       flex-shrink: 0;
-      object-fit: cover; /* 캔버스에는 적용되지 않지만, 일관성을 위해 유지 */
-      background: #f5f5f5; /* 로딩 중 배경색 */
-    }
-    
-    /* 캔버스 전용 스타일 */
-    canvas.avatar-image {
-      border: 2px solid #eee;
+      object-fit: cover;
     }
 
     .avatar-details h3 {
@@ -358,7 +351,7 @@
     <div class="popup-content">
       <button class="popup-close" onclick="closePopup()">×</button>
       <div class="avatar-info">
-        <canvas id="popupAvatarCanvas" class="avatar-image" width="80" height="80"></canvas>
+        <img id="popupAvatarImage" class="avatar-image" src="avatar_sample.jpeg" alt="아바타">
         <div class="avatar-details">
           <h3>아바타 정보</h3>
           <div class="nickname-row">

@@ -27,17 +27,28 @@ let sound = null;
 let category = null;
 
 /* ====== write 단계 아바타 기본값 & 저장값 로드 ====== */
-// (선택) write 단계에서 avatar 기본값을 미리 셋업
+// write 단계에서는 기본 몸체만 표시 (부가요소 제거)
 const defaultAvatar = {
   gender: 'female',
-  bodyIdx: 0,
-  headIdx: null,
-  wingOn: false,
+  bodyIdx: 0, // 기본 몸체 (fe.png 또는 ma.png)
+  headIdx: null, // 모자 없음
+  wingOn: false, // 날개 없음
   skin: '#ffdbac',
   eyes: '#000'
 };
-// 페이지 진입 시 기존 아바타 불러오거나 기본값 사용
+// 페이지 진입 시 기존 아바타 불러오되, write 단계에서는 기본 몸체만
 const existingAvatar = JSON.parse(localStorage.getItem('avatarData') || 'null') || defaultAvatar;
+
+// write 단계에서는 기본 몸체만 표시하도록 설정
+avatar = { 
+  ...avatar, 
+  gender: existingAvatar.gender || 'female',
+  bodyIdx: 0, // 항상 기본 몸체 (첫 번째 이미지)
+  headIdx: null, // 모자 제거
+  wingOn: false, // 날개 제거
+  skin: existingAvatar.skin || '#ffdbac',
+  eyes: existingAvatar.eyes || '#000'
+};
 
 // ===============================================
 // 5개 음악 세트 시스템 정의
@@ -863,6 +874,12 @@ function setup() {
   noLoop(); // 정적 렌더
 }
 
+function draw() {
+  // redraw() 호출 시 실행됨
+  console.log('🔄 draw() 함수 호출됨'); // 디버깅용
+  renderAvatar();
+}
+
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight * 0.45);
   renderAvatar();
@@ -887,6 +904,79 @@ function buildForm() {
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   `;
   container.appendChild(form);
+
+  // 성별 선택 추가
+  const genderLabel = document.createElement('span');
+  genderLabel.textContent = '성별';
+  genderLabel.style.cssText = `display:block;font-weight:bold;margin-bottom:6px;color:#333;`;
+  form.appendChild(genderLabel);
+
+  const genderBar = document.createElement('div');
+  genderBar.style.cssText = `display:flex;gap:12px;margin-bottom:20px;`;
+  form.appendChild(genderBar);
+
+  // 기존 아바타에서 성별 가져오기 (없으면 female 기본값)
+  let selectedGender = existingAvatar.gender || 'female';
+
+  [
+    { label: '여성', value: 'female' },
+    { label: '남성', value: 'male' }
+  ].forEach(option => {
+    const button = document.createElement('button');
+    button.textContent = option.label;
+    button.type = 'button';
+    button.style.cssText = `
+      flex:1; padding:12px;
+      border:2px solid #e0e0e0; border-radius:8px; background:#fff; color:#666;
+      font-size:16px; cursor:pointer; transition:all 0.2s;
+    `;
+    if (option.value === selectedGender) {
+      button.style.background = '#4CAF50';
+      button.style.color = '#fff';
+      button.style.borderColor = '#4CAF50';
+    }
+    button.addEventListener('click', () => {
+      genderBar.querySelectorAll('button').forEach(btn => {
+        btn.style.background = '#fff';
+        btn.style.color = '#666';
+        btn.style.borderColor = '#e0e0e0';
+      });
+      button.style.background = '#4CAF50';
+      button.style.color = '#fff';
+      button.style.borderColor = '#4CAF50';
+      selectedGender = option.value;
+      
+      console.log('🎯 성별 변경:', selectedGender); // 디버깅용
+      
+      // 아바타 데이터 업데이트 - write 단계에서는 성별과 기본 몸체만
+      existingAvatar.gender = selectedGender;
+      avatar.gender = selectedGender;
+      avatar.bodyIdx = 0; // 항상 기본 몸체
+      avatar.headIdx = null; // 모자 제거
+      avatar.wingOn = false; // 날개 제거
+      
+      console.log('🎯 업데이트된 avatar:', avatar); // 디버깅용
+      
+      localStorage.setItem('avatarData', JSON.stringify({
+        ...existingAvatar,
+        gender: selectedGender,
+        bodyIdx: 0,
+        headIdx: null,
+        wingOn: false
+      }));
+      
+      // 아바타 시각적 업데이트
+      console.log('🔄 redraw() 호출 시도'); // 디버깅용
+      redraw(); // noLoop() 상태이므로 redraw() 사용
+      console.log('🔄 redraw() 호출 완료'); // 디버깅용
+      
+      // 직접 renderAvatar 호출도 시도
+      console.log('🔄 직접 renderAvatar() 호출 시도'); // 디버깅용
+      renderAvatar();
+      console.log('🔄 직접 renderAvatar() 호출 완료'); // 디버깅용
+    });
+    genderBar.appendChild(button);
+  });
 
   const nicknameLabel = document.createElement('span');
   nicknameLabel.textContent = '닉네임';
@@ -1094,11 +1184,15 @@ const BODY_VARIANT_OFFSET = {
 // p5의 preload 훅: 에셋 선로딩
 function preload() {
   try {
+    console.log('🔄 이미지 로딩 시작...'); // 디버깅용
     IMG.female = Catalog.female.map(p => loadImage(p, () => { }, () => { }));
     IMG.male = Catalog.male.map(p => loadImage(p, () => { }, () => { }));
     IMG.heads = Catalog.heads.map(p => loadImage(p, () => { }, () => { }));
     IMG.wing = loadImage(Catalog.wing, () => { }, () => { });
     IMG._ok = true;
+    console.log('✅ 이미지 로딩 완료'); // 디버깅용
+    console.log('📁 Catalog.female:', Catalog.female); // 디버깅용
+    console.log('📁 Catalog.male:', Catalog.male); // 디버깅용
   } catch (e) {
     console.warn('스프라이트 로드 실패, 기본 도형으로 폴백:', e);
     IMG._ok = false;
@@ -1111,8 +1205,13 @@ function renderAvatar() {
   clear();
   const cx = width / 2, cy = height / 2;
 
+  console.log('🎨 renderAvatar 호출, avatar.gender:', avatar.gender); // 디버깅용
+
   const pool = (avatar.gender === 'male') ? IMG.male : IMG.female;
-  const bodyImg = pool?.[avatar.bodyIdx ?? 0];
+  const bodyImg = pool?.[0]; // 항상 첫 번째 이미지 (fe.png 또는 ma.png)
+
+  console.log('🎨 선택된 pool:', avatar.gender === 'male' ? 'male' : 'female'); // 디버깅용
+  console.log('🎨 bodyImg 존재:', !!bodyImg); // 디버깅용
 
   if (IMG._ok && bodyImg) {
     renderAvatarAt(cx, cy, 1.2);
@@ -1131,35 +1230,27 @@ function renderAvatar() {
   }
 }
 
-// 스프라이트 렌더 헬퍼
+// 스프라이트 렌더 헬퍼 (write 단계용 - 기본 몸체만)
 function renderAvatarAt(px, py, scaleFactor = 1.0) {
   const bodyPool = avatar.gender === 'female' ? IMG.female : IMG.male;
-  const bodyImg = bodyPool[avatar.bodyIdx ?? 0];
+  const bodyImg = bodyPool[0]; // 항상 첫 번째 이미지 (fe.png 또는 ma.png)
   const baseS = OFFSETS.body.s;
-  const vOff = BODY_VARIANT_OFFSET[avatar.gender]?.[avatar.bodyIdx ?? 0] ?? { x: 0, y: 0 };
+
+  console.log('🎨 renderAvatarAt - gender:', avatar.gender); // 디버깅용
+  console.log('🎨 renderAvatarAt - bodyImg:', bodyImg ? '존재' : '없음'); // 디버깅용
 
   push();
   imageMode(CENTER);
   translate(px, py);
   scale(scaleFactor);
 
-  // WING (뒤)
-  if (avatar.wingOn && IMG.wing) {
-    const w = OFFSETS.wing[avatar.gender];
-    image(IMG.wing, w.x + vOff.x, w.y + vOff.y, w.s, w.s);
-  }
-
-  // BODY
+  // BODY만 렌더링 (부가요소 제거)
   if (bodyImg) {
-    image(bodyImg, vOff.x, vOff.y, baseS, baseS);
+    image(bodyImg, 0, 0, baseS, baseS); // 오프셋 없이 중앙에 표시
+  } else {
+    console.warn('❌ bodyImg가 없어서 렌더링 실패'); // 디버깅용
   }
 
-  // HEAD (앞)
-  if (avatar.headIdx != null) {
-    const h = OFFSETS.head[avatar.gender];
-    const headImg = IMG.heads?.[avatar.headIdx];
-    if (headImg) image(headImg, h.x + vOff.x, h.y + vOff.y, h.s, h.s);
-  }
   pop();
 }
 
@@ -1169,4 +1260,5 @@ console.log('테스트: 콘솔에서 testAISystem() 실행');
 
 // p5 export (정적 렌더링만)
 window.setup = setup;
+window.draw = draw; // draw 함수도 등록
 window.windowResized = windowResized;
