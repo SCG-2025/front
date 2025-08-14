@@ -12,6 +12,7 @@ window.firebaseConfig = {
 
 import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js';
 import { getFirestore, addDoc, collection, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js';
+import { db } from './firebase-init.js';
 
 (() => {
   /* ---------- 전역 상태 ---------- */
@@ -35,7 +36,7 @@ import { getFirestore, addDoc, collection, serverTimestamp } from 'https://www.g
   let selPosition = '리드 멜로디'; // 기본값
 
   // Firebase 관련 변수
-  let db;
+  // db는 이미 firebase-init.js에서 import됨
 
   // 애니메이션 관련 변수
   let animationState = 'idle'; // idle, plane-in, jump, ride, fly-out
@@ -118,15 +119,8 @@ import { getFirestore, addDoc, collection, serverTimestamp } from 'https://www.g
       return;
     }
 
-    // Firebase 초기화
-    try {
-      if (!window.firebaseConfig) throw new Error('firebaseConfig가 없습니다.');
-      const app = getApps().length ? getApp() : initializeApp(window.firebaseConfig);
-      db = getFirestore(app);
-      console.log('Firebase 초기화 완료');
-    } catch (error) {
-      console.error('Firebase 초기화 오류:', error);
-    }
+    // Firebase는 이미 firebase-init.js에서 초기화됨
+    console.log('Firebase 초기화 완료 (firebase-init.js에서 import됨)');
 
     // 이전에 저장된 아바타가 있으면 복원 (있을 때만 덮어쓰기)
     try {
@@ -403,8 +397,17 @@ import { getFirestore, addDoc, collection, serverTimestamp } from 'https://www.g
       timestamp: serverTimestamp()
     });
 
+    // 저장할 데이터 디버깅 로그
+    console.log('💾 Firebase에 저장할 데이터:');
+    console.log('nickname:', data.nickname);
+    console.log('avatar 데이터:', JSON.stringify(data.avatar, null, 2));
+    console.log('musicPosition:', data.musicPosition);
+    console.log('selectedRecipe:', data.selectedRecipe);
+    console.log('extractedKeywords:', data.extractedKeywords);
+    console.log('전체 data:', JSON.stringify(data, null, 2));
+
     try {
-      if (db && typeof addDoc !== 'undefined' && typeof collection !== 'undefined') {
+      if (typeof addDoc !== 'undefined' && typeof collection !== 'undefined') {
         await addDoc(collection(db, 'memories'), data);
         console.log('데이터 저장 완료');
       } else {
