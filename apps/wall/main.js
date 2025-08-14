@@ -280,6 +280,20 @@ async function initTonePlayers() {
     }
   }
 }
+// === 픽셀 미디어아트 전역 ===
+let mediaArt = {
+  enabled: true,
+  // 스크린 3개 각각의 저해상도 픽셀 버퍼
+  buffers: [],
+  // 각 버퍼의 논리 해상도 (픽셀 느낌 위해 의도적으로 낮춤)
+  w: 128, h: 64,
+  // 오디오 분석기
+  fft: null,
+  // 파티클(점)들 – 스크린별로 별도 보유
+  particles: [[], [], []],
+  // Perlin 이동용 시간
+  t: 0
+};
 
 function setup() {
   createCanvas(2560, 1760);
@@ -345,6 +359,12 @@ function setup() {
       isPending: false,
       pendingStartTime: 0
     });
+     noSmooth();
+  mediaArt.buffers = [createGraphics(mediaArt.w, mediaArt.h),
+                      createGraphics(mediaArt.w, mediaArt.h),
+                      createGraphics(mediaArt.w, mediaArt.h)];
+  mediaArt.buffers.forEach(g => { g.noSmooth(); g.noStroke(); g.colorMode(HSB, 360, 100, 100, 100); });
+  mediaArt.fft = new p5.FFT(0.8, 1024);
   }
   
   // PC룸 게임용 아바타 6개 생성 (set1_pcroom_gaming)
@@ -406,6 +426,42 @@ function setup() {
       pendingStartTime: 0
     });
   }
+
+ mediaArt.buffers = [createGraphics(mediaArt.w, mediaArt.h),
+                      createGraphics(mediaArt.w, mediaArt.h),
+                      createGraphics(mediaArt.w, mediaArt.h)];
+  mediaArt.buffers.forEach(g => { g.noSmooth(); g.noStroke(); g.colorMode(HSB, 360, 100, 100, 100); });
+
+  // FFT: 전체 마스터 출력 분석 (개별 입력 지정 없어도 p5.sound 마스터를 읽습니다)
+  mediaArt.fft = new p5.FFT(0.8, 1024);
+
+  // 파티클(별점) 시드
+  for (let s = 0; s < 3; s++) {
+    for (let i = 0; i < 120; i++) {
+      mediaArt.particles[s].push({
+        x: random(mediaArt.w), y: random(mediaArt.h),
+        vx: random(-0.2, 0.2), vy: random(-0.2, 0.2),
+        // 각 파티클에 고유 색상/크기 부여
+        hue: random(200, 320), // 청보라 ~ 분홍 범위(네온 느낌)
+        size: random(1, 2.2),
+        nseed: random(1000)
+      });
+    }
+  }
+}
+function isPCRoomPlaying() {
+  // 무대에 있고 gaming 세트의 음원이 실제 재생 중인지 확인
+  const pcRoomOnStage = stageAvatars.filter(a =>
+    a.isOnStage && a.musicType && a.musicType.includes('_gaming_')
+  );
+  if (pcRoomOnStage.length === 0) return false;
+
+  // 재생 중 여부(p5.sound) 확인
+  for (const a of pcRoomOnStage) {
+    const s = musicSamples[a.musicType];
+    if (s && s.isPlaying && s.isPlaying()) return true;
+  }
+  return false;
 }
 
 // Firebase 데이터 처리
@@ -748,6 +804,159 @@ function drawSpaces() {
     line((2560 / 3) * i, 0, (2560 / 3) * i, 480);
   }
   noStroke();
+  renderMediaArtScreens(); 
+}
+// 한글 category → 테마ID 슬러그
+const CATEGORY_TO_THEME_ID = {
+  '게임': 'pcroom_gaming', // 기본폴백(무대아바타는 musicSet이 있으므로 거의 안쓰일 것)
+};
+const setNames = {
+  // 기존
+  verification: '검증용 Music Sample',
+  pcroom_gaming: 'PC방과 온라인 게임',
+  // set1
+  home_console_gaming: '집에서 게임기로',
+  social_media_memories: 'SNS 속 디지털 추억',
+  photo_album: '사진과 앨범의 기억',
+  // set2
+  sports_activities: '운동과 스포츠',
+  festivals_events: '축제와 이벤트',
+  summer_memories: '뜨거운 여름의 추억',
+  travel_places: '여행지의 특별한 경험',
+  // set3
+  family_warmth: '가족과의 따뜻한 시간',
+  school_memories: '학창시절 추억',
+  food_snacks: '음식과 간식',
+  spring_memories: '봄의 따뜻한 추억',
+  // set4
+  nostalgia_longing: '그리운 옛날 생각',
+  night_dawn: '밤과 새벽',
+  entertainment_culture: '드라마/영화/웹툰과 함께',
+  karaoke_music: '노래방과 음악 감상',
+  // set5
+  art_creative: '미술과 창작활동',
+  study_reading: '조용한 학습과 독서',
+  autumn_memories: '가을의 감성',
+  winter_memories: '포근한 겨울의 추억',
+};
+
+// 현재 무대의 "테마ID" 결정
+function getCurrentStageThemeId() {
+  // 1) 무대 위 첫 아바타의 musicSet 우선
+  const onStage = [...stageAvatars, ...avatars].filter(a => a.isOnStage);
+  if (onStage.length === 0) return null;
+
+  // musicSet 우선 사용
+  for (const a of onStage) {
+    if (a.musicSet) return a.musicSet; // 예: 'pcroom_gaming'
+  }
+
+  // 2) musicSet 없으면 category 기반 최빈 테마
+  const freq = {};
+  for (const a of onStage) {
+    // a.category가 “학교/가족/…” 등일 수 있으니 외부에서 a.themeId 같은 필드를 저장해 두었다면 그걸 우선 사용
+    const slug = (a.themeId && MEMORY_CATEGORY_TO_THEME[a.themeId])
+      ? a.themeId
+      : null;
+    const key = slug || CATEGORY_TO_THEME_ID[a.category] || 'nostalgia_longing';
+    freq[key] = (freq[key] || 0) + 1;
+  }
+  return Object.entries(freq).sort((a,b)=>b[1]-a[1])[0][0];
+}
+
+function renderMediaArtScreens() {
+  if (!mediaArt.enabled) return;
+
+  const playing = isPCRoomPlaying();
+
+  // 스펙트럼/에너지 추출 (재생 중일 때만 강하게, 아닐 땐 서서히 페이드)
+  const spectrum = mediaArt.fft.analyze();
+  const bass = mediaArt.fft.getEnergy(20, 120) / 255;     // 저역
+  const mid  = mediaArt.fft.getEnergy(250, 2000) / 255;   // 중역
+  const high = mediaArt.fft.getEnergy(4000, 12000) / 255; // 고역
+
+  mediaArt.t += 0.01;
+
+  // 스크린 위치(좌/중/우)
+  const screenRects = [
+    { x: 0,               y: 0, w: 2560/3, h: 480 },
+    { x: 2560/3,          y: 0, w: 2560/3, h: 480 },
+    { x: 2*(2560/3),      y: 0, w: 2560/3, h: 480 }
+  ];
+
+  // 스크린별로 다른 주파수대에 반응하도록 매핑
+  const energies = [
+    { e: bass,  name: 'low'  },
+    { e: mid,   name: 'mid'  },
+    { e: high,  name: 'high' }
+  ];
+
+  for (let i = 0; i < 3; i++) {
+    const g = mediaArt.buffers[i];
+    const e = energies[i].e;
+
+    // 배경을 살짝 어둡게 – 재생 시 밝기 가산
+    const baseB = playing ? 10 + e * 20 : 6;
+    g.background(0, 0, baseB, 100);
+
+    // 별(점) 업데이트 – Perlin+속도, 에너지 반응으로 이동/크기/밝기 변화
+    for (const p of mediaArt.particles[i]) {
+      // Perlin drift
+      const nx = noise(p.nseed, mediaArt.t) - 0.5;
+      const ny = noise(p.nseed + 100, mediaArt.t) - 0.5;
+
+      // 에너지 반응: 재생 중일수록 가속/크기/밝기 강화
+      const speedMul = 0.4 + e * 2.0;
+      p.x += (p.vx + nx * 0.7) * speedMul;
+      p.y += (p.vy + ny * 0.7) * speedMul;
+
+      // 화면 래핑
+      if (p.x < 0) p.x += mediaArt.w;
+      if (p.x >= mediaArt.w) p.x -= mediaArt.w;
+      if (p.y < 0) p.y += mediaArt.h;
+      if (p.y >= mediaArt.h) p.y -= mediaArt.h;
+
+      // 네온 글로우 느낌: 동일 좌표에 작은 사각형을 여러 번 반투명으로 찍기
+      const sz = p.size * (1 + e * 2.0);
+      const alpha = playing ? 60 + e * 40 : 25;
+      g.fill(p.hue, 80 + e * 20, 70 + e * 30, alpha);
+      g.rect(p.x, p.y, sz, sz);
+      g.fill(p.hue, 80 + e * 20, 100, alpha * 0.6);
+      g.rect(p.x + 0.5, p.y + 0.5, sz, sz);
+    }
+
+    // “도형으로 모이는 효과” (별 모양 실루엣 샘플)
+    // 에너지가 높을수록 중앙 별 윤곽에 점을 더 찍어 glow
+    if (playing && e > 0.05) {
+      const cx = mediaArt.w * 0.5;
+      const cy = mediaArt.h * 0.5;
+      const spikes = 5;
+      const r1 = 8 + e * 18;
+      const r2 = 4 + e * 9;
+
+      g.push();
+      g.translate(cx, cy);
+      g.rotate(frameCount * 0.002 * (i + 1));
+      for (let a = 0; a < TWO_PI; a += TWO_PI / (spikes * 2)) {
+        const r = (Math.floor(a / (TWO_PI / (spikes))) % 2 === 0) ? r1 : r2;
+        const x = cos(a) * r;
+        const y = sin(a) * r;
+        g.fill(220 + i*20, 90, 100, 60 + e*40);
+        g.rect(x, y, 1 + e*2, 1 + e*2);
+      }
+      g.pop();
+    }
+
+    // 화면에 크게 스케일링(픽셀 느낌 유지)
+    const dst = screenRects[i];
+    push();
+    translate(dst.x, dst.y);
+    // 버퍼 -> 캔버스 업스케일
+    image(mediaArt.buffers[i], 0, 0, dst.w, dst.h);
+    pop();
+
+    // 재생 중이 아니라면 서서히 페이드 아웃처럼 어둡게 유지(배경에서 처리)
+  }
 }
 
 // 무대 아바타들 그리기 (빈 슬롯 표시 - 6개 슬롯)
