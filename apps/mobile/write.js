@@ -1695,33 +1695,121 @@
         window.location.href = 'customizing.html';
     }
 
-    // 아바타 렌더링 (정적)
-    function renderAvatar() {
-        clear();
-        const size = 32; // 아바타 크기 32*32
-        const cx = width / 2, cy = height / 2;
+/* ====== [WRITE 전용] 아바타 스프라이트 카탈로그/오프셋/로더 ====== */
+// 파일명 규칙: fe.png, fe(2).png … / ma.png … / head.png …
+function makeVariants(prefix, count) {
+  return Array.from({ length: count }, (_, i) =>
+    i === 0 ? `assets/${prefix}.png` : `assets/${prefix}(${i + 1}).png`
+  );
+}
 
-        push();
-        translate(cx - size / 2, cy - size * 0.25); // 중앙에 배치 (확대 고려)
-        scale(3); // 아바타 확대
+// 스프라이트 목록 (필요 개수에 맞추어 조절)
+const Catalog = {
+  female: makeVariants('fe', 5),
+  male:   makeVariants('ma', 4),
+  heads:  makeVariants('head', 8),
+  wing:   'assets/wing.png'
+};
 
-        // 몸통
-        fill(avatar.skin); ellipse(size / 2, size * 0.25, size * 0.5);
-        rect(size * 0.2, size * 0.45, size * 0.6, size * 0.5, 10);
+// 기본 아바타(WRITE 초기 미리보기용)
+avatar = Object.assign({
+  gender: 'female',   // 'female' | 'male'
+  bodyIdx: 0,
+  headIdx: null,      // null=OFF
+  wingOn: false
+}, avatar || {});     // 기존 avatar 값과 병합
 
-        // 눈
-        fill(avatar.eyes);
-        ellipse(size * 0.4, size * 0.23, size * 0.06);
-        ellipse(size * 0.6, size * 0.23, size * 0.06);
+// 이미지 캐시
+const IMG = { female: [], male: [], heads: [], wing: null, _ok: false };
 
-        // 레이어드 이미지
-        if (avatar.clothes) loadImage(avatar.clothes, img => image(img, size * 0.2, size * 0.45, size * 0.6, size * 0.5));
-        if (avatar.hair) loadImage(avatar.hair, img => image(img, 0, 0, size, size));
-        if (avatar.shoes) loadImage(avatar.shoes, img => image(img, size * 0.25, size * 0.88, size * 0.5, size * 0.15));
-        if (avatar.gear) loadImage(avatar.gear, img => image(img, size * 0.65, size * 0.55, size * 0.3, size * 0.3));
+// 오프셋(커스터마이징 확대판과 유사)
+const OFFSETS = {
+  body: { s: 176 },
+  wing: {
+    female: { x: -6, y: -10, s: 190 },
+    male:   { x: -4, y:  -8, s: 190 }
+  },
+  head: {
+    female: { x:  0, y: -34, s: 176 },
+    male:   { x:  0, y: -30, s: 176 }
+  }
+};
+const BODY_VARIANT_OFFSET = {
+  female: { 0:{x:0,y:0}, 1:{x:2,y:-2}, 2:{x:1,y:0}, 3:{x:-1,y:0}, 4:{x:0,y:2} },
+  male:   { 0:{x:0,y:0}, 1:{x:1,y:-2}, 2:{x:2,y:0}, 3:{x:0,y:0} }
+};
 
-        pop();
-    }
+// p5의 preload 훅: 에셋 선로딩
+function preload() {
+  try {
+    IMG.female = Catalog.female.map(p => loadImage(p, ()=>{}, ()=>{}));
+    IMG.male   = Catalog.male.map(p => loadImage(p, ()=>{}, ()=>{}));
+    IMG.heads  = Catalog.heads.map(p => loadImage(p, ()=>{}, ()=>{}));
+    IMG.wing   = loadImage(Catalog.wing, ()=>{}, ()=>{});
+    IMG._ok = true;
+  } catch(e) {
+    console.warn('스프라이트 로드 실패, 기본 도형으로 폴백:', e);
+    IMG._ok = false;
+  }
+}
+window.preload = preload; // p5에 등록
+// WRITE 페이지 미리보기 렌더
+function renderAvatar() {
+  clear();
+  const cx = width / 2, cy = height / 2;
+
+  // 스프라이트가 로드되어 있고 바디 이미지가 있으면 스프라이트로 표시
+  const pool = (avatar.gender === 'male') ? IMG.male : IMG.female;
+  const bodyImg = pool?.[avatar.bodyIdx ?? 0];
+
+  if (IMG._ok && bodyImg) {
+    renderAvatarAt(cx, cy, 1.2); // 확대 스케일
+  } else {
+    // 🔁 폴백: 기존 기본 도형
+    const size = 32;
+    push();
+    translate(cx - size / 2, cy - size * 0.25);
+    scale(3);
+    fill(avatar.skin); ellipse(size / 2, size * 0.25, size * 0.5);
+    rect(size * 0.2, size * 0.45, size * 0.6, size * 0.5, 10);
+    fill(avatar.eyes);
+    ellipse(size * 0.4, size * 0.23, size * 0.06);
+    ellipse(size * 0.6, size * 0.23, size * 0.06);
+    pop();
+  }
+}
+
+// 스프라이트 렌더 헬퍼 (커스터마이징과 동일 원리)
+function renderAvatarAt(px, py, scaleFactor = 1.0) {
+  const bodyPool = avatar.gender === 'female' ? IMG.female : IMG.male;
+  const bodyImg  = bodyPool[avatar.bodyIdx ?? 0];
+  const baseS = OFFSETS.body.s;
+  const vOff  = BODY_VARIANT_OFFSET[avatar.gender]?.[avatar.bodyIdx ?? 0] ?? { x:0, y:0 };
+
+  push();
+  imageMode(CENTER);
+  translate(px, py);
+  scale(scaleFactor);
+
+  // WING (뒤)
+  if (avatar.wingOn && IMG.wing) {
+    const w = OFFSETS.wing[avatar.gender];
+    image(IMG.wing, w.x + vOff.x, w.y + vOff.y, w.s, w.s);
+  }
+
+  // BODY
+  if (bodyImg) {
+    image(bodyImg, vOff.x, vOff.y, baseS, baseS);
+  }
+
+  // HEAD (앞)
+  if (avatar.headIdx != null) {
+    const h = OFFSETS.head[avatar.gender];
+    const headImg = IMG.heads?.[avatar.headIdx];
+    if (headImg) image(headImg, h.x + vOff.x, h.y + vOff.y, h.s, h.s);
+  }
+  pop();
+}
 
     // p5 export (정적 렌더링만)
     window.setup = setup;

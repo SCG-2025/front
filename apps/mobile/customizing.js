@@ -1,4 +1,3 @@
-// customizing.js  – 모든 UI·로직을 p5.js DOM으로 생성 (ESM)
 import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js';
 import { getFirestore, addDoc, collection, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js';
 
@@ -68,21 +67,25 @@ import { getFirestore, addDoc, collection, serverTimestamp } from 'https://www.g
     IMG.wing   = loadImage(Catalog.wing);
   }
 
-  /* ---------- 오프셋(레이어 보정) ---------- */
+  /* ---------- 오프셋(레이어 보정) [크게 변경] ---------- */
+  // 전체 크기 업스케일: body/head/wing 기본 크기 확대
   const OFFSETS = {
-    body: { s: 96 }, // 공통 바디 크기
+    body: { s: 200 }, // ⬆️ 96 → 176
     wing: {
-      female: { x: -4, y: -6, s: 102 },
-      male:   { x: -2, y: -4, s: 102 }
+      // 몸이 커진 만큼 살짝 더 벌리고 위로
+      female: { x: -6, y: -10, s: 200 }, // ⬆️ 102 → 190
+      male:   { x: -4,  y: -8,  s: 200 }
     },
     head: {
-      female: { x:  0, y: -20, s: 96 },
-      male:   { x:  0, y: -18, s: 96 }
+      // 머리 위치를 조금 더 위로 보정 (몸이 커진 만큼)
+      female: { x: 0, y: -15, s: 200 }, // ⬆️ 96 → 176
+      male:   { x: 0, y: -16, s: 200 }
     }
   };
   const BODY_VARIANT_OFFSET = {
-    female: { 0:{x:0,y:0}, 1:{x:1,y:-1}, 2:{x:0,y:0}, 3:{x:-1,y:0}, 4:{x:0,y:1} },
-    male:   { 0:{x:0,y:0}, 1:{x:0,y:-1}, 2:{x:1,y:0}, 3:{x:0,y:0} }
+    // 바디별 미세 보정값은 유지/소폭 조정
+    female: { 0:{x:0,y:0}, 1:{x:2,y:-2}, 2:{x:1,y:0}, 3:{x:-1,y:0}, 4:{x:0,y:2} },
+    male:   { 0:{x:0,y:0}, 1:{x:1,y:-2}, 2:{x:2,y:0}, 3:{x:0,y:0} }
   };
 
   /* ---------- 유틸 ---------- */
@@ -125,20 +128,20 @@ import { getFirestore, addDoc, collection, serverTimestamp } from 'https://www.g
       }
     } catch {}
 
-    // 캔버스(아바타 영역)
-    const cv = createCanvas(windowWidth, windowHeight * 0.45);
+    // ⬆️ 캔버스 높이 확대: 화면의 60%
+    const cv = createCanvas(windowWidth, windowHeight * 0.6);
     cv.parent(createDiv('').id('avatar-wrap'));
 
     // UI 구성
     buildUI();
 
-    // 첫 렌더
+    // 첫 렌더 (기본 스케일 업)
     renderAvatar(); // center에 크게
     noLoop(); // 기본 draw 멈춤, 애니메이션 시작 시 loop()
   }
 
   function windowResized() {
-    resizeCanvas(windowWidth, windowHeight * 0.45);
+    resizeCanvas(windowWidth, windowHeight * 0.6); // ⬆️ 0.45 → 0.6
     renderAvatar();
   }
 
@@ -148,35 +151,35 @@ import { getFirestore, addDoc, collection, serverTimestamp } from 'https://www.g
     summaryDiv = createDiv('').id('summary')
       .style('position', 'absolute')
       .style('top', '10px').style('right', '10px')
-      .style('width', '42%').style('max-width', '220px')
-      .style('padding', '8px').style('border', '1px solid #ccc')
-      .style('background', '#fafafa').style('font-size', '0.9rem');
+      .style('width', '46%').style('max-width', '260px') // ⬆️
+      .style('padding', '10px').style('border', '1px solid #ccc')
+      .style('background', '#fafafa').style('font-size', '1.0rem'); // ⬆️
 
     /* 이전 버튼 */
     createButton('이전')
       .id('prev-btn')
       .style('position', 'absolute').style('top', '10px').style('left', '10px')
-      .style('padding', '8px 18px').style('border', 'none')
-      .style('border-radius', '6px')
+      .style('padding', '10px 20px').style('border', 'none')
+      .style('border-radius', '8px')
       .style('background', '#757575').style('color', '#fff')
-      .style('font-size', '0.9rem').style('cursor', 'pointer')
+      .style('font-size', '1rem').style('cursor', 'pointer')
       .mousePressed(() => { window.location.href = 'write.html'; });
 
     /* 완료 버튼 */
     createButton('완료')
       .id('complete-btn')
       .style('position', 'absolute').style('top', '10px').style('right', '10px')
-      .style('padding', '8px 18px').style('border', 'none')
-      .style('border-radius', '6px')
+      .style('padding', '10px 20px').style('border', 'none')
+      .style('border-radius', '8px')
       .style('background', '#4CAF50').style('color', '#fff')
-      .style('font-size', '0.9rem').style('cursor', 'pointer')
+      .style('font-size', '1rem').style('cursor', 'pointer')
       .mousePressed(showConfirmationModal);
 
     /* 음악 포지션 선택 바 (상단) - 숨김 */
     const positionBar = createDiv('').id('position-bar')
       .style('display', 'none')
       .style('flex-wrap', 'wrap')
-      .style('gap', '6px').style('padding', '8px');
+      .style('gap', '8px').style('padding', '10px');
 
     musicPositions.forEach(position => {
       createButton(position)
@@ -186,7 +189,7 @@ import { getFirestore, addDoc, collection, serverTimestamp } from 'https://www.g
           try { localStorage.setItem('musicPosition', selPosition); } catch {}
           fillInventory();
         })
-        .style('flex', '1').style('min-width', '70px');
+        .style('flex', '1').style('min-width', '90px'); // ⬆️
     });
 
     /* 하단 카테고리 버튼 바 */
@@ -203,7 +206,7 @@ import { getFirestore, addDoc, collection, serverTimestamp } from 'https://www.g
         .parent(bar)
         .mousePressed(() => { selCat = cat; fillInventory(); })
         .style('flex', '1')
-        .style('padding', '12px 0')
+        .style('padding', '14px 0') // ⬆️
         .style('border', 'none')
         .style('background', '#fff');
     });
@@ -211,19 +214,20 @@ import { getFirestore, addDoc, collection, serverTimestamp } from 'https://www.g
     /* 인벤토리(가로 스크롤) */
     inventoryDiv = createDiv('').id('inventory')
       .style('position', 'fixed')
-      .style('bottom', '60px').style('left', '0')
-      .style('width', '100%').style('height', '120px')
+      .style('bottom', '68px').style('left', '0') // ⬆️
+      .style('width', '100%').style('height', '140px') // ⬆️
       .style('overflow-x', 'auto').style('white-space', 'nowrap')
       .style('background', '#f5f5f5')
-      .style('padding', '8px')
-      .style('display', 'flex').style('gap', '8px');
+      .style('padding', '10px')
+      .style('display', 'flex').style('gap', '10px');
 
     fillInventory();      // 초기 로드
     refreshSummary();     // 초기 요약
   }
 
   function commonCard() {
-    return 'width:80px;height:80px;border:1px solid #aaa;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;';
+    // ⬆️ 80x80 → 110x110, 둥근 모서리/그림자 추가
+    return 'width:110px;height:110px;border:1px solid #aaa;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,0.08);display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;background:#fff;';
   }
 
   /* ---------- 인벤토리 채우기 ---------- */
@@ -234,6 +238,7 @@ import { getFirestore, addDoc, collection, serverTimestamp } from 'https://www.g
     if (selCat === '성별') {
       [{ label: '여성', gender: 'female' }, { label: '남성', gender: 'male' }].forEach(item => {
         const card = createDiv(item.label).parent(inventoryDiv).style(commonCard());
+        card.style('font-weight','600');
         card.mousePressed(() => {
           avatar.gender = item.gender;
           avatar.bodyIdx = 0; // 성별 바꾸면 바디 인덱스 리셋
@@ -253,7 +258,7 @@ import { getFirestore, addDoc, collection, serverTimestamp } from 'https://www.g
             avatar.bodyIdx = idx; saveAvatarToLocal();
             renderAvatar(); refreshSummary();
           });
-        createImg(imgPath, '').parent(card).style('width', '70%');
+        createImg(imgPath, '').parent(card).style('width', '90%'); // ⬆️ 70% → 90%
       });
       return;
     }
@@ -270,7 +275,7 @@ import { getFirestore, addDoc, collection, serverTimestamp } from 'https://www.g
             avatar.headIdx = idx; saveAvatarToLocal();
             renderAvatar(); refreshSummary();
           });
-        createImg(imgPath, '').parent(card).style('width', '70%');
+        createImg(imgPath, '').parent(card).style('width', '90%'); // ⬆️
       });
       return;
     }
@@ -285,7 +290,7 @@ import { getFirestore, addDoc, collection, serverTimestamp } from 'https://www.g
         avatar.wingOn = true; saveAvatarToLocal();
         renderAvatar(); refreshSummary();
       });
-      createImg(Catalog.wing, '').parent(on).style('width', '70%');
+      createImg(Catalog.wing, '').parent(on).style('width', '90%'); // ⬆️
       return;
     }
 
@@ -332,10 +337,10 @@ import { getFirestore, addDoc, collection, serverTimestamp } from 'https://www.g
   function renderAvatar() {
     clear();
     const cx = width / 2, cy = height / 2;
-    renderAvatarAt(cx, cy, 1.0);
+    renderAvatarAt(cx, cy, 1.2); // ⬆️ 기본 스케일 업 (1.0 → 1.2)
   }
 
-  // ✅ 애니메이션에서도 커스텀 아바타 그대로 사용
+  // 확대된 스프라이트 렌더
   function renderAvatarAt(px, py, scaleFactor = 1.0) {
     const bodyPool = avatar.gender === 'female' ? IMG.female : IMG.male;
     const bodyImg  = bodyPool[avatar.bodyIdx];
@@ -366,9 +371,6 @@ import { getFirestore, addDoc, collection, serverTimestamp } from 'https://www.g
     }
 
     pop();
-
-    // 참고: 스프라이트라서 피부/눈 색상은 이미지로 표현됩니다(틴트 미적용).
-    // 피부/눈 컬러는 요약/선택 상태로만 유지합니다.
   }
 
   /* ---------- 제출/애니메이션 ---------- */
@@ -421,7 +423,7 @@ import { getFirestore, addDoc, collection, serverTimestamp } from 'https://www.g
     const modalContent = createDiv('').parent(modal)
       .style('background','white').style('padding','20px')
       .style('border-radius','12px').style('text-align','center')
-      .style('max-width','300px').style('width','80%');
+      .style('max-width','320px').style('width','80%');
 
     createP('정말로 제출하시겠습니까?').parent(modalContent)
       .style('margin','0 0 20px 0').style('font-weight','bold');
@@ -430,24 +432,24 @@ import { getFirestore, addDoc, collection, serverTimestamp } from 'https://www.g
       .style('display','flex').style('gap','10px').style('justify-content','center');
 
     createButton('예').parent(btns)
-      .style('padding','8px 16px').style('border','none')
-      .style('border-radius','6px').style('background','#4CAF50')
+      .style('padding','10px 18px').style('border','none')
+      .style('border-radius','8px').style('background','#4CAF50')
       .style('color','white').style('cursor','pointer')
       .mousePressed(() => { modal.remove(); proceedWithSubmission(); });
 
     createButton('아니요').parent(btns)
-      .style('padding','8px 16px').style('border','none')
-      .style('border-radius','6px').style('background','#757575')
+      .style('padding','10px 18px').style('border','none')
+      .style('border-radius','8px').style('background','#757575')
       .style('color','white').style('cursor','pointer')
       .mousePressed(() => { modal.remove(); });
   }
 
   function startAnimation() {
     animationState = 'plane-in';
-    planeX = -80;             // 왼쪽 밖에서 시작
-    planeY = height * 0.55;
+    planeX = -120;             // ⬆️ 화면 커진 만큼 조정
+    planeY = height * 0.65;
     avatarX = width / 2;
-    avatarY = height / 2;     // 중앙에 위치
+    avatarY = height / 2;     
     jumpProgress = 0;
     loop(); // draw 루프 시작
   }
@@ -455,7 +457,6 @@ import { getFirestore, addDoc, collection, serverTimestamp } from 'https://www.g
   function draw() {
     clear();
 
-    // 기본 아바타/폼
     if (animationState === 'idle') {
       renderAvatar();
       return;
@@ -463,7 +464,7 @@ import { getFirestore, addDoc, collection, serverTimestamp } from 'https://www.g
 
     // 1. 비행기 등장
     if (animationState === 'plane-in') {
-      planeX += 8;
+      planeX += 10;
       avatarX = width / 2;
       avatarY = height / 2;
       if (planeX >= width / 2) {
@@ -476,22 +477,22 @@ import { getFirestore, addDoc, collection, serverTimestamp } from 'https://www.g
     if (animationState === 'jump') {
       jumpProgress += 0.05;
       const baseY = height / 2;
-      avatarY = baseY - sin(jumpProgress * Math.PI) * 40;
+      avatarY = baseY - sin(jumpProgress * Math.PI) * 50; // ⬆️ 점프 높이
       avatarX = width / 2;
       if (jumpProgress >= 1) {
         animationState = 'ride';
-        avatarY = planeY - 20; // 비행기 위에 탑승
-        avatarX = planeX + 30;
+        avatarY = planeY - 26; // ⬆️ 비행기 위 보정
+        avatarX = planeX + 42; // ⬆️
       }
     }
 
     // 3. 탑승 후 비행기+아바타 이동
     if (animationState === 'ride') {
-      planeX += 18; // 비행기 속도 증가
-      avatarX = planeX + 30;
-      planeY -= 2;
-      avatarY = planeY ;
-      if (planeX > width + 160) {
+      planeX += 20; // ⬆️ 속도
+      avatarX = planeX + 42;
+      planeY -= 2.2;
+      avatarY = planeY;
+      if (planeX > width + 220) {
         animationState = 'fly-out';
         setTimeout(() => {
           animationState = 'idle';
@@ -502,16 +503,16 @@ import { getFirestore, addDoc, collection, serverTimestamp } from 'https://www.g
       }
     }
 
-    // 비행기 그리기
+    // 비행기 그리기 (크게)
     push();
     fill('#eee'); stroke('#888');
     translate(planeX, planeY);
-    triangle(0, -40, 160, 0, 0, 40);
+    // ⬆️ 삼각형 크기 확대
+    triangle(0, -60, 220, 0, 0, 60);
     pop();
 
-    // ✅ 애니메이션 중에도 실제 커스텀 아바타 스프라이트로 렌더
-    // 너무 크게 보이지 않도록 축소 렌더(필요시 조절)
-    renderAvatarAt(avatarX, avatarY - 8, 0.9);
+    // 커스텀 아바타 렌더 (애니 중에는 살짝 축소)
+    renderAvatarAt(avatarX, avatarY - 8, 1.05); // ⬆️ 0.9 → 1.05
   }
 
   /* p5 필수 export */
@@ -520,3 +521,4 @@ import { getFirestore, addDoc, collection, serverTimestamp } from 'https://www.g
   window.windowResized = windowResized;
   window.draw = draw;
 })();
+
