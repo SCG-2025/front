@@ -87,15 +87,6 @@ let playingAvatars = new Set();   // 현재 재생 중 아바타 id
 let pendingAvatars = new Map();   // 다음 마디 대기 중 아바타
 let currentBpm = 197;             // 현재 BPM (검증용)
 
-// === 픽셀 미디어아트 전역 ===
-let mediaArt = {
-  enabled: true,
-  buffers: [],
-  w: 128, h: 64,        // 저해상도 버퍼(픽셀 느낌)
-  fft: null,
-  particles: [[], [], []],
-  t: 0
-};
 
 // 세트/테마 한글명 매핑
 const setNames = {
@@ -398,8 +389,7 @@ async function initTonePlayers() {
     }
   }
 }
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
+
 // === 픽셀 미디어아트 전역 ===
 let mediaArt = {
   enabled: true,
@@ -416,10 +406,7 @@ let mediaArt = {
 };
 mediaArt.activeShapes = [[], [], []]; // 각 요소는 {ownerId, musicType, shape, hue, x, y, baseSize}
 
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
+
 
 function setup() {
   createCanvas(2560, 1760);
@@ -570,13 +557,7 @@ onSnapshot(collection(db, 'memories'), (snapshot) => {
       avatar.nickname = docData.nickname;
       avatar.memory = docData.memory;
       avatar.category = docData.category;
-<<<<<<< HEAD
 
-      // 원본 커스터마이징 데이터를 별도 보관
-      avatar.customData = docData.avatar;
-
-      // 음악 포지션/세트 (있으면 적용)
-=======
       
       // ✨ 중요: 원본 아바타 커스터마이징 데이터를 별도 필드로 저장
       avatar.customData = docData.avatar; // 여기에 커스터마이징 정보가 있어야 함
@@ -606,7 +587,6 @@ onSnapshot(collection(db, 'memories'), (snapshot) => {
       }
       
       // 음악 포지션 정보 추가
->>>>>>> fc9b42c0aec4b7ab0a037f3b4f6815143baede90
       avatar.musicPosition = docData.musicPosition || '-';
       if (docData.musicSet) avatar.musicSet = docData.musicSet;
 
@@ -649,6 +629,8 @@ onSnapshot(collection(db, 'memories'), (snapshot) => {
     }
   });
 });
+// 필요 시 샘플 아바타 렌더(현재 미사용이면 빈 함수로 두세요)
+function drawSampleAvatars() { /* no-op */ }
 
 function draw() {
   background('#222');
@@ -786,8 +768,7 @@ function updateAvatar(avatar) {
 function drawAvatar(avatar) {
   if (avatar.state === 'plane-in') {
     push();
-    fill('#eee');
-    stroke('#888');
+    fill('#eee'); stroke('#888');
     translate(avatar.x, avatar.y);
     triangle(0, -40, 160, 0, 0, 40);
     pop();
@@ -796,36 +777,17 @@ function drawAvatar(avatar) {
 
   const currentY = avatar.y - avatar.dragElevation + avatar.dropBounce;
 
+  // 드래그 그림자
   if (avatar.isClicked && avatar.clickTimer > 6 && avatar.dragElevation > 0) {
     push();
-    fill(0, 0, 0, 50);
-    noStroke();
+    fill(0, 0, 0, 50); noStroke();
     ellipse(avatar.x, avatar.y + 32, 50 - avatar.dragElevation, 15 - avatar.dragElevation/3);
     pop();
   }
 
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-  // 아바타 그리기 - Stage 아바타와 사용자 아바타 구분
+  // === 본체 렌더 ===
   if (avatar.musicType) {
-    // Stage 아바타들 (musicType이 있는 경우) - avatar_sample.jpeg 사용
-=======
-=======
->>>>>>> Stashed changes
-<<<<<<< HEAD
-  // 커스터마이징 아바타면 이미지 합성 렌더, 아니면 기본 이미지
-  if (avatar.customData && typeof avatar.customData === 'object') {
-    drawCustomAvatar(avatar.x, currentY, avatar.customData, avatar.direction, showPopup && popupAvatar && popupAvatar.id === avatar.id);
-  } else {
-=======
-  // 아바타 그리기 - Stage 아바타와 사용자 아바타 구분
-  if (avatar.musicType) {
-    // Stage 아바타들 (musicType이 있는 경우) - avatar_sample.jpeg 사용
->>>>>>> fc9b42c0aec4b7ab0a037f3b4f6815143baede90
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
+    // Stage 아바타(샘플 이미지)
     push();
     translate(avatar.x, currentY);
     if (avatar.direction === -1) scale(-1, 1);
@@ -839,48 +801,42 @@ function drawAvatar(avatar) {
     }
     pop();
   } else if (avatar.customData && typeof avatar.customData === 'object') {
-    // 모바일에서 커스터마이징한 아바타 렌더링
-    drawCustomAvatar(avatar.x, currentY, avatar.customData, avatar.direction, showPopup && popupAvatar && popupAvatar.id === avatar.id);
+    // 커스텀 아바타
+    drawCustomAvatar(avatar.x, currentY, avatar.customData, avatar.direction,
+      showPopup && popupAvatar && popupAvatar.id === avatar.id);
   } else {
-    // customData가 없는 사용자 아바타의 경우 기본 아바타 데이터 생성 (ID 기반으로 고정)
+    // 커스텀 데이터가 없으면 ID 기반 기본 스킨 생성 후 렌더
     if (!avatar.defaultCustomData) {
-      // 아바타 ID를 기반으로 한 간단한 해시 생성
       let hash = 0;
       const idStr = avatar.id || 'default';
       for (let i = 0; i < idStr.length; i++) {
         hash = ((hash << 5) - hash + idStr.charCodeAt(i)) & 0xffffffff;
       }
-      
-      // 해시를 기반으로 고정된 랜덤값 생성
       const seedRandom = (seed) => {
         const x = Math.sin(seed) * 10000;
         return x - Math.floor(x);
       };
-      
       avatar.defaultCustomData = {
         gender: seedRandom(hash) > 0.5 ? 'female' : 'male',
-        bodyIdx: Math.floor(seedRandom(hash + 2) * 5), // 몸체만 설정
-        // headIdx, wingOn 등은 설정하지 않음 (기본 몸체만)
+        bodyIdx: Math.floor(seedRandom(hash + 2) * 5),
       };
     }
-    // 기본 아바타 데이터로 렌더링
-    drawCustomAvatar(avatar.x, currentY, avatar.defaultCustomData, avatar.direction, showPopup && popupAvatar && popupAvatar.id === avatar.id);
+    drawCustomAvatar(avatar.x, currentY, avatar.defaultCustomData, avatar.direction,
+      showPopup && popupAvatar && popupAvatar.id === avatar.id);
   }
 
   // 닉네임
   push();
   textAlign(CENTER, BOTTOM);
   textSize(12);
-  fill(255);
-  stroke(0);
-  strokeWeight(3);
+  fill(255); stroke(0); strokeWeight(3);
   text(avatar.nickname || '사용자', avatar.x, currentY - 37);
-  noStroke();
-  fill(255);
+  noStroke(); fill(255);
   text(avatar.nickname || '사용자', avatar.x, currentY - 37);
   pop();
 }
 
+// 커스터마이징 아바타 렌더
 // 커스터마이징 아바타 렌더
 function drawCustomAvatar(x, y, avatarData, direction, isHighlighted) {
   push();
@@ -888,35 +844,16 @@ function drawCustomAvatar(x, y, avatarData, direction, isHighlighted) {
   if (direction === -1) scale(-1, 1);
   imageMode(CENTER);
 
+  // 하이라이트
   if (isHighlighted) {
     fill(255, 215, 0, 150);
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-=======
-=======
->>>>>>> Stashed changes
-<<<<<<< HEAD
-    ellipse(0, 0, 90, 90); // 강조
+    ellipse(0, 0, 77, 77);
   }
 
-  const scale_factor = 0.5;
+  // 아바타 스케일 – 딱 한 번만 선언
+  const scale_factor = 0.418;
 
   // Wing (뒤)
-=======
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-    ellipse(0, 0, 77, 77); // 하이라이트 크기도 1.1배 증가 (70 * 1.1 = 77)
-  }
-  
-  const scale_factor = 0.418; // 크기를 1.1배 증가 (0.38 * 1.1 ≈ 0.418)
-  
-  // 이미지 모드를 CENTER로 설정
-  imageMode(CENTER);
-  
-  // Wing (뒤에 그리기)
->>>>>>> fc9b42c0aec4b7ab0a037f3b4f6815143baede90
   if (avatarData.wingOn && avatarAssets.wing) {
     const wingOffsetX = avatarData.gender === 'female' ? -2.3 : -1.5;
     const wingOffsetY = avatarData.gender === 'female' ? -4 : -3;
@@ -926,19 +863,17 @@ function drawCustomAvatar(x, y, avatarData, direction, isHighlighted) {
   // Body
   const bodyImages = avatarData.gender === 'female' ? avatarAssets.female : avatarAssets.male;
   if (bodyImages && bodyImages[avatarData.bodyIdx]) {
-    const bodyOffsetY = 0;
-    image(bodyImages[avatarData.bodyIdx], 0, bodyOffsetY, 176 * scale_factor, 176 * scale_factor);
+    image(bodyImages[avatarData.bodyIdx], 0, 0, 176 * scale_factor, 176 * scale_factor);
   } else {
-    // 폴백: 기본 원형 바디(거의 안 보일 일)
-    fill('#ffdbac');
-    noStroke();
+    // 폴백
+    fill('#ffdbac'); noStroke();
     ellipse(0, 5, 50 * scale_factor, 60 * scale_factor);
   }
 
   // Head (앞)
   if (avatarData.headIdx !== null && avatarData.headIdx !== undefined && avatarAssets.heads[avatarData.headIdx]) {
     const headOffsetX = 0;
-    const headOffsetY = avatarData.gender === 'female' ? -6 : -6;
+    const headOffsetY = -6;
     image(avatarAssets.heads[avatarData.headIdx], headOffsetX, headOffsetY, 176 * scale_factor, 176 * scale_factor);
   }
 
@@ -1005,228 +940,7 @@ function drawSpaces() {
   renderMediaArtScreens();
 }
 
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-=======
-=======
->>>>>>> Stashed changes
-// === 세트/테마별 픽셀 미디어아트 ===
-function renderMediaArtScreens() {
-  if (!mediaArt.enabled) return;
 
-  const themeId = getCurrentStageThemeId();
-  const playing = isPCRoomPlaying();
-
-  // 스펙트럼 추출
-  const spectrum = mediaArt.fft.analyze();
-  const bass = mediaArt.fft.getEnergy(20, 120) / 255;
-  const mid  = mediaArt.fft.getEnergy(250, 2000) / 255;
-  const high = mediaArt.fft.getEnergy(4000, 12000) / 255;
-
-  mediaArt.t += 0.01;
-
-  const screenRects = [
-    { x: 0,               y: 0, w: 2560/3, h: 480 },
-    { x: 2560/3,          y: 0, w: 2560/3, h: 480 },
-    { x: 2*(2560/3),      y: 0, w: 2560/3, h: 480 }
-  ];
-  const energies = [
-    { e: bass,  name: 'low'  },
-    { e: mid,   name: 'mid'  },
-    { e: high,  name: 'high' }
-  ];
-
-  // 테마별 색/패턴 프리셋 (간단 룰 기반)
-  const THEME_STYLE = {
-    // set1: 디지털 & 게임
-    pcroom_gaming:            { baseHue:[200,320], shape:'rect',  glow:true,  motif:'star' },
-    home_console_gaming:      { baseHue:[180,220], shape:'rect',  glow:true,  motif:'plus' },
-    social_media_memories:    { baseHue:[260,320], shape:'rect',  glow:true,  motif:'heart' },
-    photo_album:              { baseHue:[30,  60], shape:'rect',  glow:false, motif:'frame' },
-    // set2: 활동 & 에너지
-    sports_activities:        { baseHue:[10,  40], shape:'rect',  glow:false, motif:'stripe' },
-    festivals_events:         { baseHue:[0,  360], shape:'rect',  glow:true,  motif:'confetti' },
-    summer_memories:          { baseHue:[40,  80], shape:'rect',  glow:true,  motif:'sun' },
-    travel_places:            { baseHue:[160,220], shape:'rect',  glow:false, motif:'wave' },
-    // set3: 따뜻함 & 소통
-    family_warmth:            { baseHue:[10,  20], shape:'rect',  glow:false, motif:'round' },
-    school_memories:          { baseHue:[200,240], shape:'rect',  glow:false, motif:'grid' },
-    food_snacks:              { baseHue:[10,  40], shape:'rect',  glow:true,  motif:'dot' },
-    spring_memories:          { baseHue:[80, 120], shape:'rect',  glow:false, motif:'petal' },
-    // set4: 감성 & 문화
-    nostalgia_longing:        { baseHue:[300,340], shape:'rect',  glow:false, motif:'vignette' },
-    night_dawn:               { baseHue:[220,260], shape:'rect',  glow:true,  motif:'moon' },
-    entertainment_culture:    { baseHue:[260,300], shape:'rect',  glow:true,  motif:'film' },
-    karaoke_music:            { baseHue:[280,320], shape:'rect',  glow:true,  motif:'note' },
-    // set5: 창의성 & 계절감
-    art_creative:             { baseHue:[0,  360], shape:'rect',  glow:true,  motif:'splash' },
-    study_reading:            { baseHue:[30,  60], shape:'rect',  glow:false, motif:'page' },
-    autumn_memories:          { baseHue:[20,  40], shape:'rect',  glow:false, motif:'leaf' },
-    winter_memories:          { baseHue:[180,220], shape:'rect',  glow:true,  motif:'snow' },
-    // 폴백
-    verification:             { baseHue:[200,220], shape:'rect',  glow:false, motif:'grid' }
-  };
-  const style = THEME_STYLE[themeId] || THEME_STYLE.verification;
-
-  for (let i = 0; i < 3; i++) {
-    const g = mediaArt.buffers[i];
-    const e = energies[i].e;
-
-    // 배경 밝기 (재생 시 가산)
-    const baseB = playing ? 8 + e * 28 : 6;
-    g.background(0, 0, baseB, 100);
-
-    // 파티클(픽셀) 업데이트 (Perlin + 에너지 반응)
-    for (const p of mediaArt.particles[i]) {
-      const nx = noise(p.nseed, mediaArt.t) - 0.5;
-      const ny = noise(p.nseed + 100, mediaArt.t) - 0.5;
-      const speedMul = 0.4 + e * 2.0;
-      p.x += (p.vx + nx * 0.7) * speedMul;
-      p.y += (p.vy + ny * 0.7) * speedMul;
-
-      if (p.x < 0) p.x += mediaArt.w;
-      if (p.x >= mediaArt.w) p.x -= mediaArt.w;
-      if (p.y < 0) p.y += mediaArt.h;
-      if (p.y >= mediaArt.h) p.y -= mediaArt.h;
-
-      // 테마 hue 대역 적용
-      const hueRange = style.baseHue;
-      const baseHue = map(i, 0, 2, hueRange[0], hueRange[1]);
-      const hueJitter = (noise(p.nseed + mediaArt.t) - 0.5) * 30;
-      const hue = (baseHue + hueJitter + 360) % 360;
-
-      const sz = p.size * (1 + e * 2.0);
-      const alpha = playing ? 60 + e * 40 : 25;
-
-      // 네온 글로우(선택)
-      if (style.glow) {
-        g.fill(hue, 80 + e * 20, 70 + e * 30, alpha);
-        g.rect(p.x, p.y, sz, sz);
-        g.fill(hue, 80 + e * 20, 100, alpha * 0.6);
-        g.rect(p.x + 0.5, p.y + 0.5, sz, sz);
-      } else {
-        g.fill(hue, 60 + e * 10, 70 + e * 20, alpha);
-        g.rect(p.x, p.y, sz, sz);
-      }
-    }
-
-    // 테마 모티프(간단 점묘) – 에너지가 높을수록 강조
-    if (playing && e > 0.05) {
-      g.push();
-      const cx = mediaArt.w * 0.5;
-      const cy = mediaArt.h * 0.5;
-      g.translate(cx, cy);
-      g.rotate(frameCount * 0.002 * (i + 1));
-
-      const motifCount = 28 + Math.floor(e * 60);
-      for (let k = 0; k < motifCount; k++) {
-        const ang = k * (TWO_PI / motifCount);
-        const rad = 6 + e * 22 + noise(i, k, mediaArt.t) * 10;
-        const mx = cos(ang) * rad;
-        const my = sin(ang) * rad;
-
-        // motif에 따른 밝기/모양 분기(간단화)
-        let h = map(i, 0, 2, style.baseHue[0], style.baseHue[1]);
-        let s = 90, b = 100, a = 40 + e * 50;
-        if (style.motif === 'moon') { b = 95; }
-        if (style.motif === 'leaf') { h = 30; s = 70; }
-        if (style.motif === 'snow') { h = 200; s = 10; b = 100; }
-        if (style.motif === 'sun')  { h = 50; s = 90; b = 100; }
-
-        g.fill(h, s, b, a);
-        const px = 1 + e * 2;
-        g.rect(mx, my, px, px);
-      }
-      g.pop();
-    }
-
-    // 업스케일 출력
-    const dst = screenRects[i];
-    push();
-    translate(dst.x, dst.y);
-    image(mediaArt.buffers[i], 0, 0, dst.w, dst.h);
-    pop();
-  }
-}
-
-function initMediaArt(w, h) {
-  mediaArt.w = w;
-  mediaArt.h = h;
-  mediaArt.t = 0;
-  mediaArt.buffers = [createGraphics(w, h), createGraphics(w, h), createGraphics(w, h)];
-  mediaArt.buffers.forEach(g => { g.colorMode(HSB,360,100,100,100); g.rectMode(CENTER); });
-
-  const total = 600; // 전체 파티클 수
-  mediaArt.particles = [[], [], []];
-
-
-}
-// (선택) 명시 매핑. 없으면 해시로 안정적으로 결정됩니다.
-const MUSIC_TO_SHAPE = {
-  'Music Sample_Lead.mp3':  'star',
-  'Music Sample_Drum.mp3':  'square',
-  'Music Sample_Bass.mp3':  'diamond',
-  'Music Sample_Others.mp3':'circle',
-  'set1_pcroom_gaming_bass.wav':  'pentagon',
-  'set1_pcroom_gaming_chord.wav': 'triangle',
-  'set1_pcroom_gaming_drum.wav':  'square',
-  'set1_pcroom_gaming_fx.wav':    'diamond',
-  'set1_pcroom_gaming_lead.wav':  'star',
-  'set1_pcroom_gaming_sub.wav':   'circle',
-};
-
-// 안정적인 hue/shape 생성 (musicType 기준)
-function stableHash(s) {
-  let h = 2166136261>>>0;
-  for (let i = 0; i < s.length; i++) {
-    h ^= s.charCodeAt(i);
-    h += (h<<1) + (h<<4) + (h<<7) + (h<<8) + (h<<24);
-  }
-  return h>>>0;
-}
-
-function pickShapeForMusic(musicType) {
-  if (MUSIC_TO_SHAPE[musicType]) return MUSIC_TO_SHAPE[musicType];
-  const shapes = ['star','diamond','triangle','square','circle','pentagon'];
-  const idx = stableHash(musicType) % shapes.length;
-  return shapes[idx];
-}
-
-function pickHueForMusic(musicType) {
-  // 0~360 범위의 안정적 hue
-  return (stableHash('hue:'+musicType) % 360);
-}
-
-// 곡 시작 시, 화면에 찍을 픽셀 도형 샘플들을 생성(정적, 랜덤 위치)
-function addSongShapes(avatar, count = 48) {
-  // 이미 같은 소유자(ownerId) 도형이 있으면 중복 방지
-  removeSongShapes(avatar);
-
-  const shape = pickShapeForMusic(avatar.musicType);
-  const hue   = pickHueForMusic(avatar.musicType);
-
-  // 3개 스크린 영역(픽셀 버퍼 좌표계) 안에서 균등 분배
-  for (let k = 0; k < count; k++) {
-    const screenIdx = k % 3;
-    const x = Math.random() * mediaArt.w;
-    const y = Math.random() * mediaArt.h;
-    const baseSize = 1 + Math.random() * 2; // 픽셀 느낌 유지용 소형
-
-    mediaArt.activeShapes[screenIdx].push({
-      ownerId: avatar.id,
-      musicType: avatar.musicType,
-      shape, hue, x, y, baseSize
-    });
-  }
-}
-
-// 곡 정지/리셋 시 해당 곡의 도형 제거
-function removeSongShapes(avatarOrId) {
-  const ownerId = typeof avatarOrId === 'string' ? avatarOrId : avatarOrId.id;
-  for (let i = 0; i < 3; i++) {
-    mediaArt.activeShapes[i] = mediaArt.activeShapes[i].filter(s => s.ownerId !== ownerId);
-  }
-}
 
 function renderMediaArtScreens() {
   if (!mediaArt.enabled) return;
@@ -1601,24 +1315,10 @@ function drawPopupAvatar(canvas, avatarData) {
 
   const centerX = canvas.width / 2;
   const centerY = canvas.height / 2;
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-=======
-=======
->>>>>>> Stashed changes
-<<<<<<< HEAD
-  const scale = 0.6;
 
-  // Wing (뒤)
-=======
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
   const scale = 1.0; // 팝업용 스케일 (더 크게)
   
   // Wing (뒤에 그리기)
->>>>>>> fc9b42c0aec4b7ab0a037f3b4f6815143baede90
   if (avatarData.wingOn && avatarAssets.wing && avatarAssets.wing.width > 0) {
     const wingOffsetX = avatarData.gender === 'female' ? -6 : -4;
     const wingOffsetY = avatarData.gender === 'female' ? -10 : -8;
@@ -1656,33 +1356,7 @@ function showPopupFor(avatar) {
   showPopup = true;
 
   // 팝업 아바타 이미지 업데이트
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-=======
-=======
->>>>>>> Stashed changes
-<<<<<<< HEAD
-  const popupCanvas = document.getElementById('popupAvatarCanvas');
-  if (popupCanvas) {
-    if (avatar.customData && typeof avatar.customData === 'object') {
-      drawPopupAvatar(popupCanvas, avatar.customData);
-    } else {
-      const ctx = popupCanvas.getContext('2d');
-      ctx.clearRect(0, 0, popupCanvas.width, popupCanvas.height);
-      const img = new Image();
-      img.onload = function() {
-        const size = Math.min(popupCanvas.width, popupCanvas.height) * 0.8;
-        const x = (popupCanvas.width - size) / 2;
-        const y = (popupCanvas.height - size) / 2;
-        ctx.drawImage(img, x, y, size, size);
-      };
-      img.src = 'avatar_sample.jpeg';
-    }
-=======
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
+
   const popupImage = document.getElementById('popupAvatarImage');
   if (avatar.customData && typeof avatar.customData === 'object') {
     // 커스터마이징된 아바타를 임시 캔버스에 그린 후 이미지로 변환
@@ -1696,14 +1370,7 @@ function showPopupFor(avatar) {
   } else {
     // 기본 아바타 이미지 사용
     popupImage.src = 'avatar_sample.jpeg';
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-=======
->>>>>>> fc9b42c0aec4b7ab0a037f3b4f6815143baede90
->>>>>>> Stashed changes
-=======
->>>>>>> fc9b42c0aec4b7ab0a037f3b4f6815143baede90
->>>>>>> Stashed changes
+
   }
 
   document.getElementById('popupNickname').textContent = avatar.nickname || '사용자';
@@ -1830,15 +1497,10 @@ function resetStage() {
       resetBtn.textContent = '🎭 무대 리셋 (오류)';
     }
   }
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
+
   // 모든 도형 비우기
 mediaArt.activeShapes = [[], [], []]; // ✅
 
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
   console.log('🎭 === 무대 리셋 종료 ===');
 }
 
@@ -2623,8 +2285,4 @@ function startPCRoomMusic(avatar) {
 window.playPCRoomMusicSystem = playPCRoomMusicSystem;
 window.startPCRoomMusic = startPCRoomMusic;
 window.startMusicForAvatar = startMusicForAvatar;
-
-// ==========================================
-// 음악 세트 호환성 검사 시스템
-// ==========================================
 
