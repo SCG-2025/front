@@ -1808,35 +1808,23 @@ function startMasterClockFromPosition(startPosition) {
 
 // 현재 재생 위치에 맞춰 다음 마디에 동기화
 function scheduleAvatarForCurrentPosition(avatar, sound, currentPosition) {
-  // 현재 위치에서 다음 마디 계산
-  const beatsPerSecond = masterClock.bpm / 60.0; // 110 BPM ≈ 1.83 beats/second
-  const secondsPerMeasure = masterClock.beatsPerMeasure / beatsPerSecond; // 4 beats / 1.83 ≈ 2.18 seconds per measure
-
-  // 현재 위치가 몇 번째 마디의 몇 번째 박자인지 계산
+  // 두 마디 뒤 동기화
+  const beatsPerSecond = masterClock.bpm / 60.0;
+  const secondsPerMeasure = masterClock.beatsPerMeasure / beatsPerSecond;
   const currentMeasure = Math.floor(currentPosition / secondsPerMeasure);
-  const nextMeasureStart = (currentMeasure + 1) * secondsPerMeasure;
-
-  // 다음 마디까지 실제 기다릴 시간 계산
-  const waitTime = nextMeasureStart - currentPosition;
+  const targetMeasure = currentMeasure + 2;
+  const targetMeasureStart = targetMeasure * secondsPerMeasure;
+  const waitTime = targetMeasureStart - currentPosition;
   const currentTime = millis() / 1000.0;
 
   avatar.isPending = true;
   avatar.pendingStartTime = currentTime + waitTime;
-  // 첫 음원의 현재 위치(루프 기준)와 동일하게 맞춰서 재생
-  let syncPosition = 0;
-  if (playingAvatars.size > 0) {
-    // 첫번째 재생중인 아바타의 현재 위치를 기준으로 동기화
-    syncPosition = getCurrentPlaybackPosition();
-    // 음원 길이로 루프 offset 맞추기
-    if (sound && sound.duration) {
-      syncPosition = syncPosition % sound.duration();
-    }
-  }
-  avatar.playbackStartPosition = syncPosition;
+  // 두 번째 이후 아바타는 두 마디 뒤에 (대기시간 + 현재 재생 위치)에서 재생
+  avatar.playbackStartPosition = waitTime + currentPosition;
   pendingAvatars.set(avatar.id, { avatar, sound });
-  console.log(`⏰ ${avatar.nickname} 동기화 스케줄링:`);
+  console.log(`⏰ ${avatar.nickname} 동기화 스케줄링 (두 마디 대기):`);
   console.log(`   현재 위치: ${currentPosition.toFixed(2)}초`);
-  console.log(`   다음 마디 시작: ${nextMeasureStart.toFixed(2)}초`);
+  console.log(`   두 마디 뒤 시작: ${targetMeasureStart.toFixed(2)}초`);
   console.log(`   동기화 재생 위치: ${syncPosition.toFixed(2)}초`);
   console.log(`   대기 시간: ${waitTime.toFixed(2)}초`);
   console.log(`   실행 예정 시각: ${avatar.pendingStartTime.toFixed(2)}초`);
