@@ -1406,40 +1406,10 @@ function mouseReleased() {
         }
 
         const nearestSlot = findNearestEmptyStageSlot(selectedAvatar.x, selectedAvatar.y);
-        // 중복 포지션 체크: 같은 세트+포지션이 이미 무대에 있으면 배치 불가
-        // 세트 넘버링 추출 (예: set3)
-        let avatarSetNum = null;
-        if (selectedAvatar.musicType) {
-          const match = selectedAvatar.musicType.match(/set\d+/);
-          if (match) avatarSetNum = match[0];
-        }
-        // 포지션 추출 (예: lead, bass 등)
-        const positionList = ['bass','drum','lead','sub','chord','fx'];
-        let avatarPosition = 'bass';
-        for (const pos of positionList) {
-          if (selectedAvatar.musicType && selectedAvatar.musicType.toLowerCase().includes(pos)) {
-            avatarPosition = pos;
-            break;
-          }
-        }
-        // 중복 체크: 같은 set# + 같은 포지션이 이미 무대에 있으면 불가
-        const duplicate = stageAvatars.some(a => {
-          let aSetNum = null;
-          if (a.musicType) {
-            const m = a.musicType.match(/set\d+/);
-            if (m) aSetNum = m[0];
-          }
-          let aPosition = 'bass';
-          for (const pos of positionList) {
-            if (a.musicType && a.musicType.toLowerCase().includes(pos)) {
-              aPosition = pos;
-              break;
-            }
-          }
-          return a.isOnStage && aSetNum === avatarSetNum && aPosition === avatarPosition;
-        });
-        if (duplicate) {
-          console.log(`🚫 중복 포지션: ${avatarSetNum} 세트의 ${avatarPosition}는 이미 무대에 있습니다.`);
+        // 음악 포지션 중복 체크: 무대에 같은 musicPosition이 이미 있으면 불가
+        const duplicatePosition = [...stageAvatars, ...avatars].some(a => a.isOnStage && a.musicPosition === selectedAvatar.musicPosition);
+        if (duplicatePosition) {
+          console.log(`🚫 중복 포지션: ${selectedAvatar.musicPosition}는 이미 무대에 있습니다.`);
           selectedAvatar.y = 850;
           selectedAvatar.isOnStage = false;
           selectedAvatar.currentAction = 'idle';
