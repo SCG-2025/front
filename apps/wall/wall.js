@@ -17,11 +17,16 @@ const q = query(
 
 onSnapshot(q, (snap) => {
   wall.innerHTML = "";           // 새 스냅샷마다 초기화
-  snap.forEach((doc) => addCard(doc.data()));
+  snap.forEach((doc) => {
+    const data = doc.data();
+    console.log('[wall] 카드 데이터:', data);
+    addCard(data);
+  });
 });
 
 /* ---------- 카드 생성 ---------- */
 function addCard(data) {
+  console.log('[addCard] 카드 데이터:', data);
   // ① 카드 껍데기
   const card = document.createElement("div");
   card.className = "card";
@@ -42,6 +47,7 @@ function addCard(data) {
   const info = document.createElement("div");
   info.innerHTML = `
     <strong>${data.nickname}</strong> · <span>${data.category}</span><br>
+    <span style="color:#4CAF50;font-weight:bold">조합법: ${data.selectedRecipe?.name || '-'}</span><br>
     <pre style="white-space:pre-wrap;margin:4px 0 0">${data.memory}</pre>
   `;
   card.appendChild(info);

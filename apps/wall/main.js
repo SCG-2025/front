@@ -670,6 +670,7 @@ function isPCRoomPlaying() {
 
 // Firebase 데이터 처리
 onSnapshot(collection(db, 'memories'), (snapshot) => {
+  console.log('[main.js] onSnapshot fired, docs:', snapshot.size);
   snapshot.docChanges().forEach(change => {
     if (change.type === 'added') {
       const docData = change.doc.data();
@@ -679,6 +680,15 @@ onSnapshot(collection(db, 'memories'), (snapshot) => {
       avatar.nickname = docData.nickname;
       avatar.memory = docData.memory;
       avatar.category = docData.category;
+
+      // 조합법(레시피) 정보 콘솔 출력
+      console.log('[main.js] 카드 데이터:', {
+        nickname: avatar.nickname,
+        selectedRecipe: docData.selectedRecipe,
+        setName: docData.setName,
+        memory: avatar.memory,
+        category: avatar.category
+      });
 
       
       // ✨ 중요: 원본 아바타 커스터마이징 데이터를 별도 필드로 저장

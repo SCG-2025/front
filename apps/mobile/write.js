@@ -37,7 +37,10 @@ const defaultAvatar = {
   eyes: '#000'
 };
 // 페이지 진입 시 기존 아바타 불러오거나 기본값 사용
-const existingAvatar = JSON.parse(localStorage.getItem('avatarData') || 'null') || defaultAvatar;
+let savedAvatar = JSON.parse(localStorage.getItem('avatarData') || 'null');
+const existingAvatar = savedAvatar ? { ...defaultAvatar, ...savedAvatar } : { ...defaultAvatar };
+// avatar에도 동일하게 반영
+Object.assign(avatar, existingAvatar);
 
 // ===============================================
 // 5개 음악 세트 시스템 정의
@@ -898,7 +901,18 @@ function buildForm() {
   genderBar.style.cssText = `display:flex;gap:12px;margin-bottom:20px;`;
   form.appendChild(genderBar);
 
+  // localStorage에서 이전 값 불러오기
+  let savedNickname = localStorage.getItem('nickname') || '';
+  let savedMemory = localStorage.getItem('memory') || '';
+  let savedMusicPosition = localStorage.getItem('musicPosition') || '리드 멜로디';
   let selectedGender = existingAvatar.gender || 'female';
+  if (localStorage.getItem('avatarData')) {
+    try {
+      const savedAvatar = JSON.parse(localStorage.getItem('avatarData'));
+      if (savedAvatar && savedAvatar.gender) selectedGender = savedAvatar.gender;
+      Object.assign(avatar, savedAvatar);
+    } catch {}
+  }
 
   [
     { label: '여성', value: 'female' },
@@ -931,6 +945,7 @@ function buildForm() {
       avatar.gender = selectedGender;
       avatar.bodyIdx = 0;
       avatar.headIdx = null;
+      localStorage.setItem('avatarData', JSON.stringify(avatar));
       renderAvatar();
     });
     genderBar.appendChild(button);
@@ -943,10 +958,14 @@ function buildForm() {
 
   nicknameInput = document.createElement('input');
   nicknameInput.type = 'text';
+  nicknameInput.value = savedNickname;
   nicknameInput.style.cssText = `
     width: 100%; padding: 12px; margin-bottom: 20px;
     border: 2px solid #e0e0e0; border-radius: 8px; font-size: 16px; box-sizing: border-box;
   `;
+  nicknameInput.addEventListener('input', () => {
+    localStorage.setItem('nickname', nicknameInput.value);
+  });
   form.appendChild(nicknameInput);
 
   const positionLabel = document.createElement('span');
@@ -959,7 +978,7 @@ function buildForm() {
   form.appendChild(positionBar);
 
   const musicPositions = ['리드 멜로디', '서브 멜로디', '코드', '베이스', '드럼/퍼커션', '효과음/FX'];
-  let selectedPosition = '리드 멜로디';
+  let selectedPosition = savedMusicPosition;
 
   musicPositions.forEach(position => {
     const button = document.createElement('button');
@@ -986,6 +1005,7 @@ function buildForm() {
       button.style.borderColor = '#2196F3';
       selectedPosition = position;
       window.selectedPosition = position;
+      localStorage.setItem('musicPosition', position);
     });
     positionBar.appendChild(button);
   });
@@ -997,10 +1017,14 @@ function buildForm() {
   form.appendChild(memoryLabel);
 
   memoryInput = document.createElement('textarea');
+  memoryInput.value = savedMemory;
   memoryInput.style.cssText = `
     width:100%; height:120px; padding:12px; border:2px solid #e0e0e0; border-radius:8px; font-size:16px;
     resize:vertical; font-family:inherit; box-sizing:border-box;
   `;
+  memoryInput.addEventListener('input', () => {
+    localStorage.setItem('memory', memoryInput.value);
+  });
   form.appendChild(memoryInput);
 
   const doneButton = document.createElement('button');
@@ -1030,11 +1054,8 @@ async function submitForm() {
     const keywords = await extractKeywords(memoryText);
     if (loading) loading.style.display = 'none';
 
-    if (keywords.length > 0) {
-      await showRecipeModal(keywords, memoryText);
-    } else {
-      proceedToCustomizing();
-    }
+  // 키워드가 없어도 추천 모달을 항상 띄움
+  await showRecipeModal(keywords, memoryText);
   } catch (e) {
     console.error('키워드 추출 오류:', e);
     if (loading) loading.style.display = 'none';
@@ -1143,8 +1164,8 @@ const OFFSETS = {
     male: { x: -4, y: -8, s: 190 }
   },
   head: {
-    female: { x: 0, y: -34, s: 176 },
-    male: { x: 0, y: -30, s: 176 }
+    female: { x: 0, y: -15, s: 176 },
+    male: { x: 0, y: -16, s: 176 }
   }
 };
 const BODY_VARIANT_OFFSET = {
