@@ -269,35 +269,23 @@ function drawWarningMessage() {
 // 현재 무대 아바타들의 실제 재생 위치 추적
 function getCurrentPlaybackPosition() {
   if (playingAvatars.size === 0) return 0;
-
+  // 첫번째로 재생 중인 아바타의 currentTime 반환
   for (const avatarId of playingAvatars) {
     const avatar = [...stageAvatars].find(a => a.id === avatarId);
     if (avatar && avatar.musicType) {
-      const tonePlayer = tonePlayers[avatar.musicType];
       const p5Sound = musicSamples[avatar.musicType];
-
       if (p5Sound && p5Sound.isPlaying()) {
-        const currentPos = p5Sound.currentTime();
-        return currentPos;
+        return p5Sound.currentTime();
       }
-      if (tonePlayer && tonePlayer.state === 'started') {
-        try {
-          const elapsed = Tone.now() - Tone.Transport.seconds;
-          const loopDuration = tonePlayer.buffer ? tonePlayer.buffer.duration : 30;
-          const currentPos = elapsed % loopDuration;
-          return Math.max(0, currentPos);
-        } catch (error) {
-          console.warn('⚠️ Tone.js 위치 계산 오류:', error);
-        }
+      const tonePlayer = tonePlayers[avatar.musicType];
+      if (tonePlayer && tonePlayer.state === 'started' && tonePlayer.buffer) {
+        // Tone.js 위치 계산
+        return tonePlayer.buffer.duration ? (Tone.now() % tonePlayer.buffer.duration) : 0;
       }
     }
+    break; // 첫번째 아바타만
   }
-
-  if (masterClock.isRunning) {
-    const currentTime = millis() / 1000.0;
-    const elapsed = currentTime - masterClock.startTime;
-    return Math.max(0, elapsed);
-  }
+  return 0;
   return 0;
 }
 
@@ -1125,7 +1113,7 @@ function mousePressed() {
     return;
   }
 
-  console.log('✅ 캔버스 클릭으로 판정, 계속 진행');
+  console.log('✅ 캔버스 클릭으로 판별, 계속 진행');
 
   // 오디오 컨텍스트 활성화
   if (getAudioContext().state === 'suspended') {
@@ -1794,7 +1782,8 @@ function playAvatarMusic(avatar) {
   //   // 사용자에게 BPM 충돌 경고 표시하거나 별도 그룹으로 처리
   // }
   
-  if (playingAvatars.size === 0) {
+  // 마스터 클럭이 이미 실행 중이면 재시작하지 않음
+  if (!masterClock.isRunning && playingAvatars.size === 0) {
     // 정말 아무것도 재생 중이 아닐 때만 즉시 시작
     console.log(`🎯 ${avatar.nickname} - 첫 번째 아바타, 즉시 시작`);
     startMasterClockFromPosition(0);
@@ -1822,25 +1811,33 @@ function scheduleAvatarForCurrentPosition(avatar, sound, currentPosition) {
   // 현재 위치에서 다음 마디 계산
   const beatsPerSecond = masterClock.bpm / 60.0; // 110 BPM ≈ 1.83 beats/second
   const secondsPerMeasure = masterClock.beatsPerMeasure / beatsPerSecond; // 4 beats / 1.83 ≈ 2.18 seconds per measure
-  
+
   // 현재 위치가 몇 번째 마디의 몇 번째 박자인지 계산
   const currentMeasure = Math.floor(currentPosition / secondsPerMeasure);
   const nextMeasureStart = (currentMeasure + 1) * secondsPerMeasure;
-  
+
   // 다음 마디까지 실제 기다릴 시간 계산
   const waitTime = nextMeasureStart - currentPosition;
   const currentTime = millis() / 1000.0;
-  
+
   avatar.isPending = true;
   avatar.pendingStartTime = currentTime + waitTime;
-  avatar.playbackStartPosition = nextMeasureStart;
-  
+  // 첫 음원의 현재 위치(루프 기준)와 동일하게 맞춰서 재생
+  let syncPosition = 0;
+  if (playingAvatars.size > 0) {
+    // 첫번째 재생중인 아바타의 현재 위치를 기준으로 동기화
+    syncPosition = getCurrentPlaybackPosition();
+    // 음원 길이로 루프 offset 맞추기
+    if (sound && sound.duration) {
+      syncPosition = syncPosition % sound.duration();
+    }
+  }
+  avatar.playbackStartPosition = syncPosition;
   pendingAvatars.set(avatar.id, { avatar, sound });
-  
   console.log(`⏰ ${avatar.nickname} 동기화 스케줄링:`);
   console.log(`   현재 위치: ${currentPosition.toFixed(2)}초`);
-  console.log(`   현재 마디: ${currentMeasure + 1}마디`);
   console.log(`   다음 마디 시작: ${nextMeasureStart.toFixed(2)}초`);
+  console.log(`   동기화 재생 위치: ${syncPosition.toFixed(2)}초`);
   console.log(`   대기 시간: ${waitTime.toFixed(2)}초`);
   console.log(`   실행 예정 시각: ${avatar.pendingStartTime.toFixed(2)}초`);
 }
@@ -1915,16 +1912,19 @@ function updateNextMeasureStart() {
 function scheduleAvatarForNextMeasure(avatar, sound) {
   avatar.isPending = true;
   avatar.pendingStartTime = masterClock.nextMeasureStart;
-  
-  // 중요: 다음 마디 시작점에서 음원의 어느 지점부터 재생할지 계산
-  const playbackStartPosition = masterClock.nextMeasureStart - masterClock.startTime;
-  avatar.playbackStartPosition = playbackStartPosition;
-  
+  // 첫 음원의 현재 위치(루프 기준)와 동일하게 맞춰서 재생
+  let syncPosition = 0;
+  if (playingAvatars.size > 0) {
+    syncPosition = getCurrentPlaybackPosition();
+    if (sound && sound.duration) {
+      syncPosition = syncPosition % sound.duration();
+    }
+  }
+  avatar.playbackStartPosition = syncPosition;
   pendingAvatars.set(avatar.id, { avatar, sound });
-  
   console.log(`⏰ ${avatar.nickname} 다음 마디 대기 중`);
   console.log(`   시작 예정 시간: ${avatar.pendingStartTime.toFixed(2)}초`);
-  console.log(`   재생 시작 위치: ${playbackStartPosition.toFixed(2)}초 지점부터`);
+  console.log(`   동기화 재생 위치: ${syncPosition.toFixed(2)}초 지점부터`);
 }
 
 // 대기 중인 아바타들 확인 및 재생
@@ -2001,12 +2001,12 @@ async function playFromPosition(avatar, sound, startPosition) {
         sound.setLoop(true);
         console.log(`🎵 ${avatar.nickname} p5.sound 재생 시작 (${startPosition.toFixed(2)}초 지점부터)`);
       }
-       addSongShapes(avatar); 
+  // addSongShapes(avatar); // ReferenceError 방지: 임시 주석 처리
     } catch (error) {
       console.warn('⚠️ p5.sound 위치 재생 실패, 처음부터 재생:', error);
       sound.loop();
       console.log(`🎵 ${avatar.nickname} p5.sound 재생 시작 (처음부터 - 폴백)`);
-      addSongShapes(avatar); //
+  // addSongShapes(avatar); // ReferenceError 방지: 임시 주석 처리
     }
     
     playingAvatars.add(avatar.id);
@@ -2290,9 +2290,4 @@ function startPCRoomMusic(avatar) {
     console.warn(`⚠️ ${avatar.nickname}의 음원 파일을 찾을 수 없음: ${avatar.musicType}`);
   }
 }
-
-// 전역 함수로 노출
-window.playPCRoomMusicSystem = playPCRoomMusicSystem;
-window.startPCRoomMusic = startPCRoomMusic;
-window.startMusicForAvatar = startMusicForAvatar;
 
