@@ -1,3 +1,34 @@
+// musicSet을 세트명으로 매핑하는 함수
+function getSetGroupName(musicSet) {
+  const setMap = {
+    // set1
+    pcroom_gaming: 'set1',
+    console_gaming: 'set1',
+    avatar_family: 'set1',
+    avatar_friend: 'set1',
+    // set2
+    sports_activities: 'set2',
+    festivals_events: 'set2',
+    summer_memories: 'set2',
+    travel_places: 'set2',
+    // set3
+    family_warmth: 'set3',
+    school_memories: 'set3',
+    food_snacks: 'set3',
+    spring_memories: 'set3',
+    // set4
+    media_emotion: 'set4',
+    sns_culture: 'set4',
+    game_culture: 'set4',
+    travel_culture: 'set4',
+    // set5
+    karaoke_music: 'set5',
+    music_listening: 'set5',
+    music_playing: 'set5',
+    music_composing: 'set5',
+  };
+  return setMap[musicSet] || musicSet;
+}
 /*
 ==========================================
 다중 BPM 음악 시스템 구현 가이드 (요약 주석)
@@ -139,10 +170,19 @@ function getCurrentStageSet() {
 
 // 음악 세트 호환성 검사
 function checkMusicSetCompatibility(newAvatar) {
-  const currentSet = getCurrentStageSet();
-  if (!currentSet) return { compatible: true, currentSet: null };
-  if (newAvatar.musicSet === currentSet) return { compatible: true, currentSet };
-  return { compatible: false, currentSet };
+  // 무대에 올라간 아바타들의 세트명 추출
+  const onStageAvatars = [...stageAvatars, ...avatars].filter(a => a.isOnStage);
+  // 무대에 아무도 없으면(첫 아바타) 항상 호환됨
+  if (onStageAvatars.length === 0 || !onStageAvatars[0].setName) {
+    return { compatible: true, currentSet: null };
+  }
+  // 첫 아바타의 세트명 기준으로 비교
+  const stageSetName = onStageAvatars[0].setName;
+  const newSetName = newAvatar.setName;
+  if (newSetName === stageSetName) {
+    return { compatible: true, currentSet: stageSetName };
+  }
+  return { compatible: false, currentSet: stageSetName };
 }
 
 // 경고 토스트
