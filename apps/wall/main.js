@@ -235,6 +235,16 @@ function checkMusicSetCompatibility(newAvatar) {
 let warningMessage = null;
 let warningTimer = 0;
 
+// 포지션 중복 경고 토스트 (전역)
+function showPositionWarning(avatar) {
+  warningMessage = {
+    title: '포지션 중복',
+    content: `${avatar.nickname}의 포지션(${avatar.musicPosition})은 이미 무대에 있습니다.\n다른 포지션을 선택하거나 기존 아바타를 내리세요.`,
+    timestamp: Date.now()
+  };
+  warningTimer = 180; // 약 3초
+}
+
 function showMusicSetWarning(avatar, currentSet) {
   const names = {
     verification: '검증용 Music Sample',
@@ -305,7 +315,7 @@ function drawWarningMessage() {
   fill(255, 80, 80, alpha);
   textAlign(LEFT);
   textSize(16);
-  text('🚫 음악 세트 충돌', boxX + 15, boxY + 25);
+  text(warningMessage.title, boxX + 15, boxY + 25);
 
   fill(80, 80, 80, alpha);
   textSize(13);
@@ -1384,19 +1394,20 @@ function mouseReleased() {
         });
         // 1. 세트 호환성 검사
         const musicSetCompatibility = checkMusicSetCompatibility(selectedAvatar);
-        let setConflict = false;
+        let conflict = false;
         if (!musicSetCompatibility.compatible) {
-          setConflict = true;
-          console.log(`🚫 음악 세트 충돌: ${selectedAvatar.nickname}(${selectedAvatar.musicSet}) vs ${musicSetCompatibility.currentSet}`);
-          showMusicSetWarning(selectedAvatar, musicSetCompatibility.currentSet);
+          conflict = true;
+          if (musicSetCompatibility.reason === 'set_mismatch') {
+            console.log(`🚫 음악 세트 충돌: ${selectedAvatar.nickname}(${selectedAvatar.musicSet}) vs ${musicSetCompatibility.currentSet}`);
+            showMusicSetWarning(selectedAvatar, musicSetCompatibility.currentSet);
+          } else if (musicSetCompatibility.reason === 'duplicate_position') {
+            // 포지션명 표준화해서 로그 남김
+            const posName = (typeof extractPositionName === 'function') ? extractPositionName(selectedAvatar.musicPosition) : selectedAvatar.musicPosition;
+            console.log(`🚫 중복 포지션(표준화): ${selectedAvatar.nickname} - ${posName}`);
+            showPositionWarning(selectedAvatar);
+          }
         }
-        // 2. 포지션 중복 검사
-        const duplicatePosition = [...stageAvatars, ...avatars].some(a => a.isOnStage && a.musicPosition === selectedAvatar.musicPosition);
-        if (duplicatePosition) {
-          console.log(`🚫 중복 포지션: ${selectedAvatar.musicPosition}는 이미 무대에 있습니다.`);
-        }
-        // 3. 둘 중 하나라도 충돌이면 무대 배치 불가
-        if (setConflict || duplicatePosition) {
+        if (conflict) {
           selectedAvatar.y = 850;
           selectedAvatar.isOnStage = false;
           selectedAvatar.currentAction = 'idle';
