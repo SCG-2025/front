@@ -384,12 +384,12 @@ const musicFileMapping = {
     '효과음/FX': '../wall/music/set1_pcroom_gaming_fx.wav'
   },
   'school_memories': {
-    '리드 멜로디': '../wall/music/set1_pcroom_gaming_lead.wav',
-    '서브 멜로디': '../wall/music/set1_pcroom_gaming_sub.wav',
-    '코드': '../wall/music/set1_pcroom_gaming_chord.wav',
-    '베이스': '../wall/music/set1_pcroom_gaming_bass.wav',
-    '드럼/퍼커션': '../wall/music/set1_pcroom_gaming_drum.wav',
-    '효과음/FX': '../wall/music/set1_pcroom_gaming_fx.wav'
+  '리드 멜로디': '../wall/Music/set3_school_memories_lead.wav',
+  '서브 멜로디': '../wall/Music/set3_school_memories_sub.wav',
+  '코드': '../wall/Music/set3_school_memories_chord.wav',
+  '베이스': '../wall/Music/set3_school_memories_bass.wav',
+  '드럼/퍼커션': '../wall/Music/set3_school_memories_drum.wav',
+  '효과음/FX': '../wall/Music/set3_school_memories_fx.wav'
   },
   'food_snacks': {
     '리드 멜로디': '../wall/music/set1_pcroom_gaming_lead.wav',
