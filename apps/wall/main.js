@@ -372,6 +372,36 @@ function preload() {
     () => console.log('✅ PC룸 Sub 음원 로드 완료'),
     () => console.error('❌ PC룸 Sub 음원 로드 실패')
   );
+    // === 봄 기억/학교 기억 음원들 로드 (12트랙) ===
+    const springFiles = [
+      'set3_spring_memories_bass.wav',
+      'set3_spring_memories_chord.wav',
+      'set3_spring_memories_drum.wav',
+      'set3_spring_memories_fx.wav',
+      'set3_spring_memories_lead.wav',
+      'set3_spring_memories_sub.wav'
+    ];
+    springFiles.forEach(f => {
+      musicSamples[f] = loadSound(`Music/${f}`,
+        () => console.log(`✅ 봄 기억 ${f} 로드 완료`),
+        () => console.error(`❌ 봄 기억 ${f} 로드 실패`)
+      );
+    });
+
+    const schoolFiles = [
+      'set3_school_memories_bass.wav',
+      'set3_school_memories_chord.wav',
+      'set3_school_memories_drum.wav',
+      'set3_school_memories_fx.wav',
+      'set3_school_memories_lead.wav',
+      'set3_school_memories_sub.wav'
+    ];
+    schoolFiles.forEach(f => {
+      musicSamples[f] = loadSound(`Music/${f}`,
+        () => console.log(`✅ 학교 기억 ${f} 로드 완료`),
+        () => console.error(`❌ 학교 기억 ${f} 로드 실패`)
+      );
+    });
 }
 
 async function initTonePlayers() {
@@ -414,14 +444,20 @@ function setup() {
   window.scrollTo(0, 0);
   initTonePlayers();
 
-  // 검증용 아바타 4개 (Music Sample)
-  const verificationTypes = ['Music Sample_Lead.mp3', 'Music Sample_Drum.mp3', 'Music Sample_Bass.mp3', 'Music Sample_Others.mp3'];
-  const verificationLabels = ['Lead', 'Drum', 'Bass', 'Others'];
-
-  for (let i = 0; i < 4; i++) {
+  // 봄 기억/학교 기억 아바타 6개 (set3)
+  const springTypes = [
+    'set3_spring_memories_bass.wav',
+    'set3_spring_memories_chord.wav',
+    'set3_spring_memories_drum.wav',
+    'set3_spring_memories_fx.wav',
+    'set3_spring_memories_lead.wav',
+    'set3_spring_memories_sub.wav'
+  ];
+  const springLabels = ['봄베이스', '봄코드', '봄드럼', '봄FX', '봄리드', '봄서브'];
+  for (let i = 0; i < 6; i++) {
     stageAvatars.push({
-      id: 'verification_avatar_' + i,
-      nickname: `검증용 (${verificationLabels[i]})`,
+      id: 'spring_avatar_' + i,
+      nickname: `봄 기억 (${springLabels[i]})`,
       x: random(200, 1200),
       y: random(900, 1500),
       vx: random(-1, 1),
@@ -431,14 +467,12 @@ function setup() {
       idleTimer: 0,
       currentAction: 'walking',
       state: 'idle',
-      category: '공연',
-      memory: `검증용 아바타 ${i + 1}번입니다. ${verificationLabels[i]} 파트를 담당합니다!`,
-      keywords: ['검증', '무대', '음악', verificationLabels[i].toLowerCase()],
-
-      musicPosition: verificationLabels[i],
-      selectedRecipe: { name: '실험용', description: '검증 및 실험을 위한 레시피' },
-      extractedKeywords: ['검증', '무대', '음악', verificationLabels[i].toLowerCase()],
-
+      category: '봄 기억',
+      memory: `봄 기억에서 만든 추억입니다. ${springLabels[i]} 파트를 담당합니다!`,
+      keywords: ['세트3', '봄', '음악', springLabels[i]],
+      musicPosition: springLabels[i],
+      selectedRecipe: { name: '봄 기억', description: '봄의 따뜻한 추억' },
+      extractedKeywords: ['세트3', '봄', '음악', springLabels[i]],
       isDragged: false,
       dragElevation: 0,
       dropBounce: 0,
@@ -446,35 +480,30 @@ function setup() {
       baseY: 0,
       clickTimer: 0,
       isClicked: false,
-
       isOnStage: false,
       stageSlot: -1,
       isSpecial: true,
-
-      musicType: verificationTypes[i],
-      musicSet: 'verification',
-
+      musicType: springTypes[i],
+      musicSet: 'spring_memories',
       isPending: false,
       pendingStartTime: 0
     });
   }
 
-  // PC룸 게임용 아바타 6개 (set1_pcroom_gaming)
-  const pcRoomTypes = [
-    'set1_pcroom_gaming_bass.wav',
-    'set1_pcroom_gaming_chord.wav',
-    'set1_pcroom_gaming_drum.wav',
-    'set1_pcroom_gaming_fx.wav',
-    'set1_pcroom_gaming_lead.wav',
-    'set1_pcroom_gaming_sub.wav'
+  const schoolTypes = [
+    'set3_school_memories_bass.wav',
+    'set3_school_memories_chord.wav',
+    'set3_school_memories_drum.wav',
+    'set3_school_memories_fx.wav',
+    'set3_school_memories_lead.wav',
+    'set3_school_memories_sub.wav'
   ];
-  const pcRoomLabels = ['Bass', 'Chord', 'Drum', 'FX', 'Lead', 'Sub'];
-
+  const schoolLabels = ['학교베이스', '학교코드', '학교드럼', '학교FX', '학교리드', '학교서브'];
   for (let i = 0; i < 6; i++) {
     stageAvatars.push({
-      id: 'pcroom_avatar_' + i,
-      nickname: `PC방 (${pcRoomLabels[i]})`,
-      x: random(1400, 2360),
+      id: 'school_avatar_' + i,
+      nickname: `학교 기억 (${schoolLabels[i]})`,
+      x: random(1300, 2360),
       y: random(900, 1500),
       vx: random(-1, 1),
       vy: random(-1, 1),
@@ -483,14 +512,12 @@ function setup() {
       idleTimer: 0,
       currentAction: 'walking',
       state: 'idle',
-      category: '게임',
-      memory: `PC방에서 게임하며 만든 추억입니다. ${pcRoomLabels[i]} 파트를 담당합니다!`,
-      keywords: ['게임', 'PC방', '음악', pcRoomLabels[i].toLowerCase()],
-
-      musicPosition: pcRoomLabels[i],
-      selectedRecipe: { name: 'PC방 조합법', description: '게임과 어울리는 디지털 사운드' },
-      extractedKeywords: ['게임', 'PC방', '디지털', '사운드', pcRoomLabels[i].toLowerCase()],
-
+      category: '학교 기억',
+      memory: `학교 기억에서 만든 추억입니다. ${schoolLabels[i]} 파트를 담당합니다!`,
+      keywords: ['세트3', '학교', '음악', schoolLabels[i]],
+      musicPosition: schoolLabels[i],
+      selectedRecipe: { name: '학교 기억', description: '학창시절 추억' },
+      extractedKeywords: ['세트3', '학교', '음악', schoolLabels[i]],
       isDragged: false,
       dragElevation: 0,
       dropBounce: 0,
@@ -498,14 +525,11 @@ function setup() {
       baseY: 0,
       clickTimer: 0,
       isClicked: false,
-
       isOnStage: false,
       stageSlot: -1,
       isSpecial: true,
-
-      musicType: pcRoomTypes[i],
-      musicSet: 'pcroom_gaming',
-
+      musicType: schoolTypes[i],
+      musicSet: 'school_memories',
       isPending: false,
       pendingStartTime: 0
     });
@@ -1773,27 +1797,13 @@ function playAvatarMusic(avatar) {
   if (playingAvatars.size === 0) {
     // 정말 아무것도 재생 중이 아닐 때만 즉시 시작
     console.log(`🎯 ${avatar.nickname} - 첫 번째 아바타, 즉시 시작`);
-    // TODO: 해당 음악의 BPM으로 마스터 클럭 설정
-    // masterClock.bpm = musicBpm;
     startMasterClockFromPosition(0);
     startAvatarMusicFromPosition(avatar, sound, 0);
   } else {
-    // 현재 재생 중인 아바타들과 동기화 - 간단한 방법 사용
-    console.log(`⏰ ${avatar.nickname} - 기존 아바타들과 동기화`);
+    // 두번째 이후 아바타: 반드시 다음 마디 시작점에 맞춰 동기화
+    console.log(`⏰ ${avatar.nickname} - 다음 마디에 동기화 예약`);
     const currentPosition = getCurrentPlaybackPosition();
-    
-    // 1.5초 후에 현재 재생 위치에서 시작하도록 스케줄링
-    const currentTime = millis() / 1000.0;
-    const waitTime = 1.5; // 고정된 대기 시간
-    const futurePosition = currentPosition + waitTime;
-    
-    avatar.isPending = true;
-    avatar.pendingStartTime = currentTime + waitTime;
-    avatar.playbackStartPosition = futurePosition;
-    
-    pendingAvatars.set(avatar.id, { avatar, sound });
-    
-    console.log(`⏰ ${avatar.nickname}: ${waitTime}초 후 ${futurePosition.toFixed(2)}초 위치에서 재생`);
+    scheduleAvatarForCurrentPosition(avatar, sound, currentPosition);
   }
 }
 
