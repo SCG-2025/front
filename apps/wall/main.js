@@ -674,48 +674,48 @@ onSnapshot(collection(db, 'memories'), (snapshot) => {
   snapshot.docChanges().forEach(change => {
     if (change.type === 'added') {
       const docData = change.doc.data();
-      const avatar = docData.avatar || {};
-
-      avatar.id = change.doc.id;
-      avatar.nickname = docData.nickname;
-      avatar.memory = docData.memory;
-      avatar.category = docData.category;
-
-      // 조합법(레시피) 정보 콘솔 출력
-      console.log('[main.js] 카드 데이터:', {
-        nickname: avatar.nickname,
+      // 아바타 객체 생성: 외형 정보와 커스텀 정보 분리
+      const avatar = {
+        id: change.doc.id,
+        nickname: docData.nickname,
+        memory: docData.memory,
+        category: docData.category,
         selectedRecipe: docData.selectedRecipe,
         setName: docData.setName,
-        memory: avatar.memory,
-        category: avatar.category
-      });
-
-      
-      // ✨ 중요: 원본 아바타 커스터마이징 데이터를 별도 필드로 저장
-      avatar.customData = docData.avatar; // 여기에 커스터마이징 정보가 있어야 함
-      
-      // 커스텀 데이터가 있는지 확인하고, bodyIdx가 없는 경우에만 몸체 배정
-      if (avatar.customData && typeof avatar.customData === 'object') {
-        // bodyIdx가 없거나 유효하지 않은 경우에만 몸체 배정
-        if (avatar.customData.bodyIdx === null || avatar.customData.bodyIdx === undefined || 
-            avatar.customData.bodyIdx < 0 || avatar.customData.bodyIdx > 4) {
+        musicType: docData.musicType || (docData.avatar && docData.avatar.musicType) || null,
+        musicSet: docData.musicSet,
+        musicPosition: docData.musicPosition,
+        musicBpm: docData.musicBpm,
+        extractedKeywords: docData.extractedKeywords,
+        keywords: docData.keywords,
+        customData: docData.avatar && typeof docData.avatar === 'object' ? docData.avatar : null,
+        x: -100,
+        y: 1120,
+        vx: 6,
+        state: 'plane-in',
+        direction: 1,
+        walkTimer: 0,
+        idleTimer: 0,
+        currentAction: 'walking',
+        isDragged: false,
+        dragElevation: 0,
+        dropBounce: 0,
+        dropBounceVel: 0,
+        baseY: 1120,
+        clickTimer: 0,
+        isClicked: false,
+        isOnStage: false,
+        stageSlot: -1,
+        isSpecial: true
+      };
+      // customData가 있으면 bodyIdx/gender 보정
+      if (avatar.customData) {
+        if (avatar.customData.bodyIdx === null || avatar.customData.bodyIdx === undefined || avatar.customData.bodyIdx < 0 || avatar.customData.bodyIdx > 4) {
           avatar.customData.bodyIdx = Math.floor(Math.random() * 5);
-          console.log('🔧 몸체만 수정:', avatar.nickname, 'bodyIdx:', avatar.customData.bodyIdx);
         }
-        
-        // gender가 없는 경우에만 기본값 설정 (몸체 렌더링에 필요)
         if (!avatar.customData.gender || (avatar.customData.gender !== 'male' && avatar.customData.gender !== 'female')) {
           avatar.customData.gender = Math.random() > 0.5 ? 'female' : 'male';
-          console.log('🔧 성별만 수정:', avatar.nickname, 'gender:', avatar.customData.gender);
         }
-      } else if (!avatar.customData || typeof avatar.customData !== 'object') {
-        // customData가 아예 없는 경우에만 기본 몸체만 설정
-        avatar.customData = {
-          gender: Math.random() > 0.5 ? 'female' : 'male',
-          bodyIdx: Math.floor(Math.random() * 5), // 몸체만 설정
-          // headIdx, wingOn 등은 설정하지 않음
-        };
-        console.log('🎭 기본 몸체만 추가:', avatar.nickname, avatar.customData);
       }
       
       // 음악 포지션 정보 추가
