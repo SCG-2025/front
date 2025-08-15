@@ -757,7 +757,35 @@ onSnapshot(collection(db, 'memories'), (snapshot) => {
       avatar.stageSlot = -1;
       avatar.isSpecial = true;
 
-      avatars.push(avatar);
+  // Firestore 주요 필드 안전하게 추가
+  avatar.selectedRecipe = docData.selectedRecipe || null;
+  avatar.musicFilePath = docData.musicFilePath || null;
+  avatar.musicSet = docData.musicSet || null;
+  avatar.musicBpm = docData.musicBpm || null;
+  avatar.extractedKeywords = docData.extractedKeywords || [];
+  // musicType 자동 할당: musicFilePath > selectedRecipe+musicSet > null
+  if (!avatar.musicType) {
+    if (avatar.musicFilePath) {
+      // 경로가 포함되어 있으면 파일명만 추출
+      const fileName = avatar.musicFilePath.split('/').pop();
+      avatar.musicType = fileName;
+    } else if (avatar.selectedRecipe && avatar.musicSet) {
+      // position 추출: selectedRecipe에서 bass/drum/lead/sub/chord/fx 등 추출
+      let position = 'bass';
+      const posList = ['bass','drum','lead','sub','chord','fx'];
+      for (const pos of posList) {
+        if (avatar.selectedRecipe.toLowerCase().includes(pos)) {
+          position = pos;
+          break;
+        }
+      }
+      // musicType 조합
+      avatar.musicType = `set3_${avatar.musicSet}_${position}.wav`;
+    } else {
+      avatar.musicType = null;
+    }
+  }
+  avatars.push(avatar);
     }
   });
 });
@@ -918,7 +946,11 @@ function drawAvatar(avatar) {
   }
 
   // === 본체 렌더 ===
-  if (avatar.musicType) {
+  if (avatar.customData && typeof avatar.customData === 'object') {
+    // 커스텀 아바타
+    drawCustomAvatar(avatar.x, currentY, avatar.customData, avatar.direction,
+      showPopup && popupAvatar && popupAvatar.id === avatar.id);
+  } else if (avatar.musicType) {
     // Stage 아바타(샘플 이미지)
     push();
     translate(avatar.x, currentY);
@@ -932,10 +964,6 @@ function drawAvatar(avatar) {
       image(avatarImage, 0, 0, 64, 64);
     }
     pop();
-  } else if (avatar.customData && typeof avatar.customData === 'object') {
-    // 커스텀 아바타
-    drawCustomAvatar(avatar.x, currentY, avatar.customData, avatar.direction,
-      showPopup && popupAvatar && popupAvatar.id === avatar.id);
   } else {
     // 커스텀 데이터가 없으면 ID 기반 기본 스킨 생성 후 렌더
     if (!avatar.defaultCustomData) {
@@ -944,11 +972,17 @@ function drawAvatar(avatar) {
       for (let i = 0; i < idStr.length; i++) {
         hash = ((hash << 5) - hash + idStr.charCodeAt(i)) & 0xffffffff;
       }
+        // headIdx가 없거나 유효하지 않으면 기본값 할당
+        if (avatar.customData.headIdx === null || avatar.customData.headIdx === undefined || avatar.customData.headIdx < 0 || avatar.customData.headIdx > 8) {
+          avatar.customData.headIdx = Math.floor(Math.random() * 9);
+          console.log('🔧 머리만 수정:', avatar.nickname, 'headIdx:', avatar.customData.headIdx);
+        }
       const seedRandom = (seed) => {
         const x = Math.sin(seed) * 10000;
         return x - Math.floor(x);
       };
       avatar.defaultCustomData = {
+          headIdx: Math.floor(Math.random() * 9),
         gender: seedRandom(hash) > 0.5 ? 'female' : 'male',
         bodyIdx: Math.floor(seedRandom(hash + 2) * 5),
       };
@@ -1372,6 +1406,48 @@ function mouseReleased() {
         }
 
         const nearestSlot = findNearestEmptyStageSlot(selectedAvatar.x, selectedAvatar.y);
+        // 중복 포지션 체크: 같은 세트+포지션이 이미 무대에 있으면 배치 불가
+        // 세트 넘버링 추출 (예: set3)
+        let avatarSetNum = null;
+        if (selectedAvatar.musicType) {
+          const match = selectedAvatar.musicType.match(/set\d+/);
+          if (match) avatarSetNum = match[0];
+        }
+        // 포지션 추출 (예: lead, bass 등)
+        const positionList = ['bass','drum','lead','sub','chord','fx'];
+        let avatarPosition = 'bass';
+        for (const pos of positionList) {
+          if (selectedAvatar.musicType && selectedAvatar.musicType.toLowerCase().includes(pos)) {
+            avatarPosition = pos;
+            break;
+          }
+        }
+        // 중복 체크: 같은 set# + 같은 포지션이 이미 무대에 있으면 불가
+        const duplicate = stageAvatars.some(a => {
+          let aSetNum = null;
+          if (a.musicType) {
+            const m = a.musicType.match(/set\d+/);
+            if (m) aSetNum = m[0];
+          }
+          let aPosition = 'bass';
+          for (const pos of positionList) {
+            if (a.musicType && a.musicType.toLowerCase().includes(pos)) {
+              aPosition = pos;
+              break;
+            }
+          }
+          return a.isOnStage && aSetNum === avatarSetNum && aPosition === avatarPosition;
+        });
+        if (duplicate) {
+          console.log(`🚫 중복 포지션: ${avatarSetNum} 세트의 ${avatarPosition}는 이미 무대에 있습니다.`);
+          selectedAvatar.y = 850;
+          selectedAvatar.isOnStage = false;
+          selectedAvatar.currentAction = 'idle';
+          selectedAvatar.idleTimer = random(30, 120);
+          selectedAvatar = null;
+          isDragging = false;
+          return;
+        }
         if (nearestSlot !== -1) {
           if (selectedAvatar.isOnStage && selectedAvatar.stageSlot !== -1) {
             stageSlots[selectedAvatar.stageSlot] = null;
