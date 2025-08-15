@@ -48,8 +48,8 @@ Object.assign(avatar, existingAvatar);
 
 // 음악 세트별 정의 (5개 세트)
 const musicSets = {
-  'digital_gaming': {
-    id: 'digital_gaming',
+  'set1': {
+    id: 'set1',
     name: '디지털 & 게임',
     description: '전자음, 8비트/치프튠, 게임 BGM, 디지털 사운드',
     instruments: {
@@ -61,8 +61,8 @@ const musicSets = {
       '효과음/FX': ['글리치', '픽셀 사운드', '게임 효과음']
     }
   },
-  'activity_energy': {
-    id: 'activity_energy',
+  'set2': {
+    id: 'set2',
     name: '활동 & 에너지',
     description: '업템포, 역동적, 스포츠/축제 분위기, 여름 활기',
     instruments: {
@@ -74,8 +74,8 @@ const musicSets = {
       '효과음/FX': ['스타디움 사운드', '환호성', '스포츠 휘슬']
     }
   },
-  'warmth_social': {
-    id: 'warmth_social',
+  'set3': {
+    id: 'set3',
     name: '따뜻함 & 소통',
     description: '어쿠스틱, 포근한 멜로디, 따뜻한 감성, 사람간의 유대감',
     instruments: {
@@ -87,8 +87,8 @@ const musicSets = {
       '효과음/FX': ['자연음', '따뜻한 리버브', '새소리']
     }
   },
-  'emotion_culture': {
-    id: 'emotion_culture',
+  'set4': {
+    id: 'set4',
     name: '감성 & 문화',
     description: '센치한 분위기, 노스탤직, 문화적 세련됨, 밤의 정취',
     instruments: {
@@ -100,8 +100,8 @@ const musicSets = {
       '효과음/FX': ['빈티지 딜레이', '테이프 에코', '밤 앰비언스']
     }
   },
-  'creative_seasonal': {
-    id: 'creative_seasonal',
+  'set5': {
+    id: 'set5',
     name: '창의성 & 계절감',
     description: '창의적 사운드, 잔잔함, 계절의 변화, 예술적 분위기',
     instruments: {
@@ -122,7 +122,7 @@ const predefinedRecipes = [
     id: 'pcroom_gaming',
     name: 'PC방과 온라인 게임',
     category: 'gaming',
-    musicSet: 'digital_gaming',
+  musicSet: 'set1',
     description: '카트라이더, 크레이지아케이드, 피파온라인 등을 즐겼던 추억',
     aiPrompt: 'PC방, 게임, 친구들과 함께, 카트라이더, 크레이지아케이드, 피파온라인, 던전앤파이터, 테일즈러너, 메이플스토리, 마인크래프트, 슈퍼마리오, 테트리스, 오락실, 아케이드, 배경음악, 브금, 효과음, 게임음악, 카트라이더음악, 메이플음악'
   },
@@ -130,7 +130,7 @@ const predefinedRecipes = [
     id: 'home_console_gaming',
     name: '집에서 게임기로',
     category: 'gaming',
-    musicSet: 'digital_gaming',
+  musicSet: 'set1',
     description: '닌텐도, 플레이스테이션으로 가족, 사촌들과 게임',
     aiPrompt: '닌텐도, wii, 플레이스테이션, 게임기, 가족게임, 사촌, 집에서게임, 마리오카트, 동물의숲, 배경음악, 브금, 효과음, 게임음악, 오프닝, 주제곡'
   },
@@ -138,7 +138,7 @@ const predefinedRecipes = [
     id: 'social_media_memories',
     name: 'SNS 속 디지털 추억',
     category: 'digital',
-    musicSet: 'digital_gaming',
+  musicSet: 'set1',
     description: '싸이월드, 페이스북, 인스타그램에 남긴 추억들',
     aiPrompt: '싸이월드, 페이스북, 인스타그램, 네이버블로그, SNS, 게시물, 사진업로드, 디지털추억'
   },
@@ -146,7 +146,7 @@ const predefinedRecipes = [
     id: 'photo_album',
     name: '사진과 앨범의 기억',
     category: 'visual',
-    musicSet: 'digital_gaming',
+  musicSet: 'set1',
     description: '필름카메라, 디지털카메라로 찍은 소중한 순간들',
     aiPrompt: '사진, 앨범, 카메라, 필름, 비디오, 영상, 촬영, 기념사진, 가족사진'
   },
@@ -155,7 +155,7 @@ const predefinedRecipes = [
     id: 'sports_activities',
     name: '운동과 스포츠',
     category: 'sports',
-    musicSet: 'activity_energy',
+  musicSet: 'set2',
     description: '축구, 농구, 수영 등 운동과 관련된 모든 추억',
     aiPrompt: '축구, 농구, 배구, 야구, 테니스, 배드민턴, 달리기, 수영, 운동, 스포츠, 선수, 승부, 시합, 경기, 팀플레이, 운동장, 체육관'
   },
@@ -163,7 +163,7 @@ const predefinedRecipes = [
     id: 'festivals_events',
     name: '축제와 이벤트',
     category: 'festival',
-    musicSet: 'activity_energy',
+  musicSet: 'set2',
     description: '지역축제, 콘서트, 공연 등 특별한 이벤트 참여',
     aiPrompt: '축제, 콘서트, 공연, 이벤트, 문화제, 불꽃축제, 음악축제, 지역축제, 무대, 관람, 참여, 특별한경험'
   },
@@ -171,7 +171,7 @@ const predefinedRecipes = [
     id: 'summer_memories',
     name: '뜨거운 여름의 추억',
     category: 'season',
-    musicSet: 'activity_energy',
+  musicSet: 'set2',
     description: '바다, 수영장, 여름휴가, 시원한 음식 등 활기찬 여름 추억',
     aiPrompt: '여름, 바다, 수영장, 수영, 여름휴가, 캠핑, 물놀이, 아이스크림, 빙수, 에어컨, 선풍기, 더위, 시원함, 휴가, 바캉스, 해변, 축제'
   },
@@ -179,7 +179,7 @@ const predefinedRecipes = [
     id: 'travel_places',
     name: '여행지에서의 특별한 경험',
     category: 'travel',
-    musicSet: 'activity_energy',
+  musicSet: 'set2',
     description: '바닷가, 부산, 강릉 등 여행지에서의 소중한 경험들',
     aiPrompt: '여행, 바닷가, 부산, 강릉, 여행지, 바다, 버스킹, 관광, 나들이, 휴가'
   },
@@ -188,7 +188,7 @@ const predefinedRecipes = [
     id: 'family_warmth',
     name: '가족과의 따뜻한 시간',
     category: 'family',
-    musicSet: 'warmth_social',
+  musicSet: 'set3',
     description: '부모님, 형제자매와 함께한 포근하고 평온한 순간들',
     aiPrompt: '가족, 부모님, 아빠, 아버지, 엄마, 어머니, 형제, 자매, 따뜻함, 포근함, 평온함, 가족사진, 집'
   },
@@ -196,7 +196,7 @@ const predefinedRecipes = [
     id: 'school_memories',
     name: '학창시절 추억',
     category: 'school',
-    musicSet: 'warmth_social',
+  musicSet: 'set3',
     description: '친구들과의 학교생활, 운동회, 수학여행, 학예회 등 학창시절의 모든 추억',
     aiPrompt: '친구, 학교, 교실, 학창시절, 동창, 반친구, 함께, 같이, 초등학교, 중학교, 고등학교, 학예회, 학교행사, 운동회, 수학여행, 축제, 졸업식, 입학식, 특별한날, 체육대회, 발표회'
   },
@@ -204,7 +204,7 @@ const predefinedRecipes = [
     id: 'food_snacks',
     name: '음식과 간식',
     category: 'food',
-    musicSet: 'warmth_social',
+  musicSet: 'set3',
     description: '친구들과 함께 먹었던 맛있는 음식과 간식들',
     aiPrompt: '음식, 간식, 치킨, 피자, 떡볶이, 라면, 햄버거, 아이스크림, 과자, 빵, 분식, 맛집, 같이먹기, 군것질'
   },
@@ -212,7 +212,7 @@ const predefinedRecipes = [
     id: 'spring_memories',
     name: '봄의 따뜻한 추억',
     category: 'season',
-    musicSet: 'warmth_social',
+  musicSet: 'set3',
     description: '벚꽃, 새학기, 소풍 등 따뜻하고 새로운 시작의 봄 추억',
     aiPrompt: '봄, 벚꽃, 꽃구경, 새학기, 입학식, 소풍, 따뜻해지다, 꽃놀이, 산책, 새싹, 개화, 꽃밭, 공원, 피크닉, 햇살, 바람, 신선함'
   },
@@ -221,7 +221,7 @@ const predefinedRecipes = [
     id: 'nostalgia_longing',
     name: '그리운 옛날 생각',
     category: 'nostalgia',
-    musicSet: 'emotion_culture',
+  musicSet: 'set4',
     description: '돌아가고 싶은 어린 시절, 옛날에 대한 그리움',
     aiPrompt: '그리움, 돌아가다, 슬픔, 소중함, 옛날, 예전, 과거, 어릴때, 생각나다, 떠오르다, 기억나다, 향수, 잔잔함'
   },
@@ -229,7 +229,7 @@ const predefinedRecipes = [
     id: 'night_dawn',
     name: '밤과 새벽',
     category: 'night',
-    musicSet: 'emotion_culture',
+  musicSet: 'set4',
     description: '밤늦은 대화, 새벽 감성, 깊은 밤의 특별한 순간들',
     aiPrompt: '밤, 새벽, 밤늦게, 밤샘, 밤하늘, 별, 달, 깊은대화, 고민상담, 잠못이루는밤, 새벽감성, 밤공기'
   },
@@ -237,7 +237,7 @@ const predefinedRecipes = [
     id: 'entertainment_culture',
     name: '드라마, 영화, 웹툰과 함께',
     category: 'entertainment',
-    musicSet: 'emotion_culture',
+  musicSet: 'set4',
     description: '드라마, 영화, 웹툰, 만화를 보며 보낸 시간들',
     aiPrompt: '드라마, 영화, 웹툰, 만화, 무한도전, 방송, 프로그램, TV, 시청, 엔터테인먼트'
   },
@@ -245,7 +245,7 @@ const predefinedRecipes = [
     id: 'karaoke_music',
     name: '노래방과 음악 감상',
     category: 'music',
-    musicSet: 'emotion_culture',
+  musicSet: 'set4',
     description: '친구들과 노래방, 좋아하는 음악 듣기, 함께 부른 노래',
     aiPrompt: '노래방, 노래, 음악감상, 가요, 팝송, 힙합, 발라드, 댄스, 아이돌, 가수, 함께부르기, 듣기, 뮤직비디오, 음원, 스피커'
   },
@@ -254,7 +254,7 @@ const predefinedRecipes = [
     id: 'art_creative',
     name: '미술과 창작활동',
     category: 'creative',
-    musicSet: 'creative_seasonal',
+  musicSet: 'set5',
     description: '그림 그리기, 만들기, 공예 등 창작적인 활동',
     aiPrompt: '그림, 미술, 만들기, 공예, 창작, 색칠, 스케치, 조각, 만화그리기, 손으로만들기, 예술활동, 미술시간'
   },
@@ -262,7 +262,7 @@ const predefinedRecipes = [
     id: 'study_reading',
     name: '조용한 학습과 독서',
     category: 'study',
-    musicSet: 'creative_seasonal',
+  musicSet: 'set5',
     description: '도서관, 카페, 집에서의 공부, 독서, 조용한 학습 시간',
     aiPrompt: '도서관, 독서, 책, 공부, 조용함, 학습, 시험공부, 과제, 참고서, 소설, 만화책, 집중, 조용한공간, 열람실, 책읽기, 카페, 수다, 친구들과카페, 스터디카페, 대화, 모임'
   },
@@ -270,7 +270,7 @@ const predefinedRecipes = [
     id: 'autumn_memories',
     name: '감성적인 가을의 추억',
     category: 'season',
-    musicSet: 'creative_seasonal',
+  musicSet: 'set5',
     description: '단풍, 운동회, 추수 등 아늑하고 감성적인 가을 추억',
     aiPrompt: '가을, 단풍, 낙엽, 운동회, 추수, 감성적, 쌀쌀함, 따뜻한차, 독서의계절, 센치함, 노을, 황금빛, 코스모스, 감, 밤, 고구마'
   },
@@ -278,7 +278,7 @@ const predefinedRecipes = [
     id: 'winter_memories',
     name: '포근한 겨울의 추억',
     category: 'season',
-    musicSet: 'creative_seasonal',
+  musicSet: 'set5',
     description: '눈, 크리스마스, 연말연시 등 따뜻하고 아늑한 겨울 추억',
     aiPrompt: '겨울, 눈, 눈사람, 스키, 썰매, 크리스마스, 연말, 신정, 따뜻함, 난로, 온돌, 뜨거운음료, 코코아, 군고구마, 호빵, 목도리, 장갑'
   }

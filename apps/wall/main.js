@@ -50,34 +50,7 @@ for (let i = 0; i < pcroomPositions.length; i++) {
 }
 // musicSet을 세트명으로 매핑하는 함수
 function getSetGroupName(musicSet) {
-  const setMap = {
-    // set1
-    pcroom_gaming: 'set1',
-    console_gaming: 'set1',
-    avatar_family: 'set1',
-    avatar_friend: 'set1',
-    // set2
-    sports_activities: 'set2',
-    festivals_events: 'set2',
-    summer_memories: 'set2',
-    travel_places: 'set2',
-    // set3
-    family_warmth: 'set3',
-    school_memories: 'set3',
-    food_snacks: 'set3',
-    spring_memories: 'set3',
-    // set4
-    media_emotion: 'set4',
-    sns_culture: 'set4',
-    game_culture: 'set4',
-    travel_culture: 'set4',
-    // set5
-    karaoke_music: 'set5',
-    music_listening: 'set5',
-    music_playing: 'set5',
-    music_composing: 'set5',
-  };
-  return setMap[musicSet] || musicSet;
+  return musicSet;
 }
 /*
 ==========================================
@@ -223,12 +196,17 @@ function checkMusicSetCompatibility(newAvatar) {
   // 무대에 올라간 아바타들의 세트명 추출
   const onStageAvatars = [...stageAvatars, ...avatars].filter(a => a.isOnStage);
   // 무대에 아무도 없으면(첫 아바타) 항상 호환됨
-  if (onStageAvatars.length === 0 || !onStageAvatars[0].setName) {
+  // 세트 추출 함수: musicType에서 'setN' 추출
+  function extractSetFromMusicType(musicType) {
+    const match = (musicType || '').match(/set(\d+)/);
+    return match ? match[0] : null;
+  }
+  if (onStageAvatars.length === 0 || !onStageAvatars[0].musicType) {
     return { compatible: true, currentSet: null };
   }
-  // 첫 아바타의 세트명 기준으로 비교
-  const stageSetName = onStageAvatars[0].setName;
-  const newSetName = newAvatar.setName;
+  // 첫 아바타의 musicType에서 setN 추출
+  const stageSetName = extractSetFromMusicType(onStageAvatars[0].musicType);
+  const newSetName = extractSetFromMusicType(newAvatar.musicType);
   // 포지션명 표준화 함수
   function extractPositionName(pos) {
     const lower = (pos || '').toLowerCase();
@@ -720,7 +698,10 @@ onSnapshot(collection(db, 'memories'), (snapshot) => {
       
       // 음악 포지션 정보 추가
       avatar.musicPosition = docData.musicPosition || '-';
-      if (docData.musicSet) avatar.musicSet = docData.musicSet;
+      if (docData.musicSet) {
+        avatar.musicSet = docData.musicSet;
+        avatar.setName = getSetGroupName(docData.musicSet);
+      }
 
       if (docData.keywords) {
         avatar.keywords = docData.keywords;
@@ -1391,25 +1372,31 @@ function mouseReleased() {
       selectedAvatar.isDragged = false;
 
       if (selectedAvatar.isSpecial && isInStageArea(selectedAvatar.x, selectedAvatar.y)) {
+        // 무대 진입 전 DB 기반 아바타의 setName 누락 보정
+        if (!selectedAvatar.setName && selectedAvatar.musicSet) {
+          selectedAvatar.setName = getSetGroupName(selectedAvatar.musicSet);
+        }
+        // 무대 위 아바타들도 보정
+        [...stageAvatars, ...avatars].forEach(a => {
+          if (!a.setName && a.musicSet) {
+            a.setName = getSetGroupName(a.musicSet);
+          }
+        });
+        // 1. 세트 호환성 검사
         const musicSetCompatibility = checkMusicSetCompatibility(selectedAvatar);
+        let setConflict = false;
         if (!musicSetCompatibility.compatible) {
+          setConflict = true;
           console.log(`🚫 음악 세트 충돌: ${selectedAvatar.nickname}(${selectedAvatar.musicSet}) vs ${musicSetCompatibility.currentSet}`);
           showMusicSetWarning(selectedAvatar, musicSetCompatibility.currentSet);
-
-          selectedAvatar.y = 850;
-          selectedAvatar.currentAction = 'idle';
-          selectedAvatar.idleTimer = random(30, 120);
-
-          selectedAvatar = null;
-          isDragging = false;
-          return;
         }
-
-        const nearestSlot = findNearestEmptyStageSlot(selectedAvatar.x, selectedAvatar.y);
-        // 음악 포지션 중복 체크: 무대에 같은 musicPosition이 이미 있으면 불가
+        // 2. 포지션 중복 검사
         const duplicatePosition = [...stageAvatars, ...avatars].some(a => a.isOnStage && a.musicPosition === selectedAvatar.musicPosition);
         if (duplicatePosition) {
           console.log(`🚫 중복 포지션: ${selectedAvatar.musicPosition}는 이미 무대에 있습니다.`);
+        }
+        // 3. 둘 중 하나라도 충돌이면 무대 배치 불가
+        if (setConflict || duplicatePosition) {
           selectedAvatar.y = 850;
           selectedAvatar.isOnStage = false;
           selectedAvatar.currentAction = 'idle';
@@ -1418,6 +1405,7 @@ function mouseReleased() {
           isDragging = false;
           return;
         }
+        const nearestSlot = findNearestEmptyStageSlot(selectedAvatar.x, selectedAvatar.y);
         if (nearestSlot !== -1) {
           if (selectedAvatar.isOnStage && selectedAvatar.stageSlot !== -1) {
             stageSlots[selectedAvatar.stageSlot] = null;
