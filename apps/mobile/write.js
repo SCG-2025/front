@@ -1072,6 +1072,17 @@ function proceedToCustomizing() {
   const musicFilePath = selectedRecipeId ? getMusicFileForRecipeAndPosition(selectedRecipeId, selectedMusicPosition) : null;
   const musicBpm = selectedRecipeId ? getBpmForRecipe(selectedRecipeId) : 197;
 
+  // 조합법/세트 정보 보강
+  let setName = null;
+  let musicSet = null;
+  if (selectedRecipe) {
+    musicSet = selectedRecipe.musicSet || null;
+    // musicSets에서 setName 추출
+    if (musicSet && musicSets[musicSet]) {
+      setName = musicSets[musicSet].name;
+    }
+  }
+
   const memoryData = {
     nickname: (nicknameInput.value || '').trim(),
     memory: (memoryInput.value || '').trim(),
@@ -1080,16 +1091,18 @@ function proceedToCustomizing() {
     musicBpm,
     extractedKeywords,
     selectedRecipe,
+    musicSet,
+    setName,
     timestamp: Date.now()
   };
 
   // 1) 추억/음악 데이터
   localStorage.setItem('memoryData', JSON.stringify(memoryData));
 
-  // 2) 아바타 기본값 저장 (없을 때만)
-  if (!localStorage.getItem('avatarData')) {
-    localStorage.setItem('avatarData', JSON.stringify(existingAvatar));
-  }
+  // 2) 아바타 정보(성별 등) 항상 최신값으로 저장
+  // 모든 아바타 필드를 existingAvatar에 복사
+  Object.assign(existingAvatar, avatar);
+  localStorage.setItem('avatarData', JSON.stringify(existingAvatar));
 
   // 3) 페이지 이동
   window.location.href = 'customizing.html';

@@ -3,9 +3,19 @@ let stageAvatars = []; // 무대 전용 아바타들
 // 실험용: PC방 세트의 모든 포지션별 아바타를 무대에 추가
 const pcroomPositions = ['Bass', 'Chord', 'Drum', 'FX', 'Lead', 'Sub'];
 for (let i = 0; i < pcroomPositions.length; i++) {
+  // 포지션명 표준화
+  const posMap = {
+    Lead: '리드멜로디',
+    Sub: '서브멜로디',
+    Chord: '코드',
+    Bass: '베이스',
+    Drum: '드럼/퍼커션',
+    FX: '효과음/FX'
+  };
+  const stdPos = posMap[pcroomPositions[i]] || pcroomPositions[i];
   stageAvatars.push({
     id: 'pcroom_avatar_' + i,
-    nickname: `PC방 (${pcroomPositions[i]})`,
+    nickname: `PC방 (${stdPos})`,
     x: 100 + i * 120,
     y: 300,
     vx: 0,
@@ -16,11 +26,11 @@ for (let i = 0; i < pcroomPositions.length; i++) {
     currentAction: 'idle',
     state: 'idle',
     category: 'PC방',
-    memory: `PC방에서 만든 추억입니다. ${pcroomPositions[i]} 파트를 담당합니다!`,
-    keywords: ['세트1', 'PC방', '음악', pcroomPositions[i]],
-    musicPosition: pcroomPositions[i],
+    memory: `PC방에서 만든 추억입니다. ${stdPos} 파트를 담당합니다!`,
+    keywords: ['세트1', 'PC방', '음악', stdPos],
+    musicPosition: stdPos,
     selectedRecipe: { name: 'PC방', description: 'PC방 추억' },
-    extractedKeywords: ['세트1', 'PC방', '음악', pcroomPositions[i]],
+    extractedKeywords: ['세트1', 'PC방', '음악', stdPos],
     isDragged: false,
     dragElevation: 0,
     dropBounce: 0,
@@ -31,7 +41,7 @@ for (let i = 0; i < pcroomPositions.length; i++) {
     isOnStage: false,
     stageSlot: -1,
     isSpecial: true,
-  musicType: 'set1_pcroom_gaming_' + pcroomPositions[i].toLowerCase() + '.wav',
+    musicType: 'set1_pcroom_gaming_' + pcroomPositions[i].toLowerCase() + '.wav',
     musicSet: 'pcroom_gaming',
     setName: 'set1',
     isPending: false,
@@ -219,10 +229,28 @@ function checkMusicSetCompatibility(newAvatar) {
   // 첫 아바타의 세트명 기준으로 비교
   const stageSetName = onStageAvatars[0].setName;
   const newSetName = newAvatar.setName;
-  if (newSetName === stageSetName) {
-    return { compatible: true, currentSet: stageSetName };
+  // 포지션명 표준화 함수
+  function extractPositionName(pos) {
+    const lower = (pos || '').toLowerCase();
+    if (lower.includes('리드멜로디')) return '리드멜로디';
+    if (lower.includes('서브멜로디')) return '서브멜로디';
+    if (lower.includes('코드')) return '코드';
+    if (lower.includes('베이스')) return '베이스';
+    if (lower.includes('드럼') || lower.includes('퍼커션')) return '드럼/퍼커션';
+    if (lower.includes('효과음') || lower.includes('fx')) return '효과음/FX';
+    return lower;
   }
-  return { compatible: false, currentSet: stageSetName };
+  // 1. 세트가 다르면 무조건 호환 불가
+  if (newSetName !== stageSetName) {
+    return { compatible: false, currentSet: stageSetName, reason: 'set_mismatch' };
+  }
+  // 2. 세트가 같으면 포지션 중복 검사
+  const newPosition = extractPositionName(newAvatar.musicPosition);
+  const hasPosition = onStageAvatars.some(a => extractPositionName(a.musicPosition) === newPosition);
+  if (hasPosition) {
+    return { compatible: false, currentSet: stageSetName, reason: 'duplicate_position' };
+  }
+  return { compatible: true, currentSet: stageSetName };
 }
 
 // 경고 토스트
@@ -522,10 +550,11 @@ function setup() {
     'set3_spring_memories_sub.wav'
   ];
   const springLabels = ['봄베이스', '봄코드', '봄드럼', '봄FX', '봄리드', '봄서브'];
+  const stdSpringPositions = ['베이스', '코드', '드럼/퍼커션', '효과음/FX', '리드멜로디', '서브멜로디'];
   for (let i = 0; i < 6; i++) {
     stageAvatars.push({
       id: 'spring_avatar_' + i,
-      nickname: `봄 기억 (${springLabels[i]})`,
+      nickname: `봄 기억 (${stdSpringPositions[i]})`,
       x: random(200, 1200),
       y: random(900, 1500),
       vx: random(-1, 1),
@@ -536,11 +565,11 @@ function setup() {
       currentAction: 'walking',
       state: 'idle',
       category: '봄 기억',
-      memory: `봄 기억에서 만든 추억입니다. ${springLabels[i]} 파트를 담당합니다!`,
-      keywords: ['세트3', '봄', '음악', springLabels[i]],
-      musicPosition: springLabels[i],
+      memory: `봄 기억에서 만든 추억입니다. ${stdSpringPositions[i]} 파트를 담당합니다!`,
+      keywords: ['세트3', '봄', '음악', stdSpringPositions[i]],
+      musicPosition: stdSpringPositions[i],
       selectedRecipe: { name: '봄 기억', description: '봄의 따뜻한 추억' },
-      extractedKeywords: ['세트3', '봄', '음악', springLabels[i]],
+      extractedKeywords: ['세트3', '봄', '음악', stdSpringPositions[i]],
       isDragged: false,
       dragElevation: 0,
       dropBounce: 0,
@@ -567,10 +596,11 @@ function setup() {
     'set3_school_memories_sub.wav'
   ];
   const schoolLabels = ['학교베이스', '학교코드', '학교드럼', '학교FX', '학교리드', '학교서브'];
+  const stdSchoolPositions = ['베이스', '코드', '드럼/퍼커션', '효과음/FX', '리드멜로디', '서브멜로디'];
   for (let i = 0; i < 6; i++) {
     stageAvatars.push({
       id: 'school_avatar_' + i,
-      nickname: `학교 기억 (${schoolLabels[i]})`,
+      nickname: `학교 기억 (${stdSchoolPositions[i]})`,
       x: random(1300, 2360),
       y: random(900, 1500),
       vx: random(-1, 1),
@@ -581,11 +611,11 @@ function setup() {
       currentAction: 'walking',
       state: 'idle',
       category: '학교 기억',
-      memory: `학교 기억에서 만든 추억입니다. ${schoolLabels[i]} 파트를 담당합니다!`,
-      keywords: ['세트3', '학교', '음악', schoolLabels[i]],
-      musicPosition: schoolLabels[i],
+      memory: `학교 기억에서 만든 추억입니다. ${stdSchoolPositions[i]} 파트를 담당합니다!`,
+      keywords: ['세트3', '학교', '음악', stdSchoolPositions[i]],
+      musicPosition: stdSchoolPositions[i],
       selectedRecipe: { name: '학교 기억', description: '학창시절 추억' },
-      extractedKeywords: ['세트3', '학교', '음악', schoolLabels[i]],
+      extractedKeywords: ['세트3', '학교', '음악', stdSchoolPositions[i]],
       isDragged: false,
       dragElevation: 0,
       dropBounce: 0,

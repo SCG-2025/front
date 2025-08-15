@@ -64,15 +64,10 @@ import { db } from './firebase-init.js';
 
   // localStorage에서 기존 아바타 데이터를 가져오거나 기본값 사용
   const savedAvatar = JSON.parse(localStorage.getItem('avatarData') || 'null');
-  
-  const avatar = {
-    gender: (savedAvatar && savedAvatar.gender) || 'female',   // write.html에서 선택된 성별 사용
-    bodyIdx: (savedAvatar && savedAvatar.bodyIdx !== undefined) ? savedAvatar.bodyIdx : 0,
-    headIdx: (savedAvatar && savedAvatar.headIdx !== undefined) ? savedAvatar.headIdx : null,      // null=off, 0..N 선택
-    wingOn: (savedAvatar && savedAvatar.wingOn !== undefined) ? savedAvatar.wingOn : false,      // on/off
-    skin: (savedAvatar && savedAvatar.skin) || '#ffdbac',
-    eyes: (savedAvatar && savedAvatar.eyes) || '#000'
-  };
+  // write에서 넘어온 avatarData가 있으면 그대로 사용, 없으면 최소 기본값
+  const avatar = savedAvatar && typeof savedAvatar === 'object'
+    ? { ...savedAvatar }
+    : { gender: 'female', bodyIdx: 0, headIdx: null, wingOn: false, skin: '#ffdbac', eyes: '#000' };
 
   // 이미지 캐시
   const IMG = { female: [], male: [], heads: [], wing: null };
