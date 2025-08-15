@@ -1,3 +1,43 @@
+// ...existing code...
+let stageAvatars = []; // 무대 전용 아바타들
+// 실험용: PC방 세트의 모든 포지션별 아바타를 무대에 추가
+const pcroomPositions = ['Bass', 'Chord', 'Drum', 'FX', 'Lead', 'Sub'];
+for (let i = 0; i < pcroomPositions.length; i++) {
+  stageAvatars.push({
+    id: 'pcroom_avatar_' + i,
+    nickname: `PC방 (${pcroomPositions[i]})`,
+    x: 100 + i * 120,
+    y: 300,
+    vx: 0,
+    vy: 0,
+    direction: 1,
+    walkTimer: 0,
+    idleTimer: 0,
+    currentAction: 'idle',
+    state: 'idle',
+    category: 'PC방',
+    memory: `PC방에서 만든 추억입니다. ${pcroomPositions[i]} 파트를 담당합니다!`,
+    keywords: ['세트1', 'PC방', '음악', pcroomPositions[i]],
+    musicPosition: pcroomPositions[i],
+    selectedRecipe: { name: 'PC방', description: 'PC방 추억' },
+    extractedKeywords: ['세트1', 'PC방', '음악', pcroomPositions[i]],
+    isDragged: false,
+    dragElevation: 0,
+    dropBounce: 0,
+    dropBounceVel: 0,
+    baseY: 0,
+    clickTimer: 0,
+    isClicked: false,
+    isOnStage: false,
+    stageSlot: -1,
+    isSpecial: true,
+  musicType: 'set1_pcroom_gaming_' + pcroomPositions[i].toLowerCase() + '.wav',
+    musicSet: 'pcroom_gaming',
+    setName: 'set1',
+    isPending: false,
+    pendingStartTime: 0
+  });
+}
 // musicSet을 세트명으로 매핑하는 함수
 function getSetGroupName(musicSet) {
   const setMap = {
@@ -43,7 +83,7 @@ import { db } from './firebase-init.js';
 import { collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js';
 
 let avatars = []; // Firebase에서 가져온 아바타 데이터
-let stageAvatars = []; // 무대 전용 아바타들
+// let stageAvatars = []; // 무대 전용 아바타들 (중복 선언 제거)
 
 // 아바타 이미지 로딩을 위한 변수들
 let avatarAssets = {
