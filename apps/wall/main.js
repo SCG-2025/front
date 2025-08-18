@@ -456,6 +456,22 @@ function preload() {
     () => console.log('✅ PC룸 Sub 음원 로드 완료'),
     () => console.error('❌ PC룸 Sub 음원 로드 실패')
   );
+    // === 가족 따뜻함 음원들 로드 (6트랙) ===
+    const familyWarmthFiles = [
+      'set3_family_warmth_bass.wav',
+      'set3_family_warmth_chord.wav',
+      'set3_family_warmth_drum.wav',
+      'set3_family_warmth_fx.wav',
+      'set3_family_warmth_lead.wav',
+      'set3_family_warmth_sub.wav'
+    ];
+    familyWarmthFiles.forEach(f => {
+      musicSamples[f] = loadSound(`Music/${f}`,
+        () => console.log(`✅ 가족 따뜻함 ${f} 로드 완료`),
+        () => console.error(`❌ 가족 따뜻함 ${f} 로드 실패`)
+      );
+    });
+
     // === 봄 기억/학교 기억 음원들 로드 (12트랙) ===
     const springFiles = [
       'set3_spring_memories_bass.wav',
