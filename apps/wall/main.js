@@ -1,4 +1,4 @@
-// ...existing code...
+import { initMediaArt, renderMediaArtScreens, mediaArt, addSongShapes, removeSongShapes} from './mediaArt.js';
 let stageAvatars = []; // 무대 전용 아바타들
 // 실험용: PC방 세트의 모든 포지션별 아바타를 무대에 추가
 const pcroomPositions = ['Bass', 'Chord', 'Drum', 'FX', 'Lead', 'Sub'];
@@ -520,30 +520,12 @@ async function initTonePlayers() {
   }
 }
 
-// === 픽셀 미디어아트 전역 ===
-let mediaArt = {
-  enabled: true,
-  // 스크린 3개 각각의 저해상도 픽셀 버퍼
-  buffers: [],
-  // 각 버퍼의 논리 해상도 (픽셀 느낌 위해 의도적으로 낮춤)
-  w: 128, h: 64,
-  // 오디오 분석기
-  fft: null,
-  // 파티클(점)들 – 스크린별로 별도 보유
-  particles: [[], [], []],
-  // Perlin 이동용 시간
-  t: 0
-};
-mediaArt.activeShapes = [[], [], []]; // 각 요소는 {ownerId, musicType, shape, hue, x, y, baseSize}
-
-
-
 function setup() {
   createCanvas(2560, 1760);
   cameraX = 0; cameraY = 0;
   window.scrollTo(0, 0);
   initTonePlayers();
-
+initMediaArt();
   // 봄 기억/학교 기억 아바타 6개 (set3)
   const springTypes = [
     'set3_spring_memories_bass.wav',
@@ -637,26 +619,6 @@ function setup() {
     });
   }
 
-  // === 픽셀 버퍼/FFT 초기화 ===
-  noSmooth();
-  mediaArt.buffers = [createGraphics(mediaArt.w, mediaArt.h),
-                      createGraphics(mediaArt.w, mediaArt.h),
-                      createGraphics(mediaArt.w, mediaArt.h)];
-  mediaArt.buffers.forEach(g => { g.noSmooth(); g.noStroke(); g.colorMode(HSB, 360, 100, 100, 100); });
-  mediaArt.fft = new p5.FFT(0.8, 1024);
-
-  // 파티클(별점) 시드
-  for (let s = 0; s < 3; s++) {
-    for (let i = 0; i < 120; i++) {
-      mediaArt.particles[s].push({
-        x: random(mediaArt.w), y: random(mediaArt.h),
-        vx: random(-0.2, 0.2), vy: random(-0.2, 0.2),
-        hue: random(200, 320),
-        size: random(1, 2.2),
-        nseed: random(1000)
-      });
-    }
-  }
 }
 
 function isPCRoomPlaying() {
@@ -801,7 +763,6 @@ function drawSampleAvatars() { /* no-op */ }
 
 function draw() {
   background('#222');
-
   // 카메라 변환
   push();
   translate(-cameraX, -cameraY);
@@ -814,6 +775,8 @@ function draw() {
 
   // 공간 렌더
   drawSpaces();
+     renderMediaArtScreens(this, playingAvatars, musicSamples);
+
   drawSampleAvatars();
 
   // 무대 아바타들
@@ -838,6 +801,7 @@ function draw() {
   if (masterClock.isRunning) {
     drawMusicDebugInfo();
   }
+
 }
 
 function updateAvatar(avatar) {
@@ -1109,140 +1073,7 @@ function drawSpaces() {
   }
   noStroke();
 
-  // 픽셀 미디어아트 출력
-  renderMediaArtScreens();
-}
 
-
-
-function renderMediaArtScreens() {
-  if (!mediaArt.enabled) return;
-
-  // 🔊 “PC룸만”이 아니라, 아무 음원이나 재생 중인지로 판단
-  const playingAny =
-    playingAvatars.size > 0 ||
-    Object.values(musicSamples).some(s => s && s.isPlaying && s.isPlaying());
-
-  // 전체 마스터 출력 기반 오디오 분석
-  const spectrum = mediaArt.fft.analyze();
-  const bass = mediaArt.fft.getEnergy(20, 120) / 255;
-  const mid  = mediaArt.fft.getEnergy(250, 2000) / 255;
-  const high = mediaArt.fft.getEnergy(4000, 12000) / 255;
-  const overallE = (bass * 0.4 + mid * 0.4 + high * 0.2);
-
-  mediaArt.t += 0.01;
-
-  // 3분할 스크린의 실제 표시 영역(업스케일 목적)
-  const screenRects = [
-    { x: 0,               y: 0, w: 2560/3, h: 480 },
-    { x: 2560/3,          y: 0, w: 2560/3, h: 480 },
-    { x: 2*(2560/3),      y: 0, w: 2560/3, h: 480 }
-  ];
-
-  for (let i = 0; i < 3; i++) {
-    const g = mediaArt.buffers[i];
-
-    // 은은한 배경(재생 시 살짝 밝아짐) — 세트 제한 없이 동작
-    const baseB = playingAny ? 10 + overallE * 20 : 6;
-    g.background(0, 0, baseB, 100);
-
-    // 중앙 글로우(공통 장식) 제거 상태 유지
-
-    // 🎨 곡별 도형 렌더링: activeShapes가 있으면 재생 플래그와 무관하게 그림
-    if (mediaArt.activeShapes[i].length) {
-      const alpha = 50 + overallE * 50;  // 음악 에너지에 따른 밝기
-      const pulse = 1 + overallE * 0.6;  // 크기 펄스
-
-      for (const s of mediaArt.activeShapes[i]) {
-        g.push();
-        g.translate(s.x, s.y);
-
-        // 네온 느낌 이중 찍기
-        g.fill(s.hue, 85, 85, alpha);
-        drawPixelShape(g, s.shape, s.baseSize * pulse);
-        g.translate(0.5, 0.5);
-        g.fill(s.hue, 90, 100, alpha * 0.6);
-        drawPixelShape(g, s.shape, s.baseSize * pulse);
-
-        g.pop();
-      }
-    }
-
-    // 버퍼 업스케일 표시 (픽셀감 유지)
-    const dst = screenRects[i];
-    push();
-    translate(dst.x, dst.y);
-    image(g, 0, 0, dst.w, dst.h);
-    pop();
-  }
-}
-
-function drawPixelShape(g, shape, sz) {
-  switch (shape) {
-    case 'star':      return drawPixelStar(g, 5, sz, sz * 0.5);
-    case 'diamond':   return drawPixelDiamond(g, sz);
-    case 'triangle':  return drawPixelTriangle(g, sz);
-    case 'square':    return g.rect(0, 0, sz, sz);
-    case 'circle':    return drawPixelCircle(g, sz);
-    case 'pentagon':  return drawPixelPolygon(g, 5, sz);
-    default:          return g.rect(0, 0, sz, sz * 0.6); // fallback
-  }
-}
-
-// 별(스파이크형) – 중심을 기준으로 작은 사각형을 둘러찍기
-function drawPixelStar(g, spikes, r1, r2) {
-  for (let a = 0; a < TWO_PI; a += TWO_PI / (spikes * 2)) {
-    const useR = (Math.floor(a / (TWO_PI / spikes)) % 2 === 0) ? r1 : r2;
-    const x = cos(a) * useR;
-    const y = sin(a) * useR;
-    g.rect(x, y, 1.5, 1.5);
-  }
-}
-
-function drawPixelDiamond(g, r) {
-  // 마름모: 십자 형태로 작은 rect 배치
-  for (let t = -r; t <= r; t += 2) {
-    const x = t;
-    const y = 0;
-    g.rect(x, y, 1.5, 1.5);
-  }
-  for (let t = -r; t <= r; t += 2) {
-    const x = 0;
-    const y = t;
-    g.rect(x, y, 1.5, 1.5);
-  }
-}
-
-function drawPixelTriangle(g, r) {
-  // 정삼각형 주변을 점찍듯
-  const n = 24;
-  for (let i = 0; i < n; i++) {
-    const a = (i / n) * TWO_PI;
-    const x = cos(a) * r;
-    const y = sin(a) * r;
-    // 위쪽 반만 사용해 삼각 느낌
-    if (y < r * 0.2) g.rect(x, y, 1.5, 1.5);
-  }
-}
-
-function drawPixelCircle(g, r) {
-  const n = 36;
-  for (let i = 0; i < n; i++) {
-    const a = (i / n) * TWO_PI;
-    const x = cos(a) * r;
-    const y = sin(a) * r;
-    g.rect(x, y, 1.5, 1.5);
-  }
-}
-
-function drawPixelPolygon(g, sides, r) {
-  const n = sides * 2;
-  for (let i = 0; i < n; i++) {
-    const a = (i / n) * TWO_PI;
-    const x = cos(a) * r;
-    const y = sin(a) * r;
-    g.rect(x, y, 1.5, 1.5);
-  }
 }
 // 마우스 이벤트 처리
 function mousePressed() {
@@ -1691,8 +1522,6 @@ function resetStage() {
     }
   }
 
-  // 모든 도형 비우기
-mediaArt.activeShapes = [[], [], []]; // ✅
 
   console.log('🎭 === 무대 리셋 종료 ===');
 }
@@ -1969,11 +1798,13 @@ function playAvatarMusic(avatar) {
     console.log(`🎯 ${avatar.nickname} - 첫 번째 아바타, 즉시 시작`);
     startMasterClockFromPosition(0);
     startAvatarMusicFromPosition(avatar, sound, 0);
+    addSongShapes(avatar);
   } else {
     // 두번째 이후 아바타: 반드시 다음 마디 시작점에 맞춰 동기화
     console.log(`⏰ ${avatar.nickname} - 다음 마디에 동기화 예약`);
     const currentPosition = getCurrentPlaybackPosition();
     scheduleAvatarForCurrentPosition(avatar, sound, currentPosition);
+    addSongShapes(avatar);
   }
 }
 
@@ -2006,20 +1837,10 @@ function scheduleAvatarForCurrentPosition(avatar, sound, currentPosition) {
   console.log(`⏰ ${avatar.nickname} 동기화 스케줄링 (두 마디 대기):`);
   console.log(`   현재 위치: ${currentPosition.toFixed(2)}초`);
   console.log(`   두 마디 뒤 시작: ${targetMeasureStart.toFixed(2)}초`);
-  console.log(`   동기화 재생 위치: ${syncPosition.toFixed(2)}초`);
   console.log(`   대기 시간: ${waitTime.toFixed(2)}초`);
   console.log(`   실행 예정 시각: ${avatar.pendingStartTime.toFixed(2)}초`);
 }
 
-// 마스터 클럭 시작
-function startMasterClock() {
-  masterClock.isRunning = true;
-  masterClock.startTime = millis() / 1000.0; // 초 단위로 변환
-  masterClock.currentBeat = 0;
-  masterClock.currentMeasure = 0;
-  updateNextMeasureStart();
-  console.log('🎯 마스터 클럭 시작');
-}
 
 // 마스터 클럭 리셋 (필요시 사용)
 function resetMasterClock() {
@@ -2077,25 +1898,6 @@ function updateNextMeasureStart() {
   masterClock.nextMeasureStart = masterClock.startTime + (nextMeasureBeats / beatsPerSecond);
 }
 
-// 다음 마디에 아바타 재생 예약
-function scheduleAvatarForNextMeasure(avatar, sound) {
-  avatar.isPending = true;
-  avatar.pendingStartTime = masterClock.nextMeasureStart;
-  // 첫 음원의 현재 위치(루프 기준)와 동일하게 맞춰서 재생
-  let syncPosition = 0;
-  if (playingAvatars.size > 0) {
-    syncPosition = getCurrentPlaybackPosition();
-    if (sound && sound.duration) {
-      syncPosition = syncPosition % sound.duration();
-    }
-  }
-  avatar.playbackStartPosition = syncPosition;
-  pendingAvatars.set(avatar.id, { avatar, sound });
-  console.log(`⏰ ${avatar.nickname} 다음 마디 대기 중`);
-  console.log(`   시작 예정 시간: ${avatar.pendingStartTime.toFixed(2)}초`);
-  console.log(`   동기화 재생 위치: ${syncPosition.toFixed(2)}초 지점부터`);
-}
-
 // 대기 중인 아바타들 확인 및 재생
 function checkPendingAvatars(currentTime) {
   for (const [avatarId, { avatar, sound }] of pendingAvatars) {
@@ -2103,7 +1905,7 @@ function checkPendingAvatars(currentTime) {
       // 시간이 되었으므로 계산된 재생 위치에서 시작
       console.log(`⏰ ${avatar.nickname} 대기 완료 - ${avatar.playbackStartPosition.toFixed(2)}초 위치에서 재생 시작`);
       startAvatarMusicFromPosition(avatar, sound, avatar.playbackStartPosition);
-      
+       addSongShapes(avatar);
       // 대기 목록에서 제거
       avatar.isPending = false;
       pendingAvatars.delete(avatarId);
@@ -2111,11 +1913,6 @@ function checkPendingAvatars(currentTime) {
   }
 }
 
-// 실제 음악 재생 시작 (첫 번째 아바타용 - 현재 위치에서)
-function startAvatarMusic(avatar, sound) {
-  const currentPosition = getCurrentPlaybackPosition();
-  startAvatarMusicFromPosition(avatar, sound, currentPosition);
-}
 
 // 지정된 위치에서 음악 재생 시작
 async function startAvatarMusicFromPosition(avatar, sound, startPosition) {
