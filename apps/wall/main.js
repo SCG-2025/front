@@ -362,10 +362,18 @@ function drawWarningMessage() {
   if (warningTimer <= 0) warningMessage = null;
 }
 
-// 현재 무대 아바타들의 실제 재생 위치 추적
+// 현재 무대 아바타들의 실제 재생 위치 추적 (단순화된 안정 버전)
 function getCurrentPlaybackPosition() {
-  if (playingAvatars.size === 0) return 0;
-  // 첫번째로 재생 중인 아바타의 currentTime 반환
+  if (playingAvatars.size === 0) {
+    // 재생 중인 아바타가 없으면 마스터 클럭 기준으로 반환
+    if (masterClock.isRunning) {
+      const currentTime = millis() / 1000.0;
+      return currentTime - masterClock.startTime;
+    }
+    return 0;
+  }
+  
+  // 첫번째로 재생 중인 아바타의 currentTime 반환 (원래 방식)
   for (const avatarId of playingAvatars) {
     const avatar = [...stageAvatars].find(a => a.id === avatarId);
     if (avatar && avatar.musicType) {
@@ -375,8 +383,10 @@ function getCurrentPlaybackPosition() {
       }
       const tonePlayer = tonePlayers[avatar.musicType];
       if (tonePlayer && tonePlayer.state === 'started' && tonePlayer.buffer) {
-        // Tone.js 위치 계산
-        return tonePlayer.buffer.duration ? (Tone.now() % tonePlayer.buffer.duration) : 0;
+        // Tone.js 위치 계산 (단순화)
+        const toneNow = Tone.now();
+        const startTime = tonePlayer._startTime || 0;
+        return Math.max(0, toneNow - startTime);
       }
     }
     break; // 첫번째 아바타만
@@ -1829,25 +1839,25 @@ function startMasterClockFromPosition(startPosition) {
   console.log(`🎯 마스터 클럭 시작 (${startPosition.toFixed(2)}초 위치부터)`);
 }
 
-// 현재 재생 위치에 맞춰 다음 마디에 동기화
+// 현재 재생 위치에 맞춰 다음 마디에 동기화 (복원 + 대기시간 추가)
 function scheduleAvatarForCurrentPosition(avatar, sound, currentPosition) {
-  // 두 마디 뒤 동기화
+  // 최소 1마디 대기 후 다음 마디에 동기화 (더 여유있게)
   const beatsPerSecond = masterClock.bpm / 60.0;
   const secondsPerMeasure = masterClock.beatsPerMeasure / beatsPerSecond;
   const currentMeasure = Math.floor(currentPosition / secondsPerMeasure);
-  const targetMeasure = currentMeasure + 2;
+  const targetMeasure = currentMeasure + 2; // 2마디 뒤로 복원 (더 안정적)
   const targetMeasureStart = targetMeasure * secondsPerMeasure;
   const waitTime = targetMeasureStart - currentPosition;
   const currentTime = millis() / 1000.0;
 
   avatar.isPending = true;
   avatar.pendingStartTime = currentTime + waitTime;
-  // 두 번째 이후 아바타는 두 마디 뒤에 (대기시간 + 현재 재생 위치)에서 재생
-  avatar.playbackStartPosition = waitTime + currentPosition;
+  avatar.playbackStartPosition = targetMeasureStart; // 마디 시작점에서 재생
   pendingAvatars.set(avatar.id, { avatar, sound });
-  console.log(`⏰ ${avatar.nickname} 동기화 스케줄링 (두 마디 대기):`);
-  console.log(`   현재 위치: ${currentPosition.toFixed(2)}초`);
-  console.log(`   두 마디 뒤 시작: ${targetMeasureStart.toFixed(2)}초`);
+  
+  console.log(`⏰ ${avatar.nickname} 동기화 스케줄링 (2마디 대기):`);
+  console.log(`   현재 위치: ${currentPosition.toFixed(2)}초 (${currentMeasure + 1}마디)`);
+  console.log(`   목표 마디: ${targetMeasure + 1}마디 시작점 (${targetMeasureStart.toFixed(2)}초)`);
   console.log(`   대기 시간: ${waitTime.toFixed(2)}초`);
   console.log(`   실행 예정 시각: ${avatar.pendingStartTime.toFixed(2)}초`);
 }
@@ -1939,7 +1949,7 @@ async function startAvatarMusicFromPosition(avatar, sound, startPosition) {
   }
 }
 
-// 특정 위치에서 재생하는 실제 함수
+// 특정 위치에서 재생하는 실제 함수 (단순화된 안정 버전)
 async function playFromPosition(avatar, sound, startPosition) {
   if (!sound.isPlaying()) {
     // Tone.js 플레이어가 있으면 우선 사용
@@ -1953,15 +1963,18 @@ async function playFromPosition(avatar, sound, startPosition) {
           console.log('🎯 Tone.js 오디오 컨텍스트 시작');
         }
         
-        // 항상 특정 위치에서 재생 (0초든 아니든)
         // 음원의 길이를 고려하여 루프 내에서의 위치 계산
-        const loopPosition = tonePlayer.buffer ? startPosition % tonePlayer.buffer.duration : startPosition;
+        const bufferDuration = tonePlayer.buffer ? tonePlayer.buffer.duration : 10;
+        const loopPosition = startPosition % bufferDuration;
+        
+        // 시작 시간 기록 (단순화)
+        tonePlayer._startTime = Tone.now();
         
         tonePlayer.start(0, loopPosition);
         console.log(`🎵 ${avatar.nickname} Tone.js 재생 시작 (${loopPosition.toFixed(2)}초 지점부터)`);
         
         playingAvatars.add(avatar.id);
-        return; // Tone.js로 성공했으면 리턴
+        return;
       } catch (error) {
         console.error('❌ Tone.js 재생 오류:', error, '- p5.sound로 폴백');
       }
@@ -1973,24 +1986,24 @@ async function playFromPosition(avatar, sound, startPosition) {
         sound.loop();
         console.log(`🎵 ${avatar.nickname} p5.sound 재생 시작 (처음부터)`);
       } else {
-        // p5.sound의 play() 함수 사용: play(delay, rate, amp, cueStart)
+        // p5.sound의 play() 함수 사용
         sound.play(0, 1, 1, startPosition);
         sound.setLoop(true);
         console.log(`🎵 ${avatar.nickname} p5.sound 재생 시작 (${startPosition.toFixed(2)}초 지점부터)`);
       }
-  // addSongShapes(avatar); // ReferenceError 방지: 임시 주석 처리
     } catch (error) {
       console.warn('⚠️ p5.sound 위치 재생 실패, 처음부터 재생:', error);
       sound.loop();
       console.log(`🎵 ${avatar.nickname} p5.sound 재생 시작 (처음부터 - 폴백)`);
-  // addSongShapes(avatar); // ReferenceError 방지: 임시 주석 처리
     }
     
     playingAvatars.add(avatar.id);
+  } else {
+    console.warn(`⚠️ ${avatar.nickname} 음악이 이미 재생 중입니다`);
   }
 }
 
-// 음악 디버그 정보 표시
+// 음악 디버그 정보 표시 (단순화된 버전)
 function drawMusicDebugInfo() {
   push();
   fill(255, 255, 255, 200);
@@ -2000,12 +2013,15 @@ function drawMusicDebugInfo() {
   const currentTime = millis() / 1000.0;
   const elapsedTime = masterClock.isRunning ? currentTime - masterClock.startTime : 0;
   const actualPosition = getCurrentPlaybackPosition();
+  const beatsPerSecond = masterClock.bpm / 60.0;
+  const secondsPerMeasure = masterClock.beatsPerMeasure / beatsPerSecond;
+  const currentMeasure = Math.floor(actualPosition / secondsPerMeasure);
   
   let debugText = [
-    `🎯 마스터 클럭 ${masterClock.isRunning ? '실행 중' : '정지'}`,
+    `🎯 마스터 클럭 ${masterClock.isRunning ? '실행 중' : '정지'} (${masterClock.bpm} BPM)`,
     `⏱️ 마스터 시간: ${elapsedTime.toFixed(1)}초`,
     `🎵 실제 재생 위치: ${actualPosition.toFixed(1)}초`,
-    `📊 현재 마디: ${Math.floor(actualPosition / 2) + 1}마디`, // 2초 = 1마디 (120BPM, 4/4박자)
+    `📊 현재 마디: ${currentMeasure + 1}마디`,
     `🎼 재생 중: ${playingAvatars.size}개`,
     `⏰ 대기 중: ${pendingAvatars.size}개`,
     `⌨️ 'R' 키: 마스터 클럭 리셋`
@@ -2016,7 +2032,7 @@ function drawMusicDebugInfo() {
     for (const [avatarId, { avatar }] of pendingAvatars) {
       const waitTime = Math.max(0, avatar.pendingStartTime - currentTime);
       debugText.push(`⏰ ${avatar.nickname}: ${waitTime.toFixed(1)}초 후 재생`);
-      break; // 첫 번째만 표시
+      if (debugText.length > 8) break; // 너무 많으면 첫 번째만 표시
     }
   }
   
