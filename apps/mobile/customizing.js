@@ -58,7 +58,7 @@ import { db } from './firebase-init.js';
   const Catalog = {
     female: makeVariants('fe', 10),  // fe.png ~ fe(5).png
     male:   makeVariants('ma', 13),  // ma.png ~ ma(4).png
-    heads:  makeVariants('head', 12),
+    heads:  makeVariants('head', 8),
     sopum: makeVariants('sopum',2),
     eye: makeVariants('eye', 4),
     wing:   'assets/wing.png'
