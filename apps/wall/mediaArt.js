@@ -9,8 +9,10 @@ export let mediaArt = {
   particles: [[], [], []],
   t: 0,
   activeShapes: [[], [], []], // 각 스크린별 렌더 도형 저장
-    removeSongShapes: function() {
-    this.screens = [];   // 모든 스크린 초기화
+  removeSongShapes: function() {
+    // 모든 스크린의 도형 초기화
+    this.activeShapes = [[], [], []];
+    console.log('🗑️ [MediaArt] 모든 도형 제거됨');
   }
 };
 
