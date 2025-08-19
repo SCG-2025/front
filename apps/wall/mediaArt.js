@@ -107,6 +107,24 @@ function drawPixelShape(g, shape, sz) {
     case "gamepad": return drawPixelGamepad(g, sz);
     case "monitor": return drawPixelMonitor(g, sz);
     case "keyboard": return drawPixelKeyboard(g, sz);
+    case "snowflake1": return drawPixelSnowflake1(g, sz);
+    case "snowflake2": return drawPixelSnowflake2(g, sz);
+    case "snowflake3": return drawPixelSnowflake3(g, sz);
+     case "snowman": return drawPixelSnowman(g, sz);
+    case "snowball_round": return drawPixelSnowballRound(g, sz);
+    case "snowball_oval": return drawPixelSnowballOval(g, sz);
+    case "leaf_maple": return drawPixelLeafMaple(g, sz);
+    case "leaf_ginkgo": return drawPixelLeafGinkgo(g, sz);
+    case "leaf_basic": return drawPixelLeafBasic(g, sz);
+    case "cloud_round": return drawPixelCloudRound(g, sz);
+    case "cloud_odd": return drawPixelCloudOdd(g, sz);
+    case "circle_simple": return drawPixelCircleSimple(g, sz);
+    case "book": return drawPixelBook(g, sz);
+    case "pen": return drawPixelPen(g, sz);
+    case "glasses": return drawPixelGlasses(g, sz);
+    case "lamp": return drawPixelLamp(g, sz);
+    case "note": return drawPixelNote(g, sz);
+    case "bubble": return drawPixelBubble(g, sz);
     default:         return g.rect(0,0,sz,sz*0.6);
   }
 }
@@ -163,6 +181,69 @@ function drawPixelPolygon(g, sides, r) {
     g.rect(x, y, 1.5, 1.5);
   }
 }
+//WINTER
+function drawPixelSnowflake1(g, size) {
+  // 중심점
+  g.rect(0,0,2,2);
+  // 방사형 6방향
+  for(let a=0; a<TWO_PI; a+=PI/3){
+    const x = cos(a) * size*0.5;
+    const y = sin(a) * size*0.5;
+    g.rect(x, y, 2, 2);
+  }
+}
+function drawPixelSnowflake2(g, size) {
+  g.rect(0,0,2,2);
+  for(let a=0; a<TWO_PI; a+=PI/3){
+    const x = cos(a) * size*0.5;
+    const y = sin(a) * size*0.5;
+    g.rect(x, y, 2, 2);
+
+    // 중간 가지
+    const mx = cos(a) * size*0.25;
+    const my = sin(a) * size*0.25;
+    g.rect(mx, my, 2, 2);
+
+    // 가지에서 양옆으로 작은 점들
+    const sideAngle1 = a + PI/6;
+    const sideAngle2 = a - PI/6;
+    g.rect(mx + cos(sideAngle1)*3, my + sin(sideAngle1)*3, 2, 2);
+    g.rect(mx + cos(sideAngle2)*3, my + sin(sideAngle2)*3, 2, 2);
+  }
+}
+function drawPixelSnowflake3(g, size) {
+  const spikes = 12; // 가시 수
+  for(let i=0; i<spikes; i++){
+    const a = (TWO_PI/spikes)*i;
+    const r = (i%2===0? size*0.5 : size*0.25);
+    const x = cos(a) * r;
+    const y = sin(a) * r;
+    g.rect(x, y, 2, 2);
+  }
+}
+function drawPixelSnowman(g, size) {
+  // 세 개의 눈덩이 쌓기 (밑이 가장 큼)
+  g.ellipse(0, size*0.5, size*0.9, size*0.9);   // 아래 큰 눈덩이
+  g.ellipse(0, 0, size*0.7, size*0.7);          // 중간 몸통
+  g.ellipse(0, -size*0.5, size*0.5, size*0.5);  // 위 머리
+
+  // 눈 (점 두 개)
+  g.rect(-size*0.15, -size*0.55, 2, 2);
+  g.rect(size*0.15, -size*0.55, 2, 2);
+
+  // 버튼 (세 개쯤)
+  g.rect(0, -size*0.2, 2, 2);
+  g.rect(0, 0.0, 2, 2);
+  g.rect(0, size*0.2, 2, 2);
+}
+function drawPixelSnowballRound(g, size) {
+  g.ellipse(0, 0, size, size); // 둥근 눈덩이
+}
+function drawPixelSnowballOval(g, size) {
+  g.ellipse(0, 0, size*1.4, size*0.8); // 납작 길쭉한 눈덩이
+}
+//PC
+
 function drawPixelGamepad(g, size) {
   // 간단한 패드 모양 (좌우 손잡이 + 중앙 바디)
   g.rect(-size*0.5, -size*0.2, size, size*0.4);
@@ -185,6 +266,79 @@ function drawPixelKeyboard(g, size) {
       g.rect(x, y, 2, 2);
     }
   }
+}
+//AUTUMN
+function drawPixelLeafMaple(g, size) {
+  // 중앙 줄기
+  g.rect(0, size*0.3, 2, size*0.4);
+
+  // 위쪽 세 갈래
+  for (let angle = -PI/4; angle <= PI/4; angle += PI/4) {
+    const x = cos(angle) * size*0.3;
+    const y = -size*0.3;
+    g.ellipse(x, y, size*0.3, size*0.3);
+  }
+  // 양 옆 잎
+  g.ellipse(-size*0.35, -size*0.1, size*0.25, size*0.25);
+  g.ellipse(size*0.35, -size*0.1, size*0.25, size*0.25);
+}
+function drawPixelLeafGinkgo(g, size) {
+  // 부채꼴 모양
+  g.arc(0, 0, size*0.8, size*0.6, PI, TWO_PI);
+  // 가운데 홈
+  g.rect(-1, -size*0.05, 2, size*0.3);
+  // 줄기
+  g.rect(0, size*0.2, 2, size*0.4);
+}
+function drawPixelLeafBasic(g, size) {
+  g.ellipse(0, 0, size*0.6, size);    // 세로 타원
+  g.rect(0, size*0.4, 2, size*0.4);   // 줄기
+}
+function drawPixelLeafBasic(g, size) {
+  g.ellipse(0, 0, size*0.6, size);    // 세로 타원
+  g.rect(0, size*0.4, 2, size*0.4);   // 줄기
+}
+function drawPixelCloudOdd(g, size) {
+  g.ellipse(-size*0.3, 0, size*0.5, size*0.4);
+  g.ellipse(0, -size*0.2, size*0.7, size*0.5);
+  g.ellipse(size*0.25, 0, size*0.5, size*0.3);
+  g.ellipse(size*0.1, size*0.15, size*0.4, size*0.3);
+}
+function drawPixelCircleSimple(g, size) {
+  g.ellipse(0, 0, size, size);
+}
+
+//study_reading
+function drawPixelBook(g, size) {
+  g.rect(-size*0.4, -size*0.2, size*0.35, size*0.6); // 왼쪽 페이지
+  g.rect(size*0.05, -size*0.2, size*0.35, size*0.6); // 오른쪽 페이지
+}
+
+function drawPixelPen(g, size) {
+  g.rect(0, 0, size*0.1, size*0.8); // 펜 몸통
+  g.triangle(-size*0.05, size*0.4, size*0.05, size*0.4, 0, size*0.55); // 촉
+}
+
+function drawPixelGlasses(g, size) {
+  g.ellipse(-size*0.3, 0, size*0.4, size*0.4);
+  g.ellipse(size*0.3, 0, size*0.4, size*0.4);
+  g.rect(-size*0.1, -2, size*0.2, 4); // 다리 연결
+}
+
+function drawPixelLamp(g, size) {
+  g.rect(0, size*0.2, 2, size*0.4); // 기둥
+  g.triangle(-size*0.2, -size*0.2, size*0.2, -size*0.2, 0, -size*0.5); // 갓
+}
+
+function drawPixelNote(g, size) {
+  g.rect(-size*0.3, -size*0.4, size*0.6, size*0.8);
+  g.line(-size*0.3, -size*0.3, size*0.3, -size*0.3);
+  g.line(-size*0.3, -size*0.1, size*0.3, -size*0.1);
+}
+
+function drawPixelBubble(g, size) {
+  g.ellipse(0, 0, size*0.5, size*0.5);
+  g.ellipse(size*0.3, -size*0.3, size*0.2, size*0.2);
 }
 
 // 🎨 세트/포지션별 미디어아트 스타일 매핑
@@ -332,31 +486,28 @@ pcroom_gaming: {
     "드럼/퍼커션": { shape: "triangle", hue: 10, baseSize: 26 },
     "효과음/FX": { shape: "circle", hue: 320, baseSize: 16 },
   },
-     study_reading: {
-    "리드멜로디": { shape: "star", hue: 200, baseSize: 24 },
-    "서브멜로디": { shape: "pentagon", hue: 280, baseSize: 18 },
-    "코드": { shape: "square", hue: 100, baseSize: 20 },
-    "베이스": { shape: "diamond", hue: 50, baseSize: 22 },
-    "드럼/퍼커션": { shape: "triangle", hue: 10, baseSize: 26 },
-    "효과음/FX": { shape: "circle", hue: 320, baseSize: 16 },
+ study_reading: {
+    "리드멜로디": { shape: "book", hue: 40, baseSize: 24 },
+    "서브멜로디": { shape: "pen", hue: 200, baseSize: 20 },
+    "코드":       { shape: "glasses", hue: 100, baseSize: 22 },
+    "베이스":     { shape: "lamp", hue: 50, baseSize: 26 },
+    "드럼/퍼커션": { shape: "note", hue: 180, baseSize: 24 },
+    "효과음/FX":  { shape: "bubble", hue: 250, baseSize: 20 },
+  },  autumn_memories: {
+    "리드멜로디": { shape: "leaf_maple", hue: 20, baseSize: 24 },   // 단풍
+    "서브멜로디": { shape: "leaf_ginkgo", hue: 50, baseSize: 22 },  // 은행
+    "코드":       { shape: "leaf_basic", hue: 90, baseSize: 20 },   // 전형적인 잎
+    "베이스":     { shape: "cloud_round", hue: 200, baseSize: 26 }, // 구름
+    "드럼/퍼커션": { shape: "cloud_odd", hue: 210, baseSize: 28 },  // 다른 구름
+    "효과음/FX":  { shape: "circle_simple", hue: 180, baseSize: 18 } // 원
   },
-  autumn_memories: {
-    "리드멜로디": { shape: "star", hue: 200, baseSize: 24 },
-    "서브멜로디": { shape: "pentagon", hue: 280, baseSize: 18 },
-    "코드": { shape: "square", hue: 100, baseSize: 20 },
-    "베이스": { shape: "diamond", hue: 50, baseSize: 22 },
-    "드럼/퍼커션": { shape: "triangle", hue: 10, baseSize: 26 },
-    "효과음/FX": { shape: "circle", hue: 320, baseSize: 16 },
-  },
-
 winter_memories:{
-    "리드멜로디": { shape: "star", hue: 200, baseSize: 24 },
-    "서브멜로디": { shape: "pentagon", hue: 280, baseSize: 18 },
-    "코드": { shape: "square", hue: 100, baseSize: 20 },
-    "베이스": { shape: "diamond", hue: 50, baseSize: 22 },
-    "드럼/퍼커션": { shape: "triangle", hue: 10, baseSize: 26 },
-    "효과음/FX": { shape: "circle", hue: 320, baseSize: 16 },
-  },
+    "리드멜로디": { shape: "snowflake1", hue: 200, baseSize: 20 },
+    "서브멜로디": { shape: "snowflake2", hue: 180, baseSize: 22 },
+    "코드":       { shape: "snowflake3", hue: 220, baseSize: 24 },
+   "베이스":     { shape: "snowman", hue: 190, baseSize: 20 },
+    "드럼/퍼커션": { shape: "snowball_round", hue: 230, baseSize: 18 },
+    "효과음/FX":  { shape: "snowball_oval", hue: 250, baseSize: 28 },  },
 };
   
 
