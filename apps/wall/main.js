@@ -1475,7 +1475,7 @@ function resetStage() {
 
     playingAvatars.clear();
     pendingAvatars.clear();
-
+mediaArt.removeSongShapes();
     let tonePlayerCount = 0;
     Object.values(tonePlayers).forEach(player => {
       if (player && player.state === 'started') {
@@ -1530,7 +1530,6 @@ function resetStage() {
       resetBtn.textContent = '🎭 무대 리셋 (오류)';
     }
   }
-
 
   console.log('🎭 === 무대 리셋 종료 ===');
 }
