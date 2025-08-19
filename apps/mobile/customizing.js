@@ -50,15 +50,22 @@ import { db } from './firebase-init.js';
 
   /* ---------- 스프라이트 카탈로그/아바타/프리로드 ---------- */
   function makeVariants(prefix, count) {
-    return Array.from({ length: count }, (_, i) =>
-      i === 0 ? `assets/${prefix}.png` : `assets/${prefix}(${i + 1}).png`
-    );
+    const variants = [];
+    // 첫 번째 파일 (기본 파일)
+    variants.push(`assets/${prefix}.png`);
+    
+    // 나머지 파일들 (괄호 포함)
+    for (let i = 2; i <= count; i++) {
+      variants.push(`assets/${prefix}(${i}).png`);
+    }
+    
+    return variants;
   }
 
   const Catalog = {
-    female: makeVariants('fe', 10),  // fe.png ~ fe(5).png
-    male:   makeVariants('ma', 13),  // ma.png ~ ma(4).png
-    heads:  makeVariants('head', 12),
+    female: makeVariants('fe', 5),   // fe.png ~ fe(5).png (5개)
+    male:   makeVariants('ma', 4),   // ma.png ~ ma(4).png (4개)
+    heads:  makeVariants('head', 8), // head.png ~ head(8).png (8개)
     sopum: makeVariants('sopum',2),
     eye: makeVariants('eye', 4),
     wing:   'assets/wing.png'
@@ -137,14 +144,27 @@ import { db } from './firebase-init.js';
     // UI 구성
     buildUI();
 
-    // 첫 렌더
-    renderAvatar();
-    noLoop(); // draw는 애니메이션 때만
+    // 첫 렌더 (약간의 지연을 두고)
+    setTimeout(() => {
+      try {
+        renderAvatar();
+        noLoop(); // draw는 애니메이션 때만
+      } catch (e) {
+        console.error('초기 렌더링 오류:', e);
+      }
+    }, 200);
   }
 
   function windowResized() {
-    resizeCanvas(windowWidth, windowHeight * 0.6);
-    renderAvatar();
+    try {
+      resizeCanvas(windowWidth, windowHeight * 0.6);
+      // 캔버스 리사이즈 후 약간의 지연을 두고 렌더링
+      setTimeout(() => {
+        renderAvatar();
+      }, 100);
+    } catch (e) {
+      console.error('windowResized 오류:', e);
+    }
   }
 
   /* ---------- UI ---------- */
@@ -321,7 +341,20 @@ import { db } from './firebase-init.js';
 
   /* ---------- 렌더 ---------- */
   function renderAvatar() {
-    clear();
+    // 렌더러가 초기화되었는지 확인
+    if (typeof clear === 'function' && _renderer) {
+      try {
+        clear();
+      } catch (e) {
+        console.warn('Clear 함수 호출 실패:', e);
+        // 대안: 배경색으로 화면 지우기
+        background(255);
+      }
+    } else {
+      // 렌더러가 없으면 배경색으로 대체
+      background(255);
+    }
+    
     const cx = width / 2, cy = height / 2;
     renderAvatarAt(cx, cy, 1.2);
   }
