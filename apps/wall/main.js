@@ -389,25 +389,25 @@ function preload() {
   avatarImage = loadImage('avatar_sample.jpeg'); // 기본 폴백 이미지
 
   // === 커스터마이징 아바타 assets 로드 ===
-  // Female avatars (fe.png ~ fe(5).png)
+  // Female avatars (fe.png ~ fe5.png)
   avatarAssets.female = [];
   avatarAssets.female.push(loadImage('../mobile/assets/fe.png'));
   for (let i = 2; i <= 5; i++) {
-    avatarAssets.female.push(loadImage(`../mobile/assets/fe(${i}).png`));
+    avatarAssets.female.push(loadImage(`../mobile/assets/fe${i}.png`));
   }
 
-  // Male avatars (ma.png ~ ma(4).png)
+  // Male avatars (ma.png ~ ma4.png)
   avatarAssets.male = [];
   avatarAssets.male.push(loadImage('../mobile/assets/ma.png'));
   for (let i = 2; i <= 4; i++) {
-    avatarAssets.male.push(loadImage(`../mobile/assets/ma(${i}).png`));
+    avatarAssets.male.push(loadImage(`../mobile/assets/ma${i}.png`));
   }
 
-  // Head accessories (head.png ~ head(8).png)
+  // Head accessories (head.png ~ head8.png)
   avatarAssets.heads = [];
   avatarAssets.heads.push(loadImage('../mobile/assets/head.png'));
   for (let i = 2; i <= 8; i++) {
-    avatarAssets.heads.push(loadImage(`../mobile/assets/head(${i}).png`));
+    avatarAssets.heads.push(loadImage(`../mobile/assets/head${i}.png`));
   }
 
   // Wing
@@ -634,30 +634,31 @@ function isPCRoomPlaying() {
   return false;
 }
 
-// Firebase 데이터 처리
-onSnapshot(collection(db, 'memories'), (snapshot) => {
-  console.log('[main.js] onSnapshot fired, docs:', snapshot.size);
-  snapshot.docChanges().forEach(change => {
-    if (change.type === 'added') {
-      const docData = change.doc.data();
-      // 아바타 객체 생성: 외형 정보와 커스텀 정보 분리
-      const avatar = {
-        id: change.doc.id,
-        nickname: docData.nickname,
-        memory: docData.memory,
-        category: docData.category,
-        selectedRecipe: docData.selectedRecipe,
-        setName: docData.setName,
-        musicType: docData.musicType || (docData.avatar && docData.avatar.musicType) || null,
-        musicSet: docData.musicSet,
-        musicPosition: docData.musicPosition,
-        musicBpm: docData.musicBpm,
-        extractedKeywords: docData.extractedKeywords,
-        keywords: docData.keywords,
-        customData: docData.avatar && typeof docData.avatar === 'object' ? docData.avatar : null,
-        x: -100,
-        y: 1120,
-        vx: 6,
+// Firebase 데이터 처리 (에러 핸들링 추가)
+try {
+  onSnapshot(collection(db, 'memories'), (snapshot) => {
+    console.log('[main.js] onSnapshot fired, docs:', snapshot.size);
+    snapshot.docChanges().forEach(change => {
+      if (change.type === 'added') {
+        const docData = change.doc.data();
+        // 아바타 객체 생성: 외형 정보와 커스텀 정보 분리
+        const avatar = {
+          id: change.doc.id,
+          nickname: docData.nickname,
+          memory: docData.memory,
+          category: docData.category,
+          selectedRecipe: docData.selectedRecipe,
+          setName: docData.setName,
+          musicType: docData.musicType || (docData.avatar && docData.avatar.musicType) || null,
+          musicSet: docData.musicSet,
+          musicPosition: docData.musicPosition,
+          musicBpm: docData.musicBpm,
+          extractedKeywords: docData.extractedKeywords,
+          keywords: docData.keywords,
+          customData: docData.avatar && typeof docData.avatar === 'object' ? docData.avatar : null,
+          x: -100,
+          y: 1120,
+          vx: 6,
         state: 'plane-in',
         direction: 1,
         walkTimer: 0,
@@ -757,7 +758,15 @@ onSnapshot(collection(db, 'memories'), (snapshot) => {
   avatars.push(avatar);
     }
   });
-});
+  }, (error) => {
+    console.error('Firebase 연결 오류:', error);
+    console.log('Firebase 없이 로컬 모드로 실행합니다.');
+    // Firebase 없이도 앱이 작동하도록 기본 아바타 추가 등 필요시 추가
+  });
+} catch (error) {
+  console.error('Firebase 초기화 오류:', error);
+  console.log('Firebase 없이 로컬 모드로 실행합니다.');
+}
 // 필요 시 샘플 아바타 렌더(현재 미사용이면 빈 함수로 두세요)
 function drawSampleAvatars() { /* no-op */ }
 

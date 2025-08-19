@@ -354,10 +354,6 @@ function drawPixelLeafBasic(g, size) {
   g.ellipse(0, 0, size*0.6, size);    // 세로 타원
   g.rect(0, size*0.4, 2, size*0.4);   // 줄기
 }
-function drawPixelLeafBasic(g, size) {
-  g.ellipse(0, 0, size*0.6, size);    // 세로 타원
-  g.rect(0, size*0.4, 2, size*0.4);   // 줄기
-}
 function drawPixelCloudOdd(g, size) {
   g.ellipse(-size*0.3, 0, size*0.5, size*0.4);
   g.ellipse(0, -size*0.2, size*0.7, size*0.5);
