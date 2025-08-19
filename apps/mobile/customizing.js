@@ -60,6 +60,7 @@ import { db } from './firebase-init.js';
     male:   makeVariants('ma', 13),  // ma.png ~ ma(4).png
     heads:  makeVariants('head', 12),
     sopum: makeVariants('sopum',2),
+    eye: makeVariants('eye', 4),
     wing:   'assets/wing.png'
   };
 
