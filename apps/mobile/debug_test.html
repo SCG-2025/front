@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 추천 시스템 디버깅 테스트</title>
+    <style>
+        body { 
+            font-family: 'Malgun Gothic', sans-serif; 
+            max-width: 800px; 
+            margin: 50px auto; 
+            padding: 20px; 
+            background: #f5f5f5; 
+        }
+        .container { 
+            background: white; 
+            padding: 30px; 
+            border-radius: 15px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+        }
+        .test-input { 
+            width: 100%; 
+            height: 100px; 
+            padding: 15px; 
+            border: 2px solid #ddd; 
+            border-radius: 10px; 
+            font-size: 16px; 
+            margin-bottom: 20px; 
+        }
+        .btn { 
+            background: #007bff; 
+            color: white; 
+            padding: 12px 25px; 
+            border: none; 
+            border-radius: 8px; 
+            font-size: 16px; 
+            cursor: pointer; 
+            margin-right: 10px; 
+        }
+        .btn:hover { 
+            background: #0056b3; 
+        }
+        .debug-output { 
+            background: #1e1e1e; 
+            color: #00ff00; 
+            padding: 20px; 
+            border-radius: 10px; 
+            margin-top: 20px; 
+            font-family: 'Courier New', monospace; 
+            font-size: 12px; 
+            max-height: 500px; 
+            overflow-y: auto; 
+            white-space: pre-wrap; 
+        }
+        .result-card { 
+            background: #f8f9fa; 
+            border: 1px solid #ddd; 
+            border-radius: 10px; 
+            padding: 15px; 
+            margin: 10px 0; 
+        }
+        .result-title { 
+            font-weight: bold; 
+            color: #333; 
+            margin-bottom: 5px; 
+        }
+        .result-score { 
+            color: #007bff; 
+            font-weight: bold; 
+        }
+        .predefined-tests { 
+            margin-bottom: 20px; 
+        }
+        .predefined-tests button { 
+            background: #28a745; 
+            margin: 3px; 
+            padding: 6px 12px; 
+            font-size: 12px;
+            border-radius: 6px;
+        }
+        .predefined-tests button:hover { 
+            background: #1e7e34; 
+        }
+        .category-section {
+            margin-bottom: 12px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .category-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #495057;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 AI 음악 추천 시스템 디버깅</h1>
+        
+        <div class="predefined-tests">
+            <h3>🧪 미리 정의된 테스트</h3>
+            <div style="margin-bottom: 15px;" class="category-section">
+                <div class="category-title">🎮 디지털 & 게임</div>
+                <button onclick="setTestInput('PC방에서 친구들과 롤 하기')">PC방과 온라인 게임</button>
+                <button onclick="setTestInput('집에서 플스로 피파 게임하기')">집에서 게임기로</button>
+                <button onclick="setTestInput('휴대폰으로 모바일 게임하며 시간 보내기')">휴대폰 모바일 게임</button>
+                <button onclick="setTestInput('친구들과 보드게임 카페에서 놀기')">보드게임과 퍼즐</button>
+            </div>
+            
+            <div style="margin-bottom: 15px;" class="category-section">
+                <div class="category-title">🏃 활동 & 에너지</div>
+                <button onclick="setTestInput('친구들과 헬스장에서 운동하기')">운동과 피트니스</button>
+                <button onclick="setTestInput('동네 공원에서 조깅하며 운동')">조깅과 러닝</button>
+                <button onclick="setTestInput('친구들과 클럽에서 춤추며 밤새기')">클럽과 댄스</button>
+                <button onclick="setTestInput('카페에서 친구들과 수다떨기')">카페와 수다</button>
+            </div>
+            
+            <div style="margin-bottom: 15px;" class="category-section">
+                <div class="category-title">❤️ 따뜻함 & 소통</div>
+                <button onclick="setTestInput('가족들과 함께 저녁 식사하기')">가족과의 따뜻한 시간</button>
+                <button onclick="setTestInput('고등학교 친구들과 교실에서 수업듣기')">학창시절 추억</button>
+                <button onclick="setTestInput('연인과 함께 데이트하며 산책하기')">연애와 데이트</button>
+                <button onclick="setTestInput('생일파티에서 친구들과 축하하기')">생일과 축하</button>
+            </div>
+            
+            <div style="margin-bottom: 15px;" class="category-section">
+                <div class="category-title">🌸 계절 & 자연</div>
+                <button onclick="setTestInput('봄날 가족과 벚꽃 구경 나들이')">봄의 따뜻한 추억</button>
+                <button onclick="setTestInput('여름 바다에서 친구들과 수영하기')">여름 바다 추억</button>
+                <button onclick="setTestInput('가을 단풍 구경하며 등산하기')">가을 단풍 나들이</button>
+                <button onclick="setTestInput('겨울 눈 내리는 날 집에서 따뜻하게')">겨울 눈 추억</button>
+            </div>
+            
+            <div style="margin-bottom: 15px;" class="category-section">
+                <div class="category-title">🎭 감성 & 문화</div>
+                <button onclick="setTestInput('친구들과 노래방에서 노래 부르기')">노래방과 가라오케</button>
+                <button onclick="setTestInput('어린 시절 추억 사진 보며 회상하기')">사진과 앨범</button>
+                <button onclick="setTestInput('혼자 집에서 음악 들으며 휴식')">혼자만의 시간</button>
+                <button onclick="setTestInput('친구들과 영화관에서 영화 보기')">영화와 드라마</button>
+            </div>
+        </div>
+        
+        <textarea 
+            id="testInput" 
+            class="test-input" 
+            placeholder="분석할 추억 텍스트를 입력해주세요..."
+            maxlength="500"
+        >가족들과 함께 개나리 구경</textarea>
+        
+        <div>
+            <button class="btn" onclick="testKeywordExtraction()">키워드 추출 테스트</button>
+            <button class="btn" onclick="testFullRecommendation()">전체 추천 테스트</button>
+            <button class="btn" onclick="runAllTests()" style="background: #dc3545;">🧪 전체 자동 테스트</button>
+            <button class="btn" onclick="clearOutput()">출력 지우기</button>
+        </div>
+        
+        <div id="results"></div>
+        <div id="debugOutput" class="debug-output"></div>
+    </div>
+
+    <script src="firebase-init.js"></script>
+    <script src="write.js"></script>
+    <script>
+        let originalConsoleLog = console.log;
+        let originalConsoleError = console.error;
+        let originalConsoleWarn = console.warn;
+        
+        // 콘솔 출력을 화면에도 표시
+        function addToDebugOutput(message, type = 'log') {
+            const output = document.getElementById('debugOutput');
+            const timestamp = new Date().toLocaleTimeString();
+            let color = '#00ff00';
+            
+            if (type === 'error') color = '#ff4444';
+            else if (type === 'warn') color = '#ffaa00';
+            else if (type === 'info') color = '#4488ff';
+            
+            output.innerHTML += `<span style="color: ${color}">[${timestamp}] ${message}</span>\n`;
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalConsoleLog(...args);
+            addToDebugOutput(args.join(' '), 'log');
+        };
+        
+        console.error = function(...args) {
+            originalConsoleError(...args);
+            addToDebugOutput('ERROR: ' + args.join(' '), 'error');
+        };
+        
+        console.warn = function(...args) {
+            originalConsoleWarn(...args);
+            addToDebugOutput('WARN: ' + args.join(' '), 'warn');
+        };
+        
+        function setTestInput(text) {
+            document.getElementById('testInput').value = text;
+        }
+        
+        async function testKeywordExtraction() {
+            const input = document.getElementById('testInput').value.trim();
+            if (!input) {
+                alert('테스트할 텍스트를 입력해주세요.');
+                return;
+            }
+            
+            console.log('='.repeat(50));
+            console.log('🧪 키워드 추출 테스트 시작');
+            console.log('='.repeat(50));
+            
+            try {
+                const keywords = await extractKeywords(input);
+                
+                const resultsDiv = document.getElementById('results');
+                resultsDiv.innerHTML = `
+                    <div class="result-card">
+                        <div class="result-title">🔑 추출된 키워드</div>
+                        <div><strong>개수:</strong> ${Object.keys(keywords).length}개</div>
+                        <div><strong>키워드:</strong> ${Object.keys(keywords).join(', ')}</div>
+                        <div><strong>가중치:</strong> ${JSON.stringify(keywords, null, 2)}</div>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('키워드 추출 테스트 실패:', error);
+            }
+        }
+        
+        async function testFullRecommendation() {
+            const input = document.getElementById('testInput').value.trim();
+            if (!input) {
+                alert('테스트할 텍스트를 입력해주세요.');
+                return;
+            }
+            
+            console.log('='.repeat(50));
+            console.log('🎵 전체 추천 시스템 테스트 시작');
+            console.log('='.repeat(50));
+            
+            try {
+                // extractKeywords와 analyzeMemoryWithAI 직접 호출
+                const keywords = await extractKeywords(input);
+                console.log('📝 추출된 키워드 객체:', keywords);
+                
+                // keywords는 이미 객체 형태이므로 그대로 전달
+                const recommendations = await analyzeMemoryWithAI(input, keywords);
+                
+                let resultsHTML = `
+                    <div class="result-card">
+                        <div class="result-title">🎯 추천 결과</div>
+                `;
+                
+                recommendations.forEach((rec, index) => {
+                    resultsHTML += `
+                        <div style="margin: 10px 0; padding: 10px; border-left: 4px solid #007bff;">
+                            <strong>${index + 1}. ${rec.name}</strong>
+                            <div class="result-score">매칭도: ${Math.round(rec.similarity * 100)}%</div>
+                            <div><small>${rec.aiReason || '추천 이유 없음'}</small></div>
+                        </div>
+                    `;
+                });
+                
+                resultsHTML += `</div>`;
+                document.getElementById('results').innerHTML = resultsHTML;
+                
+            } catch (error) {
+                console.error('전체 추천 테스트 실패:', error);
+            }
+        }
+        
+        // 전체 자동 테스트 함수
+        async function runAllTests() {
+            console.log('🧪 전체 자동 테스트 시작');
+            console.log('='.repeat(60));
+            
+            const testCases = [
+                // 디지털 & 게임
+                { text: 'PC방에서 친구들과 롤 하기', expected: 'pcroom_gaming', category: '디지털&게임' },
+                { text: '집에서 플스로 피파 게임하기', expected: 'home_console_gaming', category: '디지털&게임' },
+                { text: '휴대폰으로 모바일 게임하며 시간 보내기', expected: 'social_media_memories', category: '디지털&게임' },
+                { text: '친구들과 보드게임 카페에서 놀기', expected: 'festivals_events', category: '디지털&게임' },
+                
+                // 활동 & 에너지  
+                { text: '친구들과 헬스장에서 운동하기', expected: 'sports_activities', category: '활동&에너지' },
+                { text: '동네 공원에서 조깅하며 운동', expected: 'sports_activities', category: '활동&에너지' },
+                { text: '친구들과 클럽에서 춤추며 밤새기', expected: 'night_dawn', category: '활동&에너지' },
+                { text: '카페에서 친구들과 수다떨기', expected: 'food_snacks', category: '활동&에너지' },
+                
+                // 따뜻함 & 소통
+                { text: '가족들과 함께 저녁 식사하기', expected: 'family_warmth', category: '따뜻함&소통' },
+                { text: '고등학교 친구들과 교실에서 수업듣기', expected: 'school_memories', category: '따뜻함&소통' },
+                { text: '연인과 함께 데이트하며 산책하기', expected: 'travel_places', category: '따뜻함&소통' },
+                { text: '생일파티에서 친구들과 축하하기', expected: 'festivals_events', category: '따뜻함&소통' },
+                
+                // 계절 & 자연
+                { text: '봄날 가족과 벚꽃 구경 나들이', expected: 'spring_memories', category: '계절&자연' },
+                { text: '여름 바다에서 친구들과 수영하기', expected: 'summer_memories', category: '계절&자연' },
+                { text: '가을 단풍 구경하며 등산하기', expected: 'autumn_memories', category: '계절&자연' },
+                { text: '겨울 눈 내리는 날 집에서 따뜻하게', expected: 'winter_memories', category: '계절&자연' },
+                
+                // 감성 & 문화
+                { text: '친구들과 노래방에서 노래 부르기', expected: 'karaoke_music', category: '감성&문화' },
+                { text: '어린 시절 추억 사진 보며 회상하기', expected: 'photo_album', category: '감성&문화' },
+                { text: '혼자 집에서 음악 들으며 휴식', expected: 'nostalgia_longing', category: '감성&문화' },
+                { text: '친구들과 영화관에서 영화 보기', expected: 'entertainment_culture', category: '감성&문화' }
+            ];
+            
+            let successCount = 0;
+            let totalCount = testCases.length;
+            const failedTests = [];
+            
+            for (let i = 0; i < testCases.length; i++) {
+                const testCase = testCases[i];
+                console.log(`\n🧪 테스트 ${i+1}/${totalCount}: ${testCase.category}`);
+                console.log(`📝 입력: "${testCase.text}"`);
+                console.log(`🎯 예상: ${testCase.expected}`);
+                
+                try {
+                    const keywords = await extractKeywords(testCase.text);
+                    const recommendations = await analyzeMemoryWithAI(testCase.text, keywords);
+                    
+                    if (recommendations && recommendations.length > 0) {
+                        const topRecommendation = recommendations[0];
+                        const isCorrect = topRecommendation.id === testCase.expected;
+                        
+                        if (isCorrect) {
+                            console.log(`✅ 성공: ${topRecommendation.name} (${Math.round(topRecommendation.similarity * 100)}%)`);
+                            successCount++;
+                        } else {
+                            console.log(`❌ 실패: ${topRecommendation.name} (${Math.round(topRecommendation.similarity * 100)}%)`);
+                            failedTests.push({
+                                ...testCase,
+                                actual: topRecommendation.id,
+                                actualName: topRecommendation.name,
+                                score: Math.round(topRecommendation.similarity * 100)
+                            });
+                        }
+                    } else {
+                        console.log(`❌ 오류: 추천 결과 없음`);
+                        failedTests.push({
+                            ...testCase,
+                            actual: 'NO_RESULT',
+                            actualName: '결과 없음',
+                            score: 0
+                        });
+                    }
+                } catch (error) {
+                    console.error(`❌ 테스트 오류:`, error);
+                    failedTests.push({
+                        ...testCase,
+                        actual: 'ERROR',
+                        actualName: '오류 발생',
+                        score: 0
+                    });
+                }
+                
+                // 테스트 간 간격
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            
+            // 최종 결과 요약
+            console.log('\n' + '='.repeat(60));
+            console.log('🏆 전체 테스트 결과 요약');
+            console.log('='.repeat(60));
+            console.log(`✅ 성공: ${successCount}/${totalCount} (${Math.round(successCount/totalCount*100)}%)`);
+            console.log(`❌ 실패: ${failedTests.length}/${totalCount} (${Math.round(failedTests.length/totalCount*100)}%)`);
+            
+            if (failedTests.length > 0) {
+                console.log('\n🔍 실패한 테스트들:');
+                failedTests.forEach((test, index) => {
+                    console.log(`  ${index+1}. [${test.category}] "${test.text}"`);
+                    console.log(`     예상: ${test.expected} → 실제: ${test.actual} (${test.actualName}, ${test.score}%)`);
+                });
+            }
+            
+            // 결과를 화면에도 표시
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = `
+                <div class="result-card">
+                    <div class="result-title">🏆 전체 테스트 결과</div>
+                    <div><strong>성공률:</strong> ${Math.round(successCount/totalCount*100)}% (${successCount}/${totalCount})</div>
+                    <div style="margin-top: 10px;">
+                        <div style="background: #d4edda; padding: 10px; border-radius: 5px; margin: 5px 0;">
+                            ✅ 성공: ${successCount}개
+                        </div>
+                        <div style="background: #f8d7da; padding: 10px; border-radius: 5px; margin: 5px 0;">
+                            ❌ 실패: ${failedTests.length}개
+                        </div>
+                    </div>
+                    ${failedTests.length > 0 ? `
+                        <div style="margin-top: 15px;">
+                            <strong>실패한 테스트:</strong><br>
+                            ${failedTests.map(test => 
+                                `<small>${test.category}: "${test.text}" → ${test.actualName} (${test.score}%)</small>`
+                            ).join('<br>')}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+        
+        function clearOutput() {
+            document.getElementById('debugOutput').innerHTML = '';
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        // 페이지 로드 시 초기 메시지
+        window.addEventListener('load', function() {
+            console.log('🚀 AI 추천 시스템 디버깅 페이지 준비됨');
+            console.log('📝 테스트할 추억을 입력하고 버튼을 클릭해보세요.');
+        });
+    </script>
+</body>
+</html>

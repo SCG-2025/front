@@ -124,7 +124,7 @@ const predefinedRecipes = [
     category: 'gaming',
   musicSet: 'set1',
     description: '카트라이더, 크레이지아케이드, 피파온라인 등을 즐겼던 추억',
-    aiPrompt: 'PC방, 게임, 친구들과 함께, 카트라이더, 크레이지아케이드, 피파온라인, 던전앤파이터, 테일즈러너, 메이플스토리, 마인크래프트, 슈퍼마리오, 테트리스, 오락실, 아케이드, 배경음악, 브금, 효과음, 게임음악, 카트라이더음악, 메이플음악'
+    aiPrompt: 'PC방, 온라인게임, 롤, 리그오브레전드, 게임, 인터넷카페, 친구들, 팀플레이, 멀티플레이어, 카트라이더, 크레이지아케이드, 피파온라인, 던전앤파이터, 테일즈러너, 메이플스토리, 마인크래프트, 슈퍼마리오, 테트리스, 오락실, 아케이드, 배경음악, 브금, 효과음, 게임음악, 카트라이더음악, 메이플음악'
   },
   {
     id: 'home_console_gaming',
@@ -132,7 +132,7 @@ const predefinedRecipes = [
     category: 'gaming',
   musicSet: 'set1',
     description: '닌텐도, 플레이스테이션으로 가족, 사촌들과 게임',
-    aiPrompt: '닌텐도, wii, 플레이스테이션, 게임기, 가족게임, 사촌, 집에서게임, 마리오카트, 동물의숲, 배경음악, 브금, 효과음, 게임음악, 오프닝, 주제곡'
+    aiPrompt: '집에서, 플스, 플레이스테이션, 피파, 콘솔게임, 닌텐도, wii, 게임기, 가족게임, 사촌, 집에서게임, 마리오카트, 동물의숲, 배경음악, 브금, 효과음, 게임음악, 오프닝, 주제곡'
   },
   {
     id: 'social_media_memories',
@@ -140,7 +140,7 @@ const predefinedRecipes = [
     category: 'digital',
   musicSet: 'set1',
     description: '싸이월드, 페이스북, 인스타그램에 남긴 추억들',
-    aiPrompt: '싸이월드, 페이스북, 인스타그램, 네이버블로그, SNS, 게시물, 사진업로드, 디지털추억'
+    aiPrompt: '휴대폰, 모바일게임, 모바일, 스마트폰게임, 싸이월드, 페이스북, 인스타그램, 네이버블로그, SNS, 게시물, 사진업로드, 디지털추억, 앱게임, 클래시로얄, 포켓몬고'
   },
   {
     id: 'photo_album',
@@ -148,7 +148,7 @@ const predefinedRecipes = [
     category: 'visual',
   musicSet: 'set1',
     description: '필름카메라, 디지털카메라로 찍은 소중한 순간들',
-    aiPrompt: '사진, 앨범, 카메라, 필름, 비디오, 영상, 촬영, 기념사진, 가족사진'
+    aiPrompt: '어린시절, 추억, 회상, 사진, 앨범, 카메라, 필름, 비디오, 영상, 촬영, 기념사진, 가족사진, 옛날사진, 어릴때, 과거, 기억'
   },
   // 🏃‍♂️ 세트 2: 활동 & 에너지 (4개)
   {
@@ -157,7 +157,7 @@ const predefinedRecipes = [
     category: 'sports',
   musicSet: 'set2',
     description: '축구, 농구, 수영 등 운동과 관련된 모든 추억',
-    aiPrompt: '축구, 농구, 배구, 야구, 테니스, 배드민턴, 달리기, 수영, 운동, 스포츠, 선수, 승부, 시합, 경기, 팀플레이, 운동장, 체육관'
+    aiPrompt: '운동, 헬스장, 피트니스, 조깅, 러닝, 축구, 농구, 배구, 야구, 테니스, 배드민턴, 달리기, 수영, 스포츠, 선수, 승부, 시합, 경기, 팀플레이, 운동장, 체육관, 건강, 몸매관리'
   },
   {
     id: 'festivals_events',
@@ -165,7 +165,7 @@ const predefinedRecipes = [
     category: 'festival',
   musicSet: 'set2',
     description: '지역축제, 콘서트, 공연 등 특별한 이벤트 참여',
-    aiPrompt: '축제, 콘서트, 공연, 이벤트, 문화제, 불꽃축제, 음악축제, 지역축제, 무대, 관람, 참여, 특별한경험'
+    aiPrompt: '보드게임, 파티, 생일, 축하, 축제, 콘서트, 공연, 이벤트, 문화제, 불꽃축제, 음악축제, 지역축제, 무대, 관람, 참여, 특별한경험, 모임, 친구들과, 카페에서, 게임카페'
   },
   {
     id: 'summer_memories',
@@ -181,7 +181,7 @@ const predefinedRecipes = [
     category: 'travel',
   musicSet: 'set2',
     description: '바닷가, 부산, 강릉 등 여행지에서의 소중한 경험들',
-    aiPrompt: '여행, 바닷가, 부산, 강릉, 여행지, 바다, 버스킹, 관광, 나들이, 휴가'
+    aiPrompt: '데이트, 연인, 함께, 산책, 여행, 바닷가, 부산, 강릉, 여행지, 바다, 버스킹, 관광, 나들이, 휴가, 둘이서, 커플, 로맨틱'
   },
   // ❤️ 세트 3: 따뜻함 & 소통 (4개)
   {
@@ -190,7 +190,7 @@ const predefinedRecipes = [
     category: 'family',
   musicSet: 'set3',
     description: '부모님, 형제자매와 함께한 포근하고 평온한 순간들',
-    aiPrompt: '가족, 부모님, 아빠, 아버지, 엄마, 어머니, 형제, 자매, 따뜻함, 포근함, 평온함, 가족사진, 집'
+    aiPrompt: '가족, 부모님, 아빠, 아버지, 엄마, 어머니, 형제, 자매, 따뜻함, 포근함, 평온함, 가족사진, 집, 가족들과, 가족둘과, 함께, 같이, 나들이, 외출, 구경, 산책, 시간'
   },
   {
     id: 'school_memories',
@@ -198,7 +198,7 @@ const predefinedRecipes = [
     category: 'school',
   musicSet: 'set3',
     description: '친구들과의 학교생활, 운동회, 수학여행, 학예회 등 학창시절의 모든 추억',
-    aiPrompt: '친구, 학교, 교실, 학창시절, 동창, 반친구, 함께, 같이, 초등학교, 중학교, 고등학교, 학예회, 학교행사, 운동회, 수학여행, 축제, 졸업식, 입학식, 특별한날, 체육대회, 발표회'
+    aiPrompt: '학교, 교실, 수업, 학창시절, 동창, 반친구, 교복, 선생님, 초등학교, 중학교, 고등학교, 학예회, 학교행사, 운동회, 수학여행, 축제, 졸업식, 입학식, 특별한날, 체육대회, 발표회, 학습, 시험, 급식'
   },
   {
     id: 'food_snacks',
@@ -206,7 +206,7 @@ const predefinedRecipes = [
     category: 'food',
   musicSet: 'set3',
     description: '친구들과 함께 먹었던 맛있는 음식과 간식들',
-    aiPrompt: '음식, 간식, 치킨, 피자, 떡볶이, 라면, 햄버거, 아이스크림, 과자, 빵, 분식, 맛집, 같이먹기, 군것질'
+    aiPrompt: '카페, 수다, 대화, 이야기, 친구들과, 모임, 만남, 음식, 간식, 치킨, 피자, 떡볶이, 라면, 햄버거, 아이스크림, 과자, 빵, 분식, 맛집, 같이먹기, 군것질, 커피, 음료, 디저트, 스타벅스, 카페베네'
   },
   {
     id: 'spring_memories',
@@ -214,7 +214,7 @@ const predefinedRecipes = [
     category: 'season',
   musicSet: 'set3',
     description: '벚꽃, 새학기, 소풍 등 따뜻하고 새로운 시작의 봄 추억',
-    aiPrompt: '봄, 벚꽃, 꽃구경, 새학기, 입학식, 소풍, 따뜻해지다, 꽃놀이, 산책, 새싹, 개화, 꽃밭, 공원, 피크닉, 햇살, 바람, 신선함'
+    aiPrompt: '봄날, 벚꽃구경, 봄, 벚꽃, 꽃구경, 새학기, 입학식, 소풍, 따뜻해지다, 꽃놀이, 산책, 새싹, 개화, 꽃밭, 공원, 피크닉, 햇살, 바람, 신선함, 개나리, 진달래, 매화, 목련, 철쭉, 튤립, 꽃, 구경, 나들이, 가족, 함께'
   },
   // 🎭 세트 4: 감성 & 문화 (4개)
   {
@@ -223,7 +223,7 @@ const predefinedRecipes = [
     category: 'nostalgia',
   musicSet: 'set4',
     description: '돌아가고 싶은 어린 시절, 옛날에 대한 그리움',
-    aiPrompt: '그리움, 돌아가다, 슬픔, 소중함, 옛날, 예전, 과거, 어릴때, 생각나다, 떠오르다, 기억나다, 향수, 잔잔함'
+    aiPrompt: '혼자, 집에서, 음악, 휴식, 그리움, 돌아가다, 슬픔, 소중함, 옛날, 예전, 과거, 어릴때, 생각나다, 떠오르다, 기억나다, 향수, 잔잔함, 조용한시간, 힐링'
   },
   {
     id: 'night_dawn',
@@ -231,7 +231,7 @@ const predefinedRecipes = [
     category: 'night',
   musicSet: 'set4',
     description: '밤늦은 대화, 새벽 감성, 깊은 밤의 특별한 순간들',
-    aiPrompt: '밤, 새벽, 밤늦게, 밤샘, 밤하늘, 별, 달, 깊은대화, 고민상담, 잠못이루는밤, 새벽감성, 밤공기'
+    aiPrompt: '밤, 새벽, 클럽, 댄스, 춤, 밤늦게, 밤샘, 밤하늘, 별, 달, 깊은대화, 고민상담, 잠못이루는밤, 새벽감성, 밤공기, 파티, 나이트라이프'
   },
   {
     id: 'entertainment_culture',
@@ -239,7 +239,7 @@ const predefinedRecipes = [
     category: 'entertainment',
   musicSet: 'set4',
     description: '드라마, 영화, 웹툰, 만화를 보며 보낸 시간들',
-    aiPrompt: '드라마, 영화, 웹툰, 만화, 무한도전, 방송, 프로그램, TV, 시청, 엔터테인먼트'
+    aiPrompt: '영화관, 영화, 친구들과, 영화보기, 드라마, 웹툰, 만화, 무한도전, 방송, 프로그램, TV, 시청, 엔터테인먼트, 극장, 상영관, 팝콘'
   },
   {
     id: 'karaoke_music',
@@ -264,7 +264,7 @@ const predefinedRecipes = [
     category: 'study',
   musicSet: 'set5',
     description: '도서관, 카페, 집에서의 공부, 독서, 조용한 학습 시간',
-    aiPrompt: '도서관, 독서, 책, 공부, 조용함, 학습, 시험공부, 과제, 참고서, 소설, 만화책, 집중, 조용한공간, 열람실, 책읽기, 카페, 수다, 친구들과카페, 스터디카페, 대화, 모임'
+    aiPrompt: '도서관, 독서, 책, 공부, 조용함, 학습, 시험공부, 과제, 참고서, 소설, 만화책, 집중, 조용한공간, 열람실, 책읽기, 혼자, 집중시간'
   },
   {
     id: 'autumn_memories',
@@ -534,12 +534,18 @@ async function extractKeywordsAdvanced(text) {
     
     // 4단계: 키워드 통합 및 중요도 계산
     const combinedKeywords = combineAndRankKeywords(basicKeywords, domainKeywords, apiKeywords, text);
-    console.log('✅ 최종 키워드:', combinedKeywords);
+    console.log('✅ 최종 키워드 (개수: ' + Object.keys(combinedKeywords).length + '):', combinedKeywords);
+    
+    // 키워드가 부족한 경우 경고
+    if (Object.keys(combinedKeywords).length < 3) {
+      console.warn('⚠️ 추출된 키워드가 부족합니다. 텍스트를 다시 확인해주세요.');
+    }
     
     return combinedKeywords;
     
   } catch (error) {
-    console.error('키워드 추출 오류:', error);
+    console.error('❌ 키워드 추출 오류:', error);
+    console.error('오류 스택:', error.stack);
     return extractKeywordsSimple(text); // 완전 백업
   }
 }
@@ -564,6 +570,7 @@ function extractKeywordsEnhanced(text) {
 
   // 복합어 분리 개선 (예: "가족들과" → "가족", "함께")
   cleanText = cleanText
+    .replace(/가족들과/g, '가족 함께')  // 특별 처리
     .replace(/들과/g, ' 함께')
     .replace(/들이/g, '')
     .replace(/들을/g, '')
@@ -582,8 +589,35 @@ function extractKeywordsEnhanced(text) {
     return word.trim() !== '';
   });
 
-  const wordFreq = {};
+  // 중복 제거 (유사한 키워드들을 통합)
+  const deduplicatedWords = [];
+  const seen = new Set();
+  
   words.forEach(word => {
+    // 기본형으로 변환하여 중복 체크
+    let baseForm = word;
+    
+    // 가족 관련 키워드 정규화
+    if (word.includes('가족')) {
+      baseForm = '가족';
+    }
+    // 친구 관련 키워드 정규화  
+    else if (word.includes('친구')) {
+      baseForm = '친구';
+    }
+    // 어머니/엄마 관련 키워드 정규화
+    else if (['어머니', '엄마', '어머니와', '엄마와'].includes(word)) {
+      baseForm = '어머니';
+    }
+    
+    if (!seen.has(baseForm)) {
+      seen.add(baseForm);
+      deduplicatedWords.push(baseForm);
+    }
+  });
+
+  const wordFreq = {};
+  deduplicatedWords.forEach(word => {
     let weight = 1;
     
     // 길이 기반 가중치 (개선)
@@ -755,13 +789,27 @@ function extractKeywordsSimple(text) {
 // 메인 키워드 추출 함수 (고도화된 버전 사용)
 async function extractKeywords(text) {
   try {
+    console.log('🚀 키워드 추출 시작 - 입력 텍스트:', text);
+    console.log('  텍스트 길이:', text.length, '문자');
+    
     // 고도화된 키워드 추출 시스템 사용
     const keywords = await extractKeywordsAdvanced(text);
+    
+    console.log('🎯 키워드 추출 완료 - 결과:');
+    console.log('  키워드 개수:', Object.keys(keywords).length);
+    console.log('  키워드 목록:', Object.keys(keywords));
+    console.log('  가중치 정보:', keywords);
+    
     return keywords;
   } catch (error) {
-    console.error('고급 키워드 추출 오류:', error);
+    console.error('❌ 고급 키워드 추출 오류:', error);
+    console.error('오류 스택:', error.stack);
+    console.log('🔄 백업 시스템으로 전환 중...');
+    
     // 백업: 기본 키워드 추출
-    return extractKeywordsSimple(text);
+    const backupKeywords = extractKeywordsSimple(text);
+    console.log('🔄 백업 키워드 추출 완료:', backupKeywords);
+    return backupKeywords;
   }
 }
 
@@ -769,26 +817,54 @@ async function extractKeywords(text) {
 // 설문조사 기반 AI 분류/추천 + 실제 AI API 통합
 // ===============================================
 
-// Hugging Face API를 사용한 실제 AI 분석
+// Hugging Face API를 사용한 실제 AI 분석 (오류 추적 강화)
 async function analyzeMemoryWithAI(memoryText, extractedKeywords) {
   try {
-    // 키워드와 추억 텍스트 결합
-    const combinedText = `${memoryText} ${extractedKeywords.join(' ')}`;
+    console.log('🔍 AI 분석 시작 - 입력 확인:');
+    console.log('  memoryText:', memoryText);
+    console.log('  extractedKeywords 타입:', typeof extractedKeywords);
+    console.log('  extractedKeywords 내용:', extractedKeywords);
     
-    // OpenAI 호환 무료 API 사용 (예: Together AI, Groq 등)
-    // 여기서는 간단한 텍스트 분석을 위해 로컬 분석을 강화합니다
+    // extractedKeywords가 배열인 경우 키워드 객체로 변환
+    let keywordWeights;
+    if (Array.isArray(extractedKeywords)) {
+      console.log('  🔄 배열을 키워드 객체로 변환 중...');
+      keywordWeights = {};
+      extractedKeywords.forEach(keyword => {
+        keywordWeights[keyword] = 2; // 기본 가중치
+      });
+      console.log('  변환된 키워드 객체:', keywordWeights);
+    } else if (typeof extractedKeywords === 'object') {
+      keywordWeights = extractedKeywords;
+    } else {
+      console.error('  ❌ 잘못된 키워드 형식:', extractedKeywords);
+      throw new Error('키워드 형식이 올바르지 않습니다.');
+    }
+    
+    // 키워드와 추억 텍스트 결합
+    const keywordList = Object.keys(keywordWeights);
+    const combinedText = `${memoryText} ${keywordList.join(' ')}`;
+    console.log('  combinedText:', combinedText);
     
     // 1단계: 키워드 가중치 분석
-    const keywordAnalysis = analyzeKeywordWeights(extractedKeywords, memoryText);
+    console.log('\n1️⃣ 키워드 가중치 분석...');
+    const keywordAnalysis = analyzeKeywordWeights(keywordList, memoryText);
+    console.log('  키워드 가중치 결과:', keywordAnalysis);
     
     // 2단계: 의미적 맥락 분석
+    console.log('\n2️⃣ 의미적 맥락 분석...');
     const contextAnalysis = analyzeSemanticContext(combinedText);
+    console.log('  맥락 분석 결과:', contextAnalysis);
     
     // 3단계: 감정 및 시간적 맥락 분석
+    console.log('\n3️⃣ 감정 분석...');
     const emotionalContext = analyzeEmotionalContext(combinedText);
+    console.log('  감정 분석 결과:', emotionalContext);
     
-    // 4단계: 종합 점수 계산
-    const finalScores = calculateComprehensiveScores(keywordAnalysis, contextAnalysis, emotionalContext);
+    // 4단계: 종합 점수 계산 (키워드 가중치 객체 전달)
+    console.log('\n4️⃣ 종합 점수 계산...');
+    const finalScores = calculateComprehensiveScores(keywordWeights, contextAnalysis, emotionalContext);
+    console.log('  점수 계산 완료, 결과 개수:', finalScores.length);
     
     // 상위 3개 추천
     const recommendations = finalScores
@@ -799,12 +875,21 @@ async function analyzeMemoryWithAI(memoryText, extractedKeywords) {
         aiReason: generateRecommendationReason(recipe, keywordAnalysis, contextAnalysis)
       }));
     
-    console.log('🎯 AI 분석 결과:', recommendations);
+    console.log('🎯 최종 AI 분석 결과:');
+    recommendations.forEach((r, i) => {
+      console.log(`  ${i+1}. ${r.name}: ${Math.round(r.similarity * 100)}%`);
+    });
+    
     return recommendations;
     
   } catch (error) {
-    console.error('AI 분석 오류:', error);
-    return classifyMemoryByKeywords(memoryText, extractedKeywords);
+    console.error('❌ AI 분석 중 오류 발생:', error);
+    console.error('오류 스택:', error.stack);
+    
+    // 백업: 기존 키워드 기반 시스템 사용
+    console.log('🔄 백업 시스템으로 전환...');
+    const keywordList = Array.isArray(extractedKeywords) ? extractedKeywords : Object.keys(extractedKeywords);
+    return classifyMemoryByKeywords(memoryText, keywordList);
   }
 }
 
@@ -824,12 +909,62 @@ function analyzeKeywordWeights(keywords, text) {
     weight *= Math.min(frequency * 1.5 + 1, 5); // 더 높은 빈도 보너스
     
     // 의미적 중요도 (도메인 키워드에 매우 높은 가중치)
-    const highValueKeywords = ['여름', '겨울', '봄', '가을', '게임', '가족', '친구', '학교', '여행', '음악'];
-    if (highValueKeywords.includes(keyword)) weight *= 5; // 2→5
+    const highValueKeywords = ['여름', '겨울', '봄', '가을', '게임', '가족', '학교', '여행', '음악'];
+    if (highValueKeywords.includes(keyword)) weight *= 4; // 5→4로 조정
     
     // 꽃/식물 키워드 특별 가중치
     const flowerKeywords = ['개나리', '벚꽃', '진달래', '장미', '튤립', '코스모스', '국화', '매화'];
     if (flowerKeywords.includes(keyword)) weight *= 8; // 꽃 키워드는 특별히 높은 가중치
+    
+    // 가족/사회적 관계 키워드 특별 가중치
+    const familyKeywords = ['가족', '어머니', '아버지', '엄마', '아빠', '형제', '자매', '할머니', '할아버지'];
+    if (familyKeywords.includes(keyword)) weight *= 6; // 가족 키워드 강화
+    
+    // 활동 키워드 특별 가중치
+    const familyActivityKeywords = ['구경', '산책', '놀이', '요리', '이야기', '대화', '함께'];
+    if (familyActivityKeywords.includes(keyword)) weight *= 4; // 활동 키워드 강화
+    
+    // 특정 활동 키워드들 - 더 구체적으로 분류
+    const specificActivityKeywords = {
+      // 계절 & 꽃 관련 (매우 높은 가중치)
+      '봄날': 10, '벚꽃구경': 9, '꽃구경': 8, '벚꽃': 8, '개나리': 9, '꽃': 7,
+      
+      // 게임 관련 (높은 가중치)
+      'PC방': 10, '롤': 8, '온라인게임': 8, '플스': 8, '피파': 8, '휴대폰': 6, '모바일게임': 7,
+      
+      // 보드게임 & 파티 (festivals_events 강화)
+      '보드게임': 9, '파티': 8, '생일': 8, '축하': 7, '축제': 7, '이벤트': 6,
+      
+      // 카페 & 음식 (food_snacks 강화) 
+      '카페': 8, '수다': 7, '커피': 6, '치킨': 6, '피자': 6,
+      
+      // 운동 관련
+      '운동': 7, '헬스장': 8, '조깅': 7, '수영': 7,
+      
+      // 야간 활동
+      '클럽': 8, '춤': 7, '밤': 6,
+      
+      // 영화 & 엔터테인먼트
+      '영화관': 9, '영화': 7, '영화보기': 8, '극장': 8,
+      
+      // 사진 & 추억
+      '어린시절': 8, '추억': 7, '회상': 7, '사진': 6,
+      
+      // 혼자만의 시간
+      '혼자': 8, '휴식': 7, '음악': 6,
+      
+      // 기타 활동
+      '데이트': 8, '연인': 7, '노래방': 8, '노래': 6
+    };
+    
+    if (specificActivityKeywords[keyword]) {
+      weight *= specificActivityKeywords[keyword];
+    }
+    
+    // "친구들" 키워드의 가중치 조정 - 너무 일반적이므로 더 낮춤
+    if (keyword === '친구들' || keyword === '친구') {
+      weight *= 1.5; // 2 → 1.5로 더 낮춤
+    }
     
     // 활동 키워드 가중치
     const activityKeywords = ['구경', '놀이', '산책', '나들이', '여행', '캠핑', '수영'];
@@ -914,74 +1049,201 @@ function analyzeEmotionalContext(text) {
   return scores;
 }
 
-// 종합 점수 계산 (점수 스케일 대폭 개선)
+// 종합 점수 계산 (현실적인 스케일 조정)
 function calculateComprehensiveScores(keywordWeights, contextAnalysis, emotionalContext) {
+  console.log('📊 종합 점수 계산 시작...');
+  console.log('  keywordWeights 키 개수:', Object.keys(keywordWeights).length);
+  console.log('  contextAnalysis:', contextAnalysis);
+  console.log('  emotionalContext:', emotionalContext);
+  
   return predefinedRecipes.map(recipe => {
     let score = 0;
     
-    // 기본 키워드 매칭 - 가중치 대폭 증가
+    console.log(`\n🎵 [${recipe.name}] 점수 계산 중...`);
+    
+    // 기본 키워드 매칭 - 가중치 조정
     const baseScore = getBaseKeywordScore(recipe, keywordWeights);
-    score += baseScore * 0.4; // 40% 가중치
+    score += baseScore * 0.5; // 50% 가중치로 증가
+    console.log(`  키워드 점수: ${baseScore} × 0.5 = ${baseScore * 0.5}`);
     
     // 의미적 맥락 매칭
     const contextScore = getContextMatchScore(recipe, contextAnalysis);
-    score += contextScore * 0.3; // 30% 가중치
+    score += contextScore * 0.4; // 40% 가중치로 증가
+    console.log(`  맥락 점수: ${contextScore} × 0.4 = ${contextScore * 0.4}`);
     
     // 감정적 맥락 매칭  
     const emotionScore = getEmotionMatchScore(recipe, emotionalContext);
-    score += emotionScore * 0.2; // 20% 가중치
+    score += emotionScore * 0.1; // 10% 가중치로 감소
+    console.log(`  감정 점수: ${emotionScore} × 0.1 = ${emotionScore * 0.1}`);
     
-    // 카테고리별 보너스
-    const categoryBonus = getCategoryBonus(recipe, contextAnalysis);
-    score += categoryBonus * 0.1; // 10% 가중치
+    // 카테고리별 보너스는 제거 (복잡성 감소)
     
-    console.log(`📊 ${recipe.name}: base=${baseScore}, context=${contextScore}, emotion=${emotionScore}, bonus=${categoryBonus}, total=${score}`);
+    console.log(`📊 ${recipe.name}: base=${baseScore}(×0.5), context=${contextScore}(×0.4), emotion=${emotionScore}(×0.1), total=${score.toFixed(2)}`);
     
     return {
       ...recipe,
-      similarity: Math.min(score / 300, 1) // 300점 만점으로 조정 (기존 100점에서 증가)
+      similarity: Math.min(score / 200, 1), // 200점 만점으로 조정 (더 현실적)
+      baseScore,
+      contextScore,
+      emotionScore,
+      totalScore: score.toFixed(2)
     };
   });
 }
 
-// 기본 키워드 스코어 계산 (점수 대폭 증가)
+// 기본 키워드 스코어 계산 (버그 추적용 로그 강화)
 function getBaseKeywordScore(recipe, keywordWeights) {
   const recipeKeywords = recipe.aiPrompt.split(', ');
   let score = 0;
+  let matchCount = 0;
+  
+  const isTargetRecipe = ['spring_memories', 'family_warmth', 'pcroom_gaming', 'photo_album'].includes(recipe.id);
+  
+  if (isTargetRecipe) {
+    console.log(`  🔍 ${recipe.name} 키워드 매칭 분석:`);
+    console.log(`    입력된 키워드:`, Object.keys(keywordWeights));
+    console.log(`    레시피 키워드:`, recipeKeywords);
+  }
+  
+  const matchDetails = [];
   
   Object.entries(keywordWeights).forEach(([keyword, weight]) => {
-    // 정확한 매칭
+    let matched = false;
+    let matchType = '';
+    let points = 0;
+    
+    // 정확한 매칭 (최고 점수)
     if (recipeKeywords.some(rk => rk === keyword || keyword === rk)) {
-      score += weight * 20; // 20배 증가 (기존 5배)
+      points = weight * 30;
+      score += points;
+      matchCount++;
+      matched = true;
+      matchType = '정확매칭';
     }
-    // 부분 매칭
+    // 부분 매칭 (중간 점수)
     else if (recipeKeywords.some(rk => rk.includes(keyword) || keyword.includes(rk))) {
-      score += weight * 10; // 10배 증가 (기존 5배)
+      points = weight * 20;
+      score += points;
+      matchCount++;
+      matched = true;
+      matchType = '부분매칭';
+    }
+    // 시맨틱 유사성 (낮은 점수)
+    else if (checkSemanticSimilarity(keyword, recipeKeywords)) {
+      points = weight * 10;
+      score += points;
+      matchCount++;
+      matched = true;
+      matchType = '의미매칭';
+    }
+    
+    if (matched && isTargetRecipe) {
+      matchDetails.push(`    ✓ "${keyword}" (가중치: ${weight}) → ${matchType} +${points}점`);
     }
   });
   
-  return Math.min(score, 150); // 최대 150점 (기존 50점에서 증가)
+  if (isTargetRecipe) {
+    console.log(matchDetails.join('\n'));
+    console.log(`    매칭 개수: ${matchCount}, 총점: ${score}`);
+  }
+  
+  // 매칭 개수에 따른 보너스
+  const bonusScore = matchCount > 3 ? 20 : matchCount > 1 ? 10 : 0;
+  const finalScore = score + bonusScore;
+  
+  if (isTargetRecipe) {
+    console.log(`    보너스 점수: ${bonusScore}, 최종 점수: ${finalScore}`);
+  }
+  
+  return finalScore;
 }
 
-// 맥락 매칭 스코어 (점수 대폭 증가)
+// 시맨틱 유사성 체크 함수
+function checkSemanticSimilarity(keyword, recipeKeywords) {
+  // 의미적으로 유사한 단어들의 매핑
+  const semanticMap = {
+    '가족': ['부모', '엄마', '아빠', '어머니', '아버지', '형제', '자매', '가정', '집'],
+    '친구': ['동료', '친구들', '팀원', '멤버', '사람들'],
+    '게임': ['플레이', '놀이', '경기', '게임'],
+    '음식': ['요리', '식사', '먹기', '밥', '음식'],
+    '여행': ['여행', '놀러', '구경', '산책', '나들이'],
+    '봄': ['개나리', '벚꽃', '꽃', '따뜻한', '봄날'],
+    '학교': ['공부', '수업', '학습', '교실', '선생님'],
+    '집': ['집에서', '가정', '방', '거실']
+  };
+  
+  for (const [category, synonyms] of Object.entries(semanticMap)) {
+    if (synonyms.includes(keyword)) {
+      return recipeKeywords.some(rk => 
+        synonyms.includes(rk) || 
+        rk.includes(category) || 
+        category.includes(rk)
+      );
+    }
+  }
+  
+  return false;
+}
+
+// 맥락 매칭 스코어 (명확한 로직)
 function getContextMatchScore(recipe, contextAnalysis) {
   let score = 0;
   
-  // 계절별 매칭 - 점수 증가
-  if (recipe.id === 'spring_memories' && contextAnalysis.seasonal.spring > 0) score += 50;
-  if (recipe.id === 'summer_memories' && contextAnalysis.seasonal.summer > 0) score += 50;
-  if (recipe.id === 'autumn_memories' && contextAnalysis.seasonal.autumn > 0) score += 50;
-  if (recipe.id === 'winter_memories' && contextAnalysis.seasonal.winter > 0) score += 50;
+  console.log(`  🎯 ${recipe.name} 맥락 매칭 분석:`);
+  console.log(`    계절 맥락:`, contextAnalysis.seasonal);
+  console.log(`    활동 맥락:`, contextAnalysis.activity);
   
-  // 활동별 매칭 - 점수 증가
-  if (recipe.category === 'gaming' && contextAnalysis.activity.indoor > 0) score += 40;
-  if (recipe.category === 'sports' && contextAnalysis.activity.outdoor > 0) score += 40;
-  if (recipe.category === 'social' && contextAnalysis.activity.social > 0) score += 40;
+  // 계절별 매칭 (매우 명확한 기준)
+  if (recipe.id === 'spring_memories') {
+    if (contextAnalysis.seasonal.spring > 0) {
+      const springBonus = contextAnalysis.seasonal.spring * 60; // 키워드 당 60점
+      score += springBonus;
+      console.log(`    🌸 봄 계절 매칭: +${springBonus} (${contextAnalysis.seasonal.spring}개 키워드)`);
+    }
+  }
   
-  // 가족 관련 특별 보너스
-  if (recipe.id === 'family_warmth' && contextAnalysis.activity.social > 0) score += 60;
+  if (recipe.id === 'summer_memories') {
+    if (contextAnalysis.seasonal.summer > 0) {
+      const summerBonus = contextAnalysis.seasonal.summer * 60;
+      score += summerBonus;
+      console.log(`    ☀️ 여름 계절 매칭: +${summerBonus}`);
+    }
+  }
   
-  return Math.min(score, 80); // 최대 80점 (기존 30점에서 증가)
+  if (recipe.id === 'autumn_memories') {
+    if (contextAnalysis.seasonal.autumn > 0) {
+      const autumnBonus = contextAnalysis.seasonal.autumn * 60;
+      score += autumnBonus;
+      console.log(`    🍂 가을 계절 매칭: +${autumnBonus}`);
+    }
+  }
+  
+  if (recipe.id === 'winter_memories') {
+    if (contextAnalysis.seasonal.winter > 0) {
+      const winterBonus = contextAnalysis.seasonal.winter * 60;
+      score += winterBonus;
+      console.log(`    ❄️ 겨울 계절 매칭: +${winterBonus}`);
+    }
+  }
+  
+  // 가족 관련 특별 매칭
+  if (recipe.id === 'family_warmth') {
+    if (contextAnalysis.activity.social > 0) {
+      const familyBonus = contextAnalysis.activity.social * 80; // 가족은 더 높은 점수
+      score += familyBonus;
+      console.log(`    👨‍👩‍👧‍👦 가족 사회활동 매칭: +${familyBonus} (${contextAnalysis.activity.social}개 키워드)`);
+    }
+  }
+  
+  // 야외 활동 매칭
+  if (contextAnalysis.activity.outdoor > 0) {
+    const outdoorBonus = contextAnalysis.activity.outdoor * 40;
+    score += outdoorBonus;
+    console.log(`    🌳 야외활동 매칭: +${outdoorBonus} (${contextAnalysis.activity.outdoor}개 키워드)`);
+  }
+  
+  console.log(`    📊 맥락 점수 총합: ${score}`);
+  return Math.min(score, 150); // 최대 150점
 }
 
 // 감정 매칭 스코어 (점수 증가)
@@ -1337,25 +1599,75 @@ window.testAISystem = function () {
   console.log('\n🎉 모든 테스트 완료! 개나리 같은 도메인 키워드가 잘 잡히는지 확인하세요.');
 };
 
-// 단순 키워드 추출 테스트 함수
-window.testKeywordExtraction = function(text = "가족들과 함께 개나리 구경했던 추억") {
-  console.log(`\n🔍 키워드 추출 상세 테스트: "${text}"`);
+// 🧪 완전 상세 디버깅용 테스트 함수
+window.debugScoring = function(text = "가족들과 함께 개나리 구경") {
+  console.log(`\n🔍 완전 상세 점수 계산 디버깅: "${text}"`);
+  console.log('=====================================');
   
-  console.log('\n1️⃣ 기본 룰 기반:');
-  const basic = extractKeywordsEnhanced(text);
-  console.log('  결과:', basic);
+  // 1단계: 키워드 추출 과정
+  console.log('\n1️⃣ 키워드 추출 과정:');
+  const basicKeywords = extractKeywordsEnhanced(text);
+  console.log('  기본 키워드:', basicKeywords);
   
-  console.log('\n2️⃣ 도메인 특화:');
-  const domain = extractDomainSpecificKeywords(text);
-  console.log('  결과:', domain);
+  const domainKeywords = extractDomainSpecificKeywords(text);
+  console.log('  도메인 키워드:', domainKeywords);
   
-  console.log('\n3️⃣ 형태소 분석 시뮬레이션:');
-  const morphemes = simulateKoreanMorphAnalysis(text);
-  console.log('  결과:', morphemes);
+  const combinedKeywords = combineAndRankKeywords(basicKeywords, domainKeywords, [], text);
+  console.log('  최종 키워드:', combinedKeywords);
   
-  console.log('\n4️⃣ 의미적 확장:');
-  const expanded = expandKeywordsSemantics([...basic, ...domain]);
-  console.log('  결과:', expanded);
+  // 2단계: 키워드 가중치 분석
+  console.log('\n2️⃣ 키워드 가중치 분석:');
+  const keywordWeights = analyzeKeywordWeights(combinedKeywords, text);
+  console.log('  키워드 가중치:', keywordWeights);
+  
+  // 3단계: 의미적 맥락 분석
+  console.log('\n3️⃣ 의미적 맥락 분석:');
+  const contextAnalysis = analyzeSemanticContext(text);
+  console.log('  계절 맥락:', contextAnalysis.seasonal);
+  console.log('  활동 맥락:', contextAnalysis.activity);
+  
+  // 4단계: 감정 분석
+  console.log('\n4️⃣ 감정 분석:');
+  const emotionalContext = analyzeEmotionalContext(text);
+  console.log('  감정 점수:', emotionalContext);
+  
+  // 5단계: 모든 조합법별 상세 점수 계산 (처음 10개만)
+  console.log('\n5️⃣ 모든 조합법별 상세 점수:');
+  
+  const allScores = [];
+  
+  predefinedRecipes.slice(0, 10).forEach(recipe => {
+    console.log(`\n📊 ${recipe.name} (${recipe.id}) 상세 분석:`);
+    
+    const baseScore = getBaseKeywordScore(recipe, keywordWeights);
+    const contextScore = getContextMatchScore(recipe, contextAnalysis);
+    const emotionScore = getEmotionMatchScore(recipe, emotionalContext);
+    
+    const totalScore = (baseScore * 0.5) + (contextScore * 0.4) + (emotionScore * 0.1);
+    const finalPercent = Math.round((totalScore / 200) * 100);
+    
+    allScores.push({
+      name: recipe.name,
+      id: recipe.id,
+      baseScore,
+      contextScore,
+      emotionScore,
+      totalScore,
+      finalPercent
+    });
+    
+    console.log(`  - 총 점수: ${totalScore} / 200`);
+    console.log(`  - 최종 매칭도: ${finalPercent}%`);
+  });
+  
+  // 상위 5개 결과만 정렬해서 표시
+  console.log('\n🏆 상위 5개 결과:');
+  allScores.sort((a, b) => b.totalScore - a.totalScore).slice(0, 5).forEach((result, index) => {
+    console.log(`${index + 1}. ${result.name}: ${result.finalPercent}% (${result.totalScore.toFixed(1)}점)`);
+  });
+  
+  console.log('\n=====================================');
+  console.log('💡 만약 PC방이나 게임이 높게 나온다면 계산 로직에 버그가 있음');
 };
 
 // ===============================================
@@ -1961,11 +2273,11 @@ function renderAvatarAt(px, py, scaleFactor = 1.0) {
 
 console.log('✅ 설문조사 기반 AI 추억 분석 시스템 로드 완료');
 console.log('사용 가능한 조합법:', predefinedRecipes.length + '개');
-console.log('🔍 고도화된 키워드 추출 + AI 추천 시스템 로드 완료!');
-console.log('📋 테스트 명령어:');
+console.log('🔍 완전 재설계된 키워드 + 점수 계산 시스템 로드 완료!');
+console.log('📋 디버깅 명령어:');
+console.log('  - debugScoring("가족들과 함께 개나리 구경") : 상세 점수 계산 과정');
 console.log('  - testAISystem() : 전체 시스템 테스트');
-console.log('  - testKeywordExtraction("텍스트") : 키워드 추출만 테스트');
-console.log('🌼 특징: 개나리, 벚꽃 등 도메인 키워드 강화 + 의미적 확장 + AI 분석');
+console.log('🌼 주요 개선: 개나리→봄 직접 연결, 가족→사회활동 강화, 점수 계산 재설계');
 
 // p5 export (정적 렌더링만)
 window.setup = setup;
