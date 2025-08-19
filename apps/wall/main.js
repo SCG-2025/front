@@ -1485,6 +1485,9 @@ function resetStage() {
 
     playingAvatars.clear();
     pendingAvatars.clear();
+    
+    // 미디어아트 리셋: 모든 도형 제거
+    mediaArt.removeSongShapes();
 
     let tonePlayerCount = 0;
     Object.values(tonePlayers).forEach(player => {
@@ -2100,16 +2103,17 @@ function stopAvatarMusic(avatar) {
       console.log(`⏰ ${avatar.nickname} 대기 목록에서 제거`);
     }
     
-    // 마스터 클럭은 계속 유지 (주석 처리)
-    // 이렇게 하면 아바타를 다시 올렸을 때 기존 타이밍에 맞춰 동기화됨
-    /*
+    // 모든 아바타가 무대에서 내려가면 마스터 클럭 정지
     if (playingAvatars.size === 0 && pendingAvatars.size === 0) {
       masterClock.isRunning = false;
-      console.log('🎯 마스터 클럭 정지');
+      masterClock.startTime = 0;
+      masterClock.currentBeat = 0;
+      masterClock.currentMeasure = 0;
+      console.log('🎯 모든 아바타가 무대에서 내려감 - 마스터 클럭 정지');
+    } else {
+      console.log(`🎯 마스터 클럭 유지 중 (재생: ${playingAvatars.size}개, 대기: ${pendingAvatars.size}개)`);
     }
-    */
     
-    console.log(`🎯 마스터 클럭 유지 중 (재생: ${playingAvatars.size}개, 대기: ${pendingAvatars.size}개)`);
     removeSongShapes(avatar); // ✅
 
     
