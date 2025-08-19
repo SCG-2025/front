@@ -1475,10 +1475,7 @@ function resetStage() {
 
     playingAvatars.clear();
     pendingAvatars.clear();
-    
-    // 미디어아트 리셋: 모든 도형 제거
-    mediaArt.removeSongShapes();
-    
+
     let tonePlayerCount = 0;
     Object.values(tonePlayers).forEach(player => {
       if (player && player.state === 'started') {
