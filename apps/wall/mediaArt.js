@@ -8,7 +8,10 @@ export let mediaArt = {
   fft: null,
   particles: [[], [], []],
   t: 0,
-  activeShapes: [[], [], []] // 각 스크린별 렌더 도형 저장
+  activeShapes: [[], [], []], // 각 스크린별 렌더 도형 저장
+    removeSongShapes: function() {
+    this.screens = [];   // 모든 스크린 초기화
+  }
 };
 
 // 미디어아트 초기화 (setup 단계에서 호출)
@@ -349,10 +352,6 @@ function drawPixelLeafGinkgo(g, size) {
   g.rect(-1, -size*0.05, 2, size*0.3);
   // 줄기
   g.rect(0, size*0.2, 2, size*0.4);
-}
-function drawPixelLeafBasic(g, size) {
-  g.ellipse(0, 0, size*0.6, size);    // 세로 타원
-  g.rect(0, size*0.4, 2, size*0.4);   // 줄기
 }
 function drawPixelLeafBasic(g, size) {
   g.ellipse(0, 0, size*0.6, size);    // 세로 타원
@@ -759,20 +758,6 @@ function drawPixelStar4(g, size) {
   g.rect(0,0,size,2);
   g.rect(0,0,2,size);
 }
-//summer_memories
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // 🎨 세트/포지션별 미디어아트 스타일 매핑
 const mediaArtStyles = {
