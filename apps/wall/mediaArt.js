@@ -104,6 +104,9 @@ function drawPixelShape(g, shape, sz) {
     case 'square':   return g.rect(0,0,sz,sz);
     case 'circle':   return drawPixelCircle(g, sz);
     case 'pentagon': return drawPixelPolygon(g,5,sz);
+    case "gamepad": return drawPixelGamepad(g, sz);
+    case "monitor": return drawPixelMonitor(g, sz);
+    case "keyboard": return drawPixelKeyboard(g, sz);
     default:         return g.rect(0,0,sz,sz*0.6);
   }
 }
@@ -160,25 +163,240 @@ function drawPixelPolygon(g, sides, r) {
     g.rect(x, y, 1.5, 1.5);
   }
 }
-// mediaArt.js
+function drawPixelGamepad(g, size) {
+  // 간단한 패드 모양 (좌우 손잡이 + 중앙 바디)
+  g.rect(-size*0.5, -size*0.2, size, size*0.4);
+  g.ellipse(-size*0.6, 0, size*0.4, size*0.6);
+  g.ellipse(size*0.6, 0, size*0.4, size*0.6);
+  // 버튼
+  g.rect(size*0.15, -size*0.1, 2, 2);
+  g.rect(size*0.2, size*0.1, 2, 2);
+}
+
+function drawPixelMonitor(g, size) {
+  g.rect(-size/2, -size/3, size, size*0.6); // 화면
+  g.rect(-size/6, size/3, size/3, size*0.1); // 받침대
+}
+
+function drawPixelKeyboard(g, size) {
+  g.rect(-size/2, -size/4, size, size/2);
+  for (let x=-size/2+4; x<size/2; x+=6) {
+    for (let y=-size/4+4; y<size/4; y+=6) {
+      g.rect(x, y, 2, 2);
+    }
+  }
+}
+
+// 🎨 세트/포지션별 미디어아트 스타일 매핑
+const mediaArtStyles = {
+  verification: {
+    "리드멜로디": { shape: "star", hue: 200, baseSize: 24 },
+    "서브멜로디": { shape: "pentagon", hue: 280, baseSize: 18 },
+    "코드": { shape: "square", hue: 100, baseSize: 20 },
+    "베이스": { shape: "diamond", hue: 50, baseSize: 22 },
+    "드럼/퍼커션": { shape: "triangle", hue: 10, baseSize: 26 },
+    "효과음/FX": { shape: "circle", hue: 320, baseSize: 16 },
+  },
+pcroom_gaming: {
+    "리드멜로디": { shape: "gamepad", hue: 200, baseSize: 28 },
+    "서브멜로디": { shape: "monitor", hue: 180, baseSize: 26 },
+    "코드":      { shape: "keyboard", hue: 220, baseSize: 24 },
+    "베이스":    { shape: "diamond", hue: 50, baseSize: 22 }, // 사운드 웅웅
+    "드럼/퍼커션": { shape: "circle", hue: 0, baseSize: 28 }, // 마우스 클릭 느낌
+    "효과음/FX": { shape: "star", hue: 300, baseSize: 20 }, // 반짝이는 효과
+  },
+   home_console_gaming: {
+    "리드멜로디": { shape: "star", hue: 200, baseSize: 24 },
+    "서브멜로디": { shape: "pentagon", hue: 280, baseSize: 18 },
+    "코드": { shape: "square", hue: 100, baseSize: 20 },
+    "베이스": { shape: "diamond", hue: 50, baseSize: 22 },
+    "드럼/퍼커션": { shape: "triangle", hue: 10, baseSize: 26 },
+    "효과음/FX": { shape: "circle", hue: 320, baseSize: 16 },
+  },
+  social_media_memories: {
+    "리드멜로디": { shape: "star", hue: 200, baseSize: 24 },
+    "서브멜로디": { shape: "pentagon", hue: 280, baseSize: 18 },
+    "코드": { shape: "square", hue: 100, baseSize: 20 },
+    "베이스": { shape: "diamond", hue: 50, baseSize: 22 },
+    "드럼/퍼커션": { shape: "triangle", hue: 10, baseSize: 26 },
+    "효과음/FX": { shape: "circle", hue: 320, baseSize: 16 },
+  },
+  photo_album: {
+    "리드멜로디": { shape: "star", hue: 200, baseSize: 24 },
+    "서브멜로디": { shape: "pentagon", hue: 280, baseSize: 18 },
+    "코드": { shape: "square", hue: 100, baseSize: 20 },
+    "베이스": { shape: "diamond", hue: 50, baseSize: 22 },
+    "드럼/퍼커션": { shape: "triangle", hue: 10, baseSize: 26 },
+    "효과음/FX": { shape: "circle", hue: 320, baseSize: 16 },
+  },
+  sports_activities:{
+    "리드멜로디": { shape: "star", hue: 200, baseSize: 24 },
+    "서브멜로디": { shape: "pentagon", hue: 280, baseSize: 18 },
+    "코드": { shape: "square", hue: 100, baseSize: 20 },
+    "베이스": { shape: "diamond", hue: 50, baseSize: 22 },
+    "드럼/퍼커션": { shape: "triangle", hue: 10, baseSize: 26 },
+    "효과음/FX": { shape: "circle", hue: 320, baseSize: 16 },
+  },
+    festivals_events: {
+    "리드멜로디": { shape: "star", hue: 200, baseSize: 24 },
+    "서브멜로디": { shape: "pentagon", hue: 280, baseSize: 18 },
+    "코드": { shape: "square", hue: 100, baseSize: 20 },
+    "베이스": { shape: "diamond", hue: 50, baseSize: 22 },
+    "드럼/퍼커션": { shape: "triangle", hue: 10, baseSize: 26 },
+    "효과음/FX": { shape: "circle", hue: 320, baseSize: 16 },
+  },
+  summer_memories: {
+    "리드멜로디": { shape: "star", hue: 200, baseSize: 24 },
+    "서브멜로디": { shape: "pentagon", hue: 280, baseSize: 18 },
+    "코드": { shape: "square", hue: 100, baseSize: 20 },
+    "베이스": { shape: "diamond", hue: 50, baseSize: 22 },
+    "드럼/퍼커션": { shape: "triangle", hue: 10, baseSize: 26 },
+    "효과음/FX": { shape: "circle", hue: 320, baseSize: 16 },
+  },
+  travel_places:  {
+    "리드멜로디": { shape: "star", hue: 200, baseSize: 24 },
+    "서브멜로디": { shape: "pentagon", hue: 280, baseSize: 18 },
+    "코드": { shape: "square", hue: 100, baseSize: 20 },
+    "베이스": { shape: "diamond", hue: 50, baseSize: 22 },
+    "드럼/퍼커션": { shape: "triangle", hue: 10, baseSize: 26 },
+    "효과음/FX": { shape: "circle", hue: 320, baseSize: 16 },
+  },
+  family_warmth: {
+    "리드멜로디": { shape: "star", hue: 200, baseSize: 24 },
+    "서브멜로디": { shape: "pentagon", hue: 280, baseSize: 18 },
+    "코드": { shape: "square", hue: 100, baseSize: 20 },
+    "베이스": { shape: "diamond", hue: 50, baseSize: 22 },
+    "드럼/퍼커션": { shape: "triangle", hue: 10, baseSize: 26 },
+    "효과음/FX": { shape: "circle", hue: 320, baseSize: 16 },
+  },
+  school_memories: {
+    "리드멜로디": { shape: "star", hue: 200, baseSize: 24 },
+    "서브멜로디": { shape: "pentagon", hue: 280, baseSize: 18 },
+    "코드": { shape: "square", hue: 100, baseSize: 20 },
+    "베이스": { shape: "diamond", hue: 50, baseSize: 22 },
+    "드럼/퍼커션": { shape: "triangle", hue: 10, baseSize: 26 },
+    "효과음/FX": { shape: "circle", hue: 320, baseSize: 16 },
+  },  food_snacks:  {
+    "리드멜로디": { shape: "star", hue: 200, baseSize: 24 },
+    "서브멜로디": { shape: "pentagon", hue: 280, baseSize: 18 },
+    "코드": { shape: "square", hue: 100, baseSize: 20 },
+    "베이스": { shape: "diamond", hue: 50, baseSize: 22 },
+    "드럼/퍼커션": { shape: "triangle", hue: 10, baseSize: 26 },
+    "효과음/FX": { shape: "circle", hue: 320, baseSize: 16 },
+  },
+  spring_memories: {
+    "리드멜로디": { shape: "star", hue: 200, baseSize: 24 },
+    "서브멜로디": { shape: "pentagon", hue: 280, baseSize: 18 },
+    "코드": { shape: "square", hue: 100, baseSize: 20 },
+    "베이스": { shape: "diamond", hue: 50, baseSize: 22 },
+    "드럼/퍼커션": { shape: "triangle", hue: 10, baseSize: 26 },
+    "효과음/FX": { shape: "circle", hue: 320, baseSize: 16 },
+  },
+  nostalgia_longing: {
+    "리드멜로디": { shape: "star", hue: 200, baseSize: 24 },
+    "서브멜로디": { shape: "pentagon", hue: 280, baseSize: 18 },
+    "코드": { shape: "square", hue: 100, baseSize: 20 },
+    "베이스": { shape: "diamond", hue: 50, baseSize: 22 },
+    "드럼/퍼커션": { shape: "triangle", hue: 10, baseSize: 26 },
+    "효과음/FX": { shape: "circle", hue: 320, baseSize: 16 },
+  },
+  night_dawn: {
+    "리드멜로디": { shape: "star", hue: 200, baseSize: 24 },
+    "서브멜로디": { shape: "pentagon", hue: 280, baseSize: 18 },
+    "코드": { shape: "square", hue: 100, baseSize: 20 },
+    "베이스": { shape: "diamond", hue: 50, baseSize: 22 },
+    "드럼/퍼커션": { shape: "triangle", hue: 10, baseSize: 26 },
+    "효과음/FX": { shape: "circle", hue: 320, baseSize: 16 },
+  },
+    entertainment_culture:  {
+    "리드멜로디": { shape: "star", hue: 200, baseSize: 24 },
+    "서브멜로디": { shape: "pentagon", hue: 280, baseSize: 18 },
+    "코드": { shape: "square", hue: 100, baseSize: 20 },
+    "베이스": { shape: "diamond", hue: 50, baseSize: 22 },
+    "드럼/퍼커션": { shape: "triangle", hue: 10, baseSize: 26 },
+    "효과음/FX": { shape: "circle", hue: 320, baseSize: 16 },
+  },
+     karaoke_music: {
+    "리드멜로디": { shape: "star", hue: 200, baseSize: 24 },
+    "서브멜로디": { shape: "pentagon", hue: 280, baseSize: 18 },
+    "코드": { shape: "square", hue: 100, baseSize: 20 },
+    "베이스": { shape: "diamond", hue: 50, baseSize: 22 },
+    "드럼/퍼커션": { shape: "triangle", hue: 10, baseSize: 26 },
+    "효과음/FX": { shape: "circle", hue: 320, baseSize: 16 },
+  },
+  art_creative:  {
+    "리드멜로디": { shape: "star", hue: 200, baseSize: 24 },
+    "서브멜로디": { shape: "pentagon", hue: 280, baseSize: 18 },
+    "코드": { shape: "square", hue: 100, baseSize: 20 },
+    "베이스": { shape: "diamond", hue: 50, baseSize: 22 },
+    "드럼/퍼커션": { shape: "triangle", hue: 10, baseSize: 26 },
+    "효과음/FX": { shape: "circle", hue: 320, baseSize: 16 },
+  },
+     study_reading: {
+    "리드멜로디": { shape: "star", hue: 200, baseSize: 24 },
+    "서브멜로디": { shape: "pentagon", hue: 280, baseSize: 18 },
+    "코드": { shape: "square", hue: 100, baseSize: 20 },
+    "베이스": { shape: "diamond", hue: 50, baseSize: 22 },
+    "드럼/퍼커션": { shape: "triangle", hue: 10, baseSize: 26 },
+    "효과음/FX": { shape: "circle", hue: 320, baseSize: 16 },
+  },
+  autumn_memories: {
+    "리드멜로디": { shape: "star", hue: 200, baseSize: 24 },
+    "서브멜로디": { shape: "pentagon", hue: 280, baseSize: 18 },
+    "코드": { shape: "square", hue: 100, baseSize: 20 },
+    "베이스": { shape: "diamond", hue: 50, baseSize: 22 },
+    "드럼/퍼커션": { shape: "triangle", hue: 10, baseSize: 26 },
+    "효과음/FX": { shape: "circle", hue: 320, baseSize: 16 },
+  },
+
+winter_memories:{
+    "리드멜로디": { shape: "star", hue: 200, baseSize: 24 },
+    "서브멜로디": { shape: "pentagon", hue: 280, baseSize: 18 },
+    "코드": { shape: "square", hue: 100, baseSize: 20 },
+    "베이스": { shape: "diamond", hue: 50, baseSize: 22 },
+    "드럼/퍼커션": { shape: "triangle", hue: 10, baseSize: 26 },
+    "효과음/FX": { shape: "circle", hue: 320, baseSize: 16 },
+  },
+};
+  
+
+// fallback: 세트 정의가 없으면 포지션명으로 기본 처리
+function defaultShapeForPosition(posName) {
+  if (!posName) return { shape: "circle", hue: 180, baseSize: 20 };
+  if (posName.includes("베이스")) return { shape: "diamond", hue: 60, baseSize: 20 };
+  if (posName.includes("코드")) return { shape: "square", hue: 120, baseSize: 20 };
+  if (posName.includes("드럼")) return { shape: "triangle", hue: 0, baseSize: 24 };
+  if (posName.includes("리드")) return { shape: "star", hue: 200, baseSize: 22 };
+  if (posName.includes("서브")) return { shape: "pentagon", hue: 280, baseSize: 18 };
+  if (posName.includes("FX")) return { shape: "circle", hue: 320, baseSize: 16 };
+  return { shape: "square", hue: 180, baseSize: 20 };
+}
+
+// 최종 config 추출
+function getShapeConfig(avatar) {
+  const setCfg = mediaArtStyles[avatar.musicSet];
+  if (setCfg && setCfg[avatar.musicPosition]) {
+    return setCfg[avatar.musicPosition];
+  }
+  return defaultShapeForPosition(avatar.musicPosition);
+}
 
 // 아바타용 미디어아트 도형 추가
 export function addSongShapes(avatar) {
-  // 어떤 화면(0,1,2)에 표시할지 -> 무대 슬롯 기반 분배 예시
   const screenIndex = avatar.stageSlot % 3;
+  const cfg = getShapeConfig(avatar);
 
-  // 도형 데이터 구성
   mediaArt.activeShapes[screenIndex].push({
     ownerId: avatar.id,
     musicType: avatar.musicType,
-    shape: pickShapeForPosition(avatar.musicPosition),
-    hue: random(0, 360), // 색 랜덤
+    shape: cfg.shape,
+    hue: cfg.hue,
     x: random(mediaArt.w),
     y: random(mediaArt.h),
-    baseSize: random(6, 14)
+    baseSize: cfg.baseSize
   });
 
-  console.log(`🎨 [MediaArt] ${avatar.nickname} → 스크린 ${screenIndex}에 도형 추가`);
+  console.log(`🎨 [MediaArt] ${avatar.nickname} (${avatar.musicSet}/${avatar.musicPosition}) → shape:${cfg.shape}, hue:${cfg.hue}`);
 }
 
 // 아바타 내려가면 도형 제거
@@ -189,14 +407,3 @@ export function removeSongShapes(avatar) {
   console.log(`🗑️ [MediaArt] ${avatar.nickname} 도형 제거`);
 }
 
-// 포지션에 따라 도형 종류 매핑
-function pickShapeForPosition(posName) {
-  if (!posName) return "circle";
-  if (posName.includes("베이스")) return "diamond";
-  if (posName.includes("코드")) return "square";
-  if (posName.includes("드럼")) return "triangle";
-  if (posName.includes("리드")) return "star";
-  if (posName.includes("서브")) return "pentagon";
-  if (posName.includes("FX")) return "circle";
-  return "square"; // fallback
-}
