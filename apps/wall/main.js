@@ -389,25 +389,25 @@ function preload() {
   avatarImage = loadImage('avatar_sample.jpeg'); // 기본 폴백 이미지
 
   // === 커스터마이징 아바타 assets 로드 ===
-  // Female avatars (fe.png ~ fe5.png)
+  // Female avatars (fe.png ~ fe(5).png)
   avatarAssets.female = [];
   avatarAssets.female.push(loadImage('../mobile/assets/fe.png'));
   for (let i = 2; i <= 5; i++) {
-    avatarAssets.female.push(loadImage(`../mobile/assets/fe${i}.png`));
+    avatarAssets.female.push(loadImage(`../mobile/assets/fe(${i}).png`));
   }
 
-  // Male avatars (ma.png ~ ma4.png)
+  // Male avatars (ma.png ~ ma(4).png)
   avatarAssets.male = [];
   avatarAssets.male.push(loadImage('../mobile/assets/ma.png'));
   for (let i = 2; i <= 4; i++) {
-    avatarAssets.male.push(loadImage(`../mobile/assets/ma${i}.png`));
+    avatarAssets.male.push(loadImage(`../mobile/assets/ma(${i}).png`));
   }
 
-  // Head accessories (head.png ~ head8.png)
+  // Head accessories (head.png ~ head(8).png)
   avatarAssets.heads = [];
   avatarAssets.heads.push(loadImage('../mobile/assets/head.png'));
   for (let i = 2; i <= 8; i++) {
-    avatarAssets.heads.push(loadImage(`../mobile/assets/head${i}.png`));
+    avatarAssets.heads.push(loadImage(`../mobile/assets/head(${i}).png`));
   }
 
   // Wing
