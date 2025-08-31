@@ -142,14 +142,6 @@ const predefinedRecipes = [
     description: '싸이월드, 페이스북, 인스타그램에 남긴 추억들',
     aiPrompt: '휴대폰, 모바일게임, 모바일, 스마트폰게임, 싸이월드, 페이스북, 인스타그램, 네이버블로그, SNS, 게시물, 사진업로드, 디지털추억, 앱게임, 클래시로얄, 포켓몬고'
   },
-  {
-    id: 'photo_album',
-    name: '사진과 앨범의 기억',
-    category: 'visual',
-  musicSet: 'set1',
-    description: '필름카메라, 디지털카메라로 찍은 소중한 순간들',
-    aiPrompt: '어린시절, 추억, 회상, 사진, 앨범, 카메라, 필름, 비디오, 영상, 촬영, 기념사진, 가족사진, 옛날사진, 어릴때, 과거, 기억'
-  },
   // 🏃‍♂️ 세트 2: 활동 & 에너지 (4개)
   {
     id: 'sports_activities',
@@ -166,14 +158,6 @@ const predefinedRecipes = [
   musicSet: 'set2',
     description: '지역축제, 콘서트, 공연 등 특별한 이벤트 참여',
     aiPrompt: '보드게임, 파티, 생일, 축하, 축제, 콘서트, 공연, 이벤트, 문화제, 불꽃축제, 음악축제, 지역축제, 무대, 관람, 참여, 특별한경험, 모임, 친구들과, 카페에서, 게임카페'
-  },
-  {
-    id: 'summer_memories',
-    name: '뜨거운 여름의 추억',
-    category: 'season',
-  musicSet: 'set2',
-    description: '바다, 수영장, 여름휴가, 시원한 음식 등 활기찬 여름 추억',
-    aiPrompt: '여름, 바다, 수영장, 수영, 여름휴가, 캠핑, 물놀이, 아이스크림, 빙수, 에어컨, 선풍기, 더위, 시원함, 휴가, 바캉스, 해변, 축제'
   },
   {
     id: 'travel_places',
@@ -199,14 +183,6 @@ const predefinedRecipes = [
   musicSet: 'set3',
     description: '친구들과의 학교생활, 운동회, 수학여행, 학예회 등 학창시절의 모든 추억',
     aiPrompt: '학교, 교실, 수업, 학창시절, 동창, 반친구, 교복, 선생님, 초등학교, 중학교, 고등학교, 학예회, 학교행사, 운동회, 수학여행, 축제, 졸업식, 입학식, 특별한날, 체육대회, 발표회, 학습, 시험, 급식'
-  },
-  {
-    id: 'food_snacks',
-    name: '음식과 간식',
-    category: 'food',
-  musicSet: 'set3',
-    description: '친구들과 함께 먹었던 맛있는 음식과 간식들',
-    aiPrompt: '카페, 수다, 대화, 이야기, 친구들과, 모임, 만남, 음식, 간식, 치킨, 피자, 떡볶이, 라면, 햄버거, 아이스크림, 과자, 빵, 분식, 맛집, 같이먹기, 군것질, 커피, 음료, 디저트, 스타벅스, 카페베네'
   },
   {
     id: 'spring_memories',
@@ -241,14 +217,6 @@ const predefinedRecipes = [
     description: '드라마, 영화, 웹툰, 만화를 보며 보낸 시간들',
     aiPrompt: '영화관, 영화, 친구들과, 영화보기, 드라마, 웹툰, 만화, 무한도전, 방송, 프로그램, TV, 시청, 엔터테인먼트, 극장, 상영관, 팝콘'
   },
-  {
-    id: 'karaoke_music',
-    name: '노래방과 음악 감상',
-    category: 'music',
-  musicSet: 'set4',
-    description: '친구들과 노래방, 좋아하는 음악 듣기, 함께 부른 노래',
-    aiPrompt: '노래방, 노래, 음악감상, 가요, 팝송, 힙합, 발라드, 댄스, 아이돌, 가수, 함께부르기, 듣기, 뮤직비디오, 음원, 스피커'
-  },
   // 🌸 세트 5: 창의성 & 계절감 (4개)
   {
     id: 'art_creative',
@@ -265,14 +233,6 @@ const predefinedRecipes = [
   musicSet: 'set5',
     description: '도서관, 카페, 집에서의 공부, 독서, 조용한 학습 시간',
     aiPrompt: '도서관, 독서, 책, 공부, 조용함, 학습, 시험공부, 과제, 참고서, 소설, 만화책, 집중, 조용한공간, 열람실, 책읽기, 혼자, 집중시간'
-  },
-  {
-    id: 'autumn_memories',
-    name: '감성적인 가을의 추억',
-    category: 'season',
-  musicSet: 'set5',
-    description: '단풍, 운동회, 추수 등 아늑하고 감성적인 가을 추억',
-    aiPrompt: '가을, 단풍, 낙엽, 운동회, 추수, 감성적, 쌀쌀함, 따뜻한차, 독서의계절, 센치함, 노을, 황금빛, 코스모스, 감, 밤, 고구마'
   },
   {
     id: 'winter_memories',
@@ -293,58 +253,45 @@ const musicBpmInfo = {
   'pcroom_gaming': 197,
   'home_console_gaming': 197,
   'social_media_memories': 197,
-  'photo_album': 197,
   'sports_activities': 128,
   'festivals_events': 128,
-  'summer_memories': 128,
   'travel_places': 128,
   'family_warmth': 140,
   'school_memories': 140,
-  'food_snacks': 140,
   'spring_memories': 140,
   'nostalgia_longing': 85,
   'night_dawn': 85,
   'entertainment_culture': 85,
-  'karaoke_music': 85,
   'art_creative': 75,
   'study_reading': 75,
-  'autumn_memories': 75,
   'winter_memories': 75
 };
 
 // 조합법 ID와 음원 파일 세트 매핑 (임시: 대부분 set1 파일 재사용)
 const musicFileMapping = {
   'pcroom_gaming': {
-    '리드 멜로디': '../wall/music/set1_pcroom_gaming_lead.wav',
-    '서브 멜로디': '../wall/music/set1_pcroom_gaming_sub.wav',
-    '코드': '../wall/music/set1_pcroom_gaming_chord.wav',
-    '베이스': '../wall/music/set1_pcroom_gaming_bass.wav',
-    '드럼/퍼커션': '../wall/music/set1_pcroom_gaming_drum.wav',
-    '효과음/FX': '../wall/music/set1_pcroom_gaming_fx.wav'
+    '리드 멜로디': '../wall/Music/set1_pcroom_gaming_lead.wav',
+    '서브 멜로디': '../wall/Music/set1_pcroom_gaming_sub.wav',
+    '코드': '../wall/Music/set1_pcroom_gaming_chord.wav',
+    '베이스': '../wall/Music/set1_pcroom_gaming_bass.wav',
+    '드럼/퍼커션': '../wall/Music/set1_pcroom_gaming_drum.wav',
+    '효과음/FX': '../wall/Music/set1_pcroom_gaming_fx.wav'
   },
   'home_console_gaming': {
-    '리드 멜로디': '../wall/music/set1_pcroom_gaming_lead.wav',
-    '서브 멜로디': '../wall/music/set1_pcroom_gaming_sub.wav',
-    '코드': '../wall/music/set1_pcroom_gaming_chord.wav',
-    '베이스': '../wall/music/set1_pcroom_gaming_bass.wav',
-    '드럼/퍼커션': '../wall/music/set1_pcroom_gaming_drum.wav',
-    '효과음/FX': '../wall/music/set1_pcroom_gaming_fx.wav'
+    '리드 멜로디': '../wall/Music/set1_home_console_gaming_lead.wav',
+    '서브 멜로디': '../wall/Music/set1_home_console_gaming_sub.wav',
+    '코드': '../wall/Music/set1_home_console_gaming_chord.wav',
+    '베이스': '../wall/Music/set1_home_console_gaming_bass.wav',
+    '드럼/퍼커션': '../wall/Music/set1_home_console_gaming_drum.wav',
+    '효과음/FX': '../wall/Music/set1_home_console_gaming_fx.wav'
   },
   'social_media_memories': {
-    '리드 멜로디': '../wall/music/set1_pcroom_gaming_lead.wav',
-    '서브 멜로디': '../wall/music/set1_pcroom_gaming_sub.wav',
-    '코드': '../wall/music/set1_pcroom_gaming_chord.wav',
-    '베이스': '../wall/music/set1_pcroom_gaming_bass.wav',
-    '드럼/퍼커션': '../wall/music/set1_pcroom_gaming_drum.wav',
-    '효과음/FX': '../wall/music/set1_pcroom_gaming_fx.wav'
-  },
-  'photo_album': {
-    '리드 멜로디': '../wall/music/set1_pcroom_gaming_lead.wav',
-    '서브 멜로디': '../wall/music/set1_pcroom_gaming_sub.wav',
-    '코드': '../wall/music/set1_pcroom_gaming_chord.wav',
-    '베이스': '../wall/music/set1_pcroom_gaming_bass.wav',
-    '드럼/퍼커션': '../wall/music/set1_pcroom_gaming_drum.wav',
-    '효과음/FX': '../wall/music/set1_pcroom_gaming_fx.wav'
+    '리드 멜로디': '../wall/Music/set1_social_media_memories_lead.wav',
+    '서브 멜로디': '../wall/Music/set1_social_media_memories_sub.wav',
+    '코드': '../wall/Music/set1_social_media_memories_chord.wav',
+    '베이스': '../wall/Music/set1_social_media_memories_bass.wav',
+    '드럼/퍼커션': '../wall/Music/set1_social_media_memories_drum.wav',
+    '효과음/FX': '../wall/Music/set1_social_media_memories_fx.wav'
   },
   'sports_activities': {
     '리드 멜로디': '../wall/music/set1_pcroom_gaming_lead.wav',
@@ -355,14 +302,6 @@ const musicFileMapping = {
     '효과음/FX': '../wall/music/set1_pcroom_gaming_fx.wav'
   },
   'festivals_events': {
-    '리드 멜로디': '../wall/music/set1_pcroom_gaming_lead.wav',
-    '서브 멜로디': '../wall/music/set1_pcroom_gaming_sub.wav',
-    '코드': '../wall/music/set1_pcroom_gaming_chord.wav',
-    '베이스': '../wall/music/set1_pcroom_gaming_bass.wav',
-    '드럼/퍼커션': '../wall/music/set1_pcroom_gaming_drum.wav',
-    '효과음/FX': '../wall/music/set1_pcroom_gaming_fx.wav'
-  },
-  'summer_memories': {
     '리드 멜로디': '../wall/music/set1_pcroom_gaming_lead.wav',
     '서브 멜로디': '../wall/music/set1_pcroom_gaming_sub.wav',
     '코드': '../wall/music/set1_pcroom_gaming_chord.wav',
@@ -394,14 +333,6 @@ const musicFileMapping = {
   '드럼/퍼커션': '../wall/Music/set3_school_memories_drum.wav',
   '효과음/FX': '../wall/Music/set3_school_memories_fx.wav'
   },
-  'food_snacks': {
-    '리드 멜로디': '../wall/music/set1_pcroom_gaming_lead.wav',
-    '서브 멜로디': '../wall/music/set1_pcroom_gaming_sub.wav',
-    '코드': '../wall/music/set1_pcroom_gaming_chord.wav',
-    '베이스': '../wall/music/set1_pcroom_gaming_bass.wav',
-    '드럼/퍼커션': '../wall/music/set1_pcroom_gaming_drum.wav',
-    '효과음/FX': '../wall/music/set1_pcroom_gaming_fx.wav'
-  },
   'spring_memories': {
   '리드 멜로디': '../wall/Music/set3_spring_memories_lead.wav',
   '서브 멜로디': '../wall/Music/set3_spring_memories_sub.wav',
@@ -411,36 +342,28 @@ const musicFileMapping = {
   '효과음/FX': '../wall/Music/set3_spring_memories_fx.wav'
   },
   'nostalgia_longing': {
-    '리드 멜로디': '../wall/music/set1_pcroom_gaming_lead.wav',
-    '서브 멜로디': '../wall/music/set1_pcroom_gaming_sub.wav',
-    '코드': '../wall/music/set1_pcroom_gaming_chord.wav',
-    '베이스': '../wall/music/set1_pcroom_gaming_bass.wav',
-    '드럼/퍼커션': '../wall/music/set1_pcroom_gaming_drum.wav',
-    '효과음/FX': '../wall/music/set1_pcroom_gaming_fx.wav'
+    '리드 멜로디': '../wall/Music/set4_nostalgia_longing_lead.wav',
+    '서브 멜로디': '../wall/Music/set4_nostalgia_longing_sub.wav',
+    '코드': '../wall/Music/set4_nostalgia_longing_chord.wav',
+    '베이스': '../wall/Music/set4_nostalgia_longing_bass.wav',
+    '드럼/퍼커션': '../wall/Music/set4_nostalgia_longing_drum.wav',
+    '효과음/FX': '../wall/Music/set4_nostalgia_longing_fx.wav'
   },
   'night_dawn': {
-    '리드 멜로디': '../wall/music/set1_pcroom_gaming_lead.wav',
-    '서브 멜로디': '../wall/music/set1_pcroom_gaming_sub.wav',
-    '코드': '../wall/music/set1_pcroom_gaming_chord.wav',
-    '베이스': '../wall/music/set1_pcroom_gaming_bass.wav',
-    '드럼/퍼커션': '../wall/music/set1_pcroom_gaming_drum.wav',
-    '효과음/FX': '../wall/music/set1_pcroom_gaming_fx.wav'
+    '리드 멜로디': '../wall/Music/set4_night_dawn_lead.wav',
+    '서브 멜로디': '../wall/Music/set4_night_dawn_sub.wav',
+    '코드': '../wall/Music/set4_night_dawn_chord.wav',
+    '베이스': '../wall/Music/set4_night_dawn_bass.wav',
+    '드럼/퍼커션': '../wall/Music/set4_night_dawn_drum.wav',
+    '효과음/FX': '../wall/Music/set4_night_dawn_fx.wav'
   },
   'entertainment_culture': {
-    '리드 멜로디': '../wall/music/set1_pcroom_gaming_lead.wav',
-    '서브 멜로디': '../wall/music/set1_pcroom_gaming_sub.wav',
-    '코드': '../wall/music/set1_pcroom_gaming_chord.wav',
-    '베이스': '../wall/music/set1_pcroom_gaming_bass.wav',
-    '드럼/퍼커션': '../wall/music/set1_pcroom_gaming_drum.wav',
-    '효과음/FX': '../wall/music/set1_pcroom_gaming_fx.wav'
-  },
-  'karaoke_music': {
-    '리드 멜로디': '../wall/music/set1_pcroom_gaming_lead.wav',
-    '서브 멜로디': '../wall/music/set1_pcroom_gaming_sub.wav',
-    '코드': '../wall/music/set1_pcroom_gaming_chord.wav',
-    '베이스': '../wall/music/set1_pcroom_gaming_bass.wav',
-    '드럼/퍼커션': '../wall/music/set1_pcroom_gaming_drum.wav',
-    '효과음/FX': '../wall/music/set1_pcroom_gaming_fx.wav'
+    '리드 멜로디': '../wall/Music/set4_entertainment_culture_lead.wav',
+    '서브 멜로디': '../wall/Music/set4_entertainment_culture_sub.wav',
+    '코드': '../wall/Music/set4_entertainment_culture_chord.wav',
+    '베이스': '../wall/Music/set4_entertainment_culture_bass.wav',
+    '드럼/퍼커션': '../wall/Music/set4_entertainment_culture_drum.wav',
+    '효과음/FX': '../wall/Music/set4_entertainment_culture_fx.wav'
   },
   'art_creative': {
     '리드 멜로디': '../wall/music/set1_pcroom_gaming_lead.wav',
@@ -451,14 +374,6 @@ const musicFileMapping = {
     '효과음/FX': '../wall/music/set1_pcroom_gaming_fx.wav'
   },
   'study_reading': {
-    '리드 멜로디': '../wall/music/set1_pcroom_gaming_lead.wav',
-    '서브 멜로디': '../wall/music/set1_pcroom_gaming_sub.wav',
-    '코드': '../wall/music/set1_pcroom_gaming_chord.wav',
-    '베이스': '../wall/music/set1_pcroom_gaming_bass.wav',
-    '드럼/퍼커션': '../wall/music/set1_pcroom_gaming_drum.wav',
-    '효과음/FX': '../wall/music/set1_pcroom_gaming_fx.wav'
-  },
-  'autumn_memories': {
     '리드 멜로디': '../wall/music/set1_pcroom_gaming_lead.wav',
     '서브 멜로디': '../wall/music/set1_pcroom_gaming_sub.wav',
     '코드': '../wall/music/set1_pcroom_gaming_chord.wav',
@@ -935,9 +850,6 @@ function analyzeKeywordWeights(keywords, text) {
       // 보드게임 & 파티 (festivals_events 강화)
       '보드게임': 9, '파티': 8, '생일': 8, '축하': 7, '축제': 7, '이벤트': 6,
       
-      // 카페 & 음식 (food_snacks 강화) 
-      '카페': 8, '수다': 7, '커피': 6, '치킨': 6, '피자': 6,
-      
       // 운동 관련
       '운동': 7, '헬스장': 8, '조깅': 7, '수영': 7,
       
@@ -1097,7 +1009,7 @@ function getBaseKeywordScore(recipe, keywordWeights) {
   let score = 0;
   let matchCount = 0;
   
-  const isTargetRecipe = ['spring_memories', 'family_warmth', 'pcroom_gaming', 'photo_album'].includes(recipe.id);
+  const isTargetRecipe = ['spring_memories', 'family_warmth', 'pcroom_gaming'].includes(recipe.id);
   
   if (isTargetRecipe) {
     console.log(`  🔍 ${recipe.name} 키워드 매칭 분석:`);
@@ -1202,22 +1114,6 @@ function getContextMatchScore(recipe, contextAnalysis) {
     }
   }
   
-  if (recipe.id === 'summer_memories') {
-    if (contextAnalysis.seasonal.summer > 0) {
-      const summerBonus = contextAnalysis.seasonal.summer * 60;
-      score += summerBonus;
-      console.log(`    ☀️ 여름 계절 매칭: +${summerBonus}`);
-    }
-  }
-  
-  if (recipe.id === 'autumn_memories') {
-    if (contextAnalysis.seasonal.autumn > 0) {
-      const autumnBonus = contextAnalysis.seasonal.autumn * 60;
-      score += autumnBonus;
-      console.log(`    🍂 가을 계절 매칭: +${autumnBonus}`);
-    }
-  }
-  
   if (recipe.id === 'winter_memories') {
     if (contextAnalysis.seasonal.winter > 0) {
       const winterBonus = contextAnalysis.seasonal.winter * 60;
@@ -1264,7 +1160,7 @@ function getCategoryBonus(recipe, contextAnalysis) {
   
   // 사회적 활동에 보너스
   if (contextAnalysis.activity.social > 2) {
-    if (['school_memories', 'family_warmth', 'karaoke_music'].includes(recipe.id)) {
+    if (['school_memories', 'family_warmth'].includes(recipe.id)) {
       bonus += 30; // 기존 10점에서 증가
     }
   }
@@ -1276,9 +1172,6 @@ function getCategoryBonus(recipe, contextAnalysis) {
 function generateRecommendationReason(recipe, keywordAnalysis, contextAnalysis) {
   const reasons = [];
   
-  if (contextAnalysis.seasonal.summer > 0 && recipe.id === 'summer_memories') {
-    reasons.push('여름 관련 키워드가 많이 감지됨');
-  }
   if (contextAnalysis.activity.social > 1) {
     reasons.push('사회적 활동 맥락이 강함');
   }
@@ -1332,9 +1225,6 @@ function classifyMemoryByKeywords(memoryText, extractedKeywords) {
         case 'social_media_memories':
           matchScore(['싸이월드','cyworld','페이스북','facebook','인스타그램','instagram','인스타','네이버','naver','블로그','blog','sns','게시물','업로드','포스팅'], 17);
           break;
-        case 'photo_album':
-          matchScore(['사진','photo','앨범','album','카메라','camera','필름','film','비디오','video','영상','촬영','찍다','기념사진','가족사진'], 14);
-          break;
         case 'school_memories':
           matchScore(['친구','친구들','friend','friends','학교','교실','학창시절','초등학교','중학교','고등학교','동창','반친구','함께','같이','우리','학예회','학교행사','운동회','수학여행','축제','졸업식','입학식','특별한날','체육대회','발표회'], 17);
           break;
@@ -1353,9 +1243,6 @@ function classifyMemoryByKeywords(memoryText, extractedKeywords) {
         case 'study_reading':
           matchScore(['도서관','library','독서','책','book','공부','study','조용함','학습','시험공부','과제','참고서','소설','novel','만화책','집중','조용한공간','열람실','책읽기','카페','cafe','수다','대화','스터디카페','모임','친구들과'], 15);
           break;
-        case 'karaoke_music':
-          matchScore(['노래방','노래','음악감상','가요','팝송','pop','힙합','hiphop','발라드','댄스','아이돌','idol','가수','함께부르기','듣기','뮤직비디오','mv','음원','스피커','music','유튜브음악','spotify'], 18);
-          break;
         case 'sports_activities':
           matchScore(['축구','농구','배구','야구','테니스','배드민턴','badminton','달리기','수영','운동','스포츠','sport','선수','승부','시합','경기','팀플레이','team','운동장','체육관'], 16);
           break;
@@ -1370,12 +1257,6 @@ function classifyMemoryByKeywords(memoryText, extractedKeywords) {
           break;
         case 'spring_memories':
           matchScore(['봄','spring','벚꽃','꽃구경','새학기','입학식','소풍','따뜻해지다','꽃놀이','산책','새싹','개화','꽃밭','공원','피크닉','picnic','햇살','바람','신선함','꽃','따뜻함','개나리','진달래','매화','장미'], 25); // 점수 증가 + 꽃 키워드 추가
-          break;
-        case 'summer_memories':
-          matchScore(['여름','summer','바다','sea','수영장','수영','swimming','여름휴가','캠핑','camping','물놀이','아이스크림','빙수','에어컨','선풍기','더위','시원함','휴가','바캉스','해변','beach'], 25);
-          break;
-        case 'autumn_memories':
-          matchScore(['가을','autumn','fall','단풍','낙엽','운동회','추수','감성적','쌀쌀함','따뜻한차','독서의계절','센치함','노을','황금빛','코스모스','감','밤','고구마','선선함'], 24);
           break;
         case 'winter_memories':
           matchScore(['겨울','winter','눈','snow','눈사람','스키','ski','썰매','크리스마스','christmas','연말','신정','따뜻함','난로','온돌','뜨거운음료','코코아','군고구마','호빵','목도리','장갑','추위'], 25);
@@ -1510,10 +1391,6 @@ window.testAISystem = function () {
     {
       text: "가족들과 함께 개나리 구경했던 추억",
       expected: "spring_memories"
-    },
-    {
-      text: "여름에 친구들과 바다에 갔던 추억이에요. 해변에서 수영하고 캠핑도 했어요.",
-      expected: "summer_memories"
     },
     {
       text: "PC방에서 친구들과 카트라이더하고 메이플스토리 했던 기억이 나네요.",

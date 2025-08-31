@@ -795,14 +795,6 @@ pcroom_gaming: {
     "베이스":    { shape: "spring2", hue: 280, baseSize: 28 }, // 웨이브 라인
     "효과음/FX": { shape: "circle", hue: 320, baseSize: 16 },
   },
-  photo_album: {
-    "리드멜로디":   { shape: "people_circle1", hue: 20, baseSize: 28 }, // 가족이 원형으로 모여 손잡음
-    "서브멜로디":   { shape: "people_circle2", hue: 30, baseSize: 26 }, // 더 많은 사람, 타원형
-    "코드": { shape: "square", hue: 100, baseSize: 20 },
-    "베이스": { shape: "diamond", hue: 50, baseSize: 22 },
-    "드럼/퍼커션":  { shape: "heart2", hue: 15, baseSize: 24 },        // 둥글고 부드러운 하트
-    "효과음/FX":  { shape: "people_circle3", hue: 280, baseSize: 24 }  // 손잡고 비대칭
-  },
   sports_activities:{
     "리드멜로디":   { shape: "people_circle1", hue: 20, baseSize: 28 }, // 가족이 원형으로 모여 손잡음
     "서브멜로디":   { shape: "people_circle2", hue: 30, baseSize: 26 }, // 더 많은 사람, 타원형
@@ -819,15 +811,6 @@ pcroom_gaming: {
     "베이스":       { shape: "note_eighth", hue: 180, baseSize: 20 },  // 8분 음표
    
     "효과음/FX": { shape: "circle", hue: 320, baseSize: 16 },
-  },
-  summer_memories: {
-        "리드멜로디":  { shape: "burst_hollow", hue: 300, baseSize: 26 },
-
-    "서브멜로디":   { shape: "burst", hue: 60, baseSize: 24 },
-    "코드":         { shape: "polygon", hue: 100, baseSize: 22 },
-    "드럼/퍼커션":  { shape: "spring1", hue: 120, baseSize: 30 }, // 지그재그 용수철
-    "베이스":    { shape: "spring2", hue: 280, baseSize: 28 }, // 웨이브 라인
-    "효과음/FX":    { shape: "hot_fog", hue: 40, baseSize: 30 }       // 따뜻한 분위기 안개
   },
   travel_places: {
     "리드멜로디":   { shape: "airplane", hue: 200, baseSize: 28 }, // 비행기
@@ -853,14 +836,6 @@ school_memories: {
     "베이스":     { shape: "people_circle1", hue: 100, baseSize: 30 }, // 손잡고 원형
     "드럼/퍼커션": { shape: "people_circle2", hue: 300, baseSize: 26 }, // 손잡고 타원형
     "효과음/FX":  { shape: "people_circle3", hue: 280, baseSize: 24 }  // 손잡고 비대칭
-  },
-   food_snacks: {
-    "리드멜로디":   { shape: "snack_star", hue: 40, baseSize: 26 },
-    "서브멜로디":   { shape: "snack_burst", hue: 60, baseSize: 24 },
-    "코드":         { shape: "snack_polygon", hue: 100, baseSize: 22 },
-    "베이스":       { shape: "snack_star_hollow", hue: 20, baseSize: 28 },
-    "드럼/퍼커션":  { shape: "snack_burst_hollow", hue: 300, baseSize: 26 },
-    "효과음/FX":    { shape: "snack_polygon_hollow", hue: 200, baseSize: 24 },
   },
   spring_memories: {
     "리드멜로디":   { shape: "flower1", hue: 330, baseSize: 26 },  // 분홍 벚꽃
@@ -894,14 +869,6 @@ school_memories: {
     "드럼/퍼커션":  { shape: "spring1", hue: 120, baseSize: 30 }, // 지그재그 용수철
     "효과음/FX":    { shape: "spring2", hue: 280, baseSize: 28 }, // 웨이브 라인
   },
- karaoke_music: {
-    "리드멜로디": { shape: "treble", hue: 200, baseSize: 28 },       // 높은음자리표
-    "서브멜로디": { shape: "note_eighth", hue: 180, baseSize: 22 },  // 8분음표
-    "코드":       { shape: "bass", hue: 220, baseSize: 26 },         // 낮은음자리표
-    "베이스":     { shape: "note_quarter", hue: 50, baseSize: 20 },  // 4분음표
-    "드럼/퍼커션": { shape: "note_double", hue: 10, baseSize: 24 },  // 더블음표
-    "효과음/FX":  { shape: "rest", hue: 320, baseSize: 18 },         // 쉼표
-  },
   art_creative:  {
     "리드멜로디": { shape: "star", hue: 200, baseSize: 24 },
     "서브멜로디": { shape: "pentagon", hue: 280, baseSize: 18 },
@@ -917,13 +884,6 @@ school_memories: {
     "베이스":     { shape: "lamp", hue: 50, baseSize: 26 },
     "드럼/퍼커션": { shape: "note", hue: 180, baseSize: 24 },
     "효과음/FX":  { shape: "bubble", hue: 250, baseSize: 20 },
-  },  autumn_memories: {
-    "리드멜로디": { shape: "leaf_maple", hue: 20, baseSize: 24 },   // 단풍
-    "서브멜로디": { shape: "leaf_ginkgo", hue: 50, baseSize: 22 },  // 은행
-    "코드":       { shape: "leaf_basic", hue: 90, baseSize: 20 },   // 전형적인 잎
-    "베이스":     { shape: "cloud_round", hue: 200, baseSize: 26 }, // 구름
-    "드럼/퍼커션": { shape: "cloud_odd", hue: 210, baseSize: 28 },  // 다른 구름
-    "효과음/FX":  { shape: "circle_simple", hue: 180, baseSize: 18 } // 원
   },
 winter_memories:{
     "리드멜로디": { shape: "snowflake1", hue: 200, baseSize: 20 },

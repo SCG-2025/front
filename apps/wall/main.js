@@ -150,26 +150,21 @@ const setNames = {
   // set1 (디지털 & 게임)
   home_console_gaming: '집에서 게임기로',
   social_media_memories: 'SNS 속 디지털 추억',
-  photo_album: '사진과 앨범의 기억',
   // set2 (활동 & 에너지)
   sports_activities: '운동과 스포츠',
   festivals_events: '축제와 이벤트',
-  summer_memories: '뜨거운 여름의 추억',
   travel_places: '여행지의 특별한 경험',
   // set3 (따뜻함 & 소통)
   family_warmth: '가족과의 따뜻한 시간',
   school_memories: '학창시절 추억',
-  food_snacks: '음식과 간식',
   spring_memories: '봄의 따뜻한 추억',
   // set4 (감성 & 문화)
   nostalgia_longing: '그리운 옛날 생각',
   night_dawn: '밤과 새벽',
   entertainment_culture: '드라마/영화/웹툰과 함께',
-  karaoke_music: '노래방과 음악 감상',
   // set5 (창의성 & 계절감)
   art_creative: '미술과 창작활동',
   study_reading: '조용한 학습과 독서',
-  autumn_memories: '가을의 감성',
   winter_memories: '포근한 겨울의 추억',
 };
 
