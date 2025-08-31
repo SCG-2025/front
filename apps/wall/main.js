@@ -164,7 +164,7 @@ const setNames = {
   entertainment_culture: '드라마/영화/웹툰과 함께',
   // set5 (창의성 & 계절감)
   art_creative: '미술과 창작활동',
-  study_reading: '조용한 학습과 독서',
+  autumn_memories: '감성적인 가을의 추억',
   winter_memories: '포근한 겨울의 추억',
 };
 

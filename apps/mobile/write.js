@@ -227,12 +227,12 @@ const predefinedRecipes = [
     aiPrompt: '그림, 미술, 만들기, 공예, 창작, 색칠, 스케치, 조각, 만화그리기, 손으로만들기, 예술활동, 미술시간'
   },
   {
-    id: 'study_reading',
-    name: '조용한 학습과 독서',
-    category: 'study',
+    id: 'autumn_memories',
+    name: '감성적인 가을의 추억',
+    category: 'season',
   musicSet: 'set5',
-    description: '도서관, 카페, 집에서의 공부, 독서, 조용한 학습 시간',
-    aiPrompt: '도서관, 독서, 책, 공부, 조용함, 학습, 시험공부, 과제, 참고서, 소설, 만화책, 집중, 조용한공간, 열람실, 책읽기, 혼자, 집중시간'
+    description: '단풍, 운동회, 추수 등 아늑하고 감성적인 가을 추억',
+    aiPrompt: '가을, 단풍, 낙엽, 운동회, 추수, 감성적, 쌀쌀함, 따뜻한차, 독서의계절, 센치함, 노을, 황금빛, 코스모스, 감, 밤, 고구마'
   },
   {
     id: 'winter_memories',
@@ -263,7 +263,7 @@ const musicBpmInfo = {
   'night_dawn': 85,
   'entertainment_culture': 85,
   'art_creative': 75,
-  'study_reading': 75,
+  'autumn_memories': 75,
   'winter_memories': 75
 };
 
@@ -366,28 +366,28 @@ const musicFileMapping = {
     '효과음/FX': '../wall/Music/set4_entertainment_culture_fx.wav'
   },
   'art_creative': {
-    '리드 멜로디': '../wall/music/set1_pcroom_gaming_lead.wav',
-    '서브 멜로디': '../wall/music/set1_pcroom_gaming_sub.wav',
-    '코드': '../wall/music/set1_pcroom_gaming_chord.wav',
-    '베이스': '../wall/music/set1_pcroom_gaming_bass.wav',
-    '드럼/퍼커션': '../wall/music/set1_pcroom_gaming_drum.wav',
-    '효과음/FX': '../wall/music/set1_pcroom_gaming_fx.wav'
+    '리드 멜로디': '../wall/Music/set5_art_creative_lead.wav',
+    '서브 멜로디': '../wall/Music/set5_art_creative_chord_sub.wav',
+    '코드': '../wall/Music/set5_art_creative_chord.wav',
+    '베이스': '../wall/Music/set5_art_creative_bass.wav',
+    '드럼/퍼커션': '../wall/Music/set5_art_creative_drum.wav',
+    '효과음/FX': '../wall/Music/set5_art_creative_chord_fx.wav'
   },
-  'study_reading': {
-    '리드 멜로디': '../wall/music/set1_pcroom_gaming_lead.wav',
-    '서브 멜로디': '../wall/music/set1_pcroom_gaming_sub.wav',
-    '코드': '../wall/music/set1_pcroom_gaming_chord.wav',
-    '베이스': '../wall/music/set1_pcroom_gaming_bass.wav',
-    '드럼/퍼커션': '../wall/music/set1_pcroom_gaming_drum.wav',
-    '효과음/FX': '../wall/music/set1_pcroom_gaming_fx.wav'
+  'autumn_memories': {
+    '리드 멜로디': '../wall/Music/set5_autumn_memories_lead.wav',
+    '서브 멜로디': '../wall/Music/set5_autumn_memories_sub.wav',
+    '코드': '../wall/Music/set5_autumn_memories_chord.wav',
+    '베이스': '../wall/Music/set5_autumn_memories_bass.wav',
+    '드럼/퍼커션': '../wall/Music/set5_autumn_memories_drum.wav',
+    '효과음/FX': '../wall/Music/set5_autumn_memories_fx.wav'
   },
   'winter_memories': {
-    '리드 멜로디': '../wall/music/set1_pcroom_gaming_lead.wav',
-    '서브 멜로디': '../wall/music/set1_pcroom_gaming_sub.wav',
-    '코드': '../wall/music/set1_pcroom_gaming_chord.wav',
-    '베이스': '../wall/music/set1_pcroom_gaming_bass.wav',
-    '드럼/퍼커션': '../wall/music/set1_pcroom_gaming_drum.wav',
-    '효과음/FX': '../wall/music/set1_pcroom_gaming_fx.wav'
+    '리드 멜로디': '../wall/Music/set5_winter_memories_lead.wav',
+    '서브 멜로디': '../wall/Music/set5_winter_memories_sub.wav',
+    '코드': '../wall/Music/set5_winter_memories_chord.wav',
+    '베이스': '../wall/Music/set5_winter_memories_bass.wav',
+    '드럼/퍼커션': '../wall/Music/set5_winter_memories_drum.wav',
+    '효과음/FX': '../wall/Music/set5_winter_memories_fx.wav'
   }
 };
 
@@ -1240,8 +1240,8 @@ function classifyMemoryByKeywords(memoryText, extractedKeywords) {
         case 'nostalgia_longing':
           matchScore(['그리움','그리워','돌아가다','슬픔','소중함','옛날','예전','과거','어릴때','어렸을때','생각나다','떠오르다','기억나다','향수','잔잔함'], 16);
           break;
-        case 'study_reading':
-          matchScore(['도서관','library','독서','책','book','공부','study','조용함','학습','시험공부','과제','참고서','소설','novel','만화책','집중','조용한공간','열람실','책읽기','카페','cafe','수다','대화','스터디카페','모임','친구들과'], 15);
+        case 'autumn_memories':
+          matchScore(['가을','autumn','fall','단풍','낙엽','운동회','추수','감성적','쌀쌀함','따뜻한차','독서의계절','센치함','노을','황금빛','코스모스','감','밤','고구마','선선함'], 24);
           break;
         case 'sports_activities':
           matchScore(['축구','농구','배구','야구','테니스','배드민턴','badminton','달리기','수영','운동','스포츠','sport','선수','승부','시합','경기','팀플레이','team','운동장','체육관'], 16);

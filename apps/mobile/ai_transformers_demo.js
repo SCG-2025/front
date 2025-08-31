@@ -19,7 +19,7 @@ const recipes = [
   { id: 'night_dawn', name: '밤과 새벽', description: '밤늦은 대화, 새벽 감성, 깊은 밤의 특별한 순간들' },
   { id: 'entertainment_culture', name: '드라마, 영화, 웹툰과 함께', description: '드라마, 영화, 웹툰, 만화를 보며 보낸 시간들' },
   { id: 'art_creative', name: '미술과 창작활동', description: '그림 그리기, 만들기, 공예 등 창작적인 활동' },
-  { id: 'study_reading', name: '조용한 학습과 독서', description: '도서관, 카페, 집에서의 공부, 독서, 조용한 학습 시간' },
+  { id: 'autumn_memories', name: '감성적인 가을의 추억', description: '단풍, 운동회, 추수 등 아늑하고 감성적인 가을 추억' },
   { id: 'winter_memories', name: '포근한 겨울의 추억', description: '눈, 크리스마스, 연말연시 등 따뜻하고 아늑한 겨울 추억' }
 ];
 

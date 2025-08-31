@@ -877,13 +877,13 @@ school_memories: {
     "드럼/퍼커션": { shape: "triangle", hue: 10, baseSize: 26 },
     "효과음/FX": { shape: "circle", hue: 320, baseSize: 16 },
   },
- study_reading: {
-    "리드멜로디": { shape: "book", hue: 40, baseSize: 24 },
-    "서브멜로디": { shape: "pen", hue: 200, baseSize: 20 },
-    "코드":       { shape: "glasses", hue: 100, baseSize: 22 },
-    "베이스":     { shape: "lamp", hue: 50, baseSize: 26 },
-    "드럼/퍼커션": { shape: "note", hue: 180, baseSize: 24 },
-    "효과음/FX":  { shape: "bubble", hue: 250, baseSize: 20 },
+ autumn_memories: {
+    "리드멜로디": { shape: "leaf_maple", hue: 20, baseSize: 24 },   // 단풍
+    "서브멜로디": { shape: "leaf_ginkgo", hue: 50, baseSize: 22 },  // 은행
+    "코드":       { shape: "leaf_basic", hue: 90, baseSize: 20 },   // 전형적인 잎
+    "베이스":     { shape: "cloud_round", hue: 200, baseSize: 26 }, // 구름
+    "드럼/퍼커션": { shape: "cloud_odd", hue: 210, baseSize: 28 },  // 다른 구름
+    "효과음/FX":  { shape: "circle_simple", hue: 180, baseSize: 18 } // 원
   },
 winter_memories:{
     "리드멜로디": { shape: "snowflake1", hue: 200, baseSize: 20 },
