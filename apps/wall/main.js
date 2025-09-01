@@ -173,10 +173,12 @@ let stageSlots = [null, null, null, null, null, null];
 let masterClock = {
   isRunning: false,
   startTime: 0,
-  bpm: 197, // 게임 세트 기본 BPM으로 변경 (PC룸/콘솔 게임)
+  bpm: 170, // SET1 기본 BPM으로 변경 (PC룸/콘솔 게임)
   beatsPerMeasure: 4,
+  measuresPerLoop: 8, // 모든 음원은 8마디로 구성
   currentBeat: 0,
   currentMeasure: 0,
+  currentLoop: 0, // 현재 몇 번째 8마디 루프인지
   nextMeasureStart: 0
 };
 
@@ -197,25 +199,25 @@ let avatarBpmMapping = new Map();
 
 let playingAvatars = new Set();   // 현재 재생 중 아바타 id
 let pendingAvatars = new Map();   // 다음 마디 대기 중 아바타
-let currentBpm = 197;             // 현재 BPM (검증용)
+let currentBpm = 170;             // 현재 BPM (검증용)
 
 // 음악 세트별 BPM 정보
 const musicSetBpms = {
-  'pcroom_gaming': 197,
-  'home_console_gaming': 197,
-  'social_media_memories': 197,
-  'sports_activities': 128,
-  'festivals_events': 128,
-  'travel_places': 128,
+  'pcroom_gaming': 170,
+  'home_console_gaming': 170,
+  'social_media_memories': 170,
+  'sports_activities': 170,
+  'festivals_events': 170,
+  'travel_places': 170,
   'family_warmth': 140,
   'school_memories': 140,
   'spring_memories': 140,
-  'nostalgia_longing': 85,
-  'night_dawn': 85,
-  'entertainment_culture': 85,
-  'art_creative': 75,
-  'autumn_memories': 75,
-  'winter_memories': 75
+  'nostalgia_longing': 140,
+  'night_dawn': 140,
+  'entertainment_culture': 140,
+  'art_creative': 130,
+  'autumn_memories': 130,
+  'winter_memories': 130
 };
 
 
@@ -223,6 +225,7 @@ const musicSetBpms = {
 const setNames = {
   // 기존
   verification: '검증용 Music Sample',
+  // SET 1 - 게임/디지털 (197 BPM)
   pcroom_gaming: 'PC방과 온라인 게임',
   home_console_gaming: '집에서 게임기로',
   social_media_memories: 'SNS 속 디지털 추억',
@@ -243,6 +246,20 @@ const setNames = {
   autumn_memories: '감성적인 가을의 추억',
   winter_memories: '포근한 겨울의 추억'
 };
+
+// BPM과 8마디 구조를 고려한 정확한 음원 길이 계산
+function calculateLoopDuration(bpm) {
+  // 8마디, 마디당 4박자 = 총 32박자
+  const totalBeats = masterClock.measuresPerLoop * masterClock.beatsPerMeasure; // 8 * 4 = 32
+  const beatsPerSecond = bpm / 60.0;
+  return totalBeats / beatsPerSecond; // 초 단위 길이
+}
+
+// 현재 BPM에서의 마디 길이 계산
+function getMeasureDuration(bpm) {
+  const beatsPerSecond = bpm / 60.0;
+  return masterClock.beatsPerMeasure / beatsPerSecond; // 1마디 길이 (초)
+}
 
 // 무대 테마ID 추론 (무대 위 첫 아바타의 musicSet 우선)
 function getCurrentStageThemeId() {
@@ -2459,10 +2476,11 @@ function playAvatarMusic(avatar) {
     startAvatarMusicFromPosition(avatar, sound, 0);
     addSongShapes(avatar);
   } else {
-    // 두번째 이후 아바타: 반드시 다음 마디 시작점에 맞춰 동기화
-    console.log(`⏰ ${avatar.nickname} - 다음 마디에 동기화 예약`);
+    // 두번째 이후 아바타: 현재 재생 위치에 맞춰 즉시 재생
+    console.log(`🎵 ${avatar.nickname} - 현재 위치에 맞춰 즉시 재생`);
     const currentPosition = getCurrentPlaybackPosition();
-    scheduleAvatarForCurrentPosition(avatar, sound, currentPosition);
+    console.log(`현재 재생 위치: ${currentPosition.toFixed(3)}초`);
+    startAvatarMusicFromPosition(avatar, sound, currentPosition);
     addSongShapes(avatar);
   }
 }
@@ -2478,65 +2496,54 @@ function startMasterClockFromPosition(startPosition) {
 }
 
 // 현재 재생 위치에 맞춰 다음 마디에 동기화 (개선된 버전)
-function scheduleAvatarForCurrentPosition(avatar, sound, currentPosition) {
-  const beatsPerSecond = masterClock.bpm / 60.0;
-  const secondsPerMeasure = masterClock.beatsPerMeasure / beatsPerSecond;
-  const currentMeasure = Math.floor(currentPosition / secondsPerMeasure);
-  const positionInCurrentMeasure = currentPosition % secondsPerMeasure;
+function scheduleAvatarForCurrentPosition(avatar, sound) {
+  console.log(`[음악 예약] 아바타 ${avatar.id} 예약 중...`);
+  console.log(`현재 마스터 클럭: 루프 ${masterClock.currentLoop}, 마디 ${masterClock.currentMeasure}, 박자 ${masterClock.currentBeat.toFixed(2)}`);
   
-  // 음원 길이 확인 (동기화 정확도 향상)
-  const p5Sound = musicSamples[avatar.musicType];
-  let soundDuration = 10; // 기본값
-  if (p5Sound && p5Sound.duration() > 0) {
-    soundDuration = p5Sound.duration();
+  // 현재 재생 위치 계산
+  const currentPlaybackPosition = getCurrentPlaybackPosition();
+  const measureDuration = getMeasureDuration(masterClock.bpm);
+  
+  console.log(`현재 재생 위치: ${currentPlaybackPosition.toFixed(3)}초`);
+  
+  // 현재 마디 내에서의 위치 계산
+  const positionInMeasure = (masterClock.currentBeat / masterClock.beatsPerMeasure) * measureDuration;
+  
+  // 더 안전한 동기화를 위해 다음 마디가 아닌 그 다음 마디에서 시작
+  // (현재 마디가 거의 끝나가면 여유를 두고 기다림)
+  let targetMeasureOffset = 1; // 기본적으로 다음 마디
+  
+  // 현재 마디의 75% 이상 지나갔으면 그 다음 마디로 연기
+  if (positionInMeasure > measureDuration * 0.75) {
+    targetMeasureOffset = 2;
+    console.log(`⏰ 현재 마디 75% 이상 진행됨 - 여유를 위해 2마디 후로 연기`);
   }
   
-  // 중요: 첫 번째 아바타와 같은 마디 내 위치에서 시작하도록 계산
-  const targetMeasure = currentMeasure + 1; // 다음 마디
-  const targetMeasureStart = targetMeasure * secondsPerMeasure;
+  // 목표 마디 계산
+  const targetMeasureInLoop = (masterClock.currentMeasure + targetMeasureOffset) % masterClock.measuresPerLoop;
+  const targetMeasureStart = targetMeasureInLoop * measureDuration;
+  const targetPlaybackPosition = targetMeasureStart + positionInMeasure;
   
-  // 음원 길이를 고려한 정확한 재생 위치 계산
-  const targetPlaybackPosition = targetMeasureStart + positionInCurrentMeasure;
-  const adjustedPlaybackPosition = targetPlaybackPosition % soundDuration; // 음원 길이 내로 조정
+  // 대기 시간 계산
+  const timeToTargetMeasure = (measureDuration - positionInMeasure) + ((targetMeasureOffset - 1) * measureDuration);
   
-  const waitTime = targetMeasureStart - currentPosition;
+  console.log(`현재 마디 ${masterClock.currentMeasure + 1}, 마디 내 위치: ${positionInMeasure.toFixed(3)}초`);
+  console.log(`목표 마디: ${targetMeasureInLoop + 1}, 대기 시간: ${timeToTargetMeasure.toFixed(3)}초`);
+  
+  // 마디 시작 시간 계산
   const currentTime = millis() / 1000.0;
-
-  // 대기 시간이 너무 짧으면 다음 마디로
-  if (waitTime < 0.15) { // 150ms 여유로 증가
-    const nextTargetMeasure = currentMeasure + 2;
-    const nextTargetMeasureStart = nextTargetMeasure * secondsPerMeasure;
-    const nextTargetPlaybackPosition = nextTargetMeasureStart + positionInCurrentMeasure;
-    const nextAdjustedPlaybackPosition = nextTargetPlaybackPosition % soundDuration;
-    const nextWaitTime = nextTargetMeasureStart - currentPosition;
-    
-    avatar.isPending = true;
-    avatar.pendingStartTime = currentTime + nextWaitTime;
-    avatar.playbackStartPosition = nextAdjustedPlaybackPosition;
-    avatar.originalPlaybackPosition = nextTargetPlaybackPosition; // 원본 위치 저장
-    pendingAvatars.set(avatar.id, { avatar, sound });
-    
-    console.log(`⏰ ${avatar.nickname} 다음 마디 동기화 스케줄링:`);
-    console.log(`   현재 위치: ${currentPosition.toFixed(2)}초 (${currentMeasure + 1}마디의 ${positionInCurrentMeasure.toFixed(2)}초)`);
-    console.log(`   목표 마디: ${nextTargetMeasure + 1}마디 시작점 + ${positionInCurrentMeasure.toFixed(2)}초`);
-    console.log(`   원본 재생 위치: ${nextTargetPlaybackPosition.toFixed(2)}초`);
-    console.log(`   조정된 재생 위치: ${nextAdjustedPlaybackPosition.toFixed(2)}초 (음원 길이: ${soundDuration.toFixed(2)}초)`);
-    console.log(`   대기 시간: ${nextWaitTime.toFixed(2)}초`);
-  } else {
-    avatar.isPending = true;
-    avatar.pendingStartTime = currentTime + waitTime;
-    avatar.playbackStartPosition = adjustedPlaybackPosition;
-    avatar.originalPlaybackPosition = targetPlaybackPosition; // 원본 위치 저장
-    pendingAvatars.set(avatar.id, { avatar, sound });
-    
-    console.log(`⏰ ${avatar.nickname} 동기화 스케줄링:`);
-    console.log(`   현재 위치: ${currentPosition.toFixed(2)}초 (${currentMeasure + 1}마디의 ${positionInCurrentMeasure.toFixed(2)}초)`);
-    console.log(`   목표 마디: ${targetMeasure + 1}마디 시작점 + ${positionInCurrentMeasure.toFixed(2)}초`);
-    console.log(`   원본 재생 위치: ${targetPlaybackPosition.toFixed(2)}초`);
-    console.log(`   조정된 재생 위치: ${adjustedPlaybackPosition.toFixed(2)}초 (음원 길이: ${soundDuration.toFixed(2)}초)`);
-    console.log(`   대기 시간: ${waitTime.toFixed(2)}초`);
-    console.log(`   실행 예정 시각: ${avatar.pendingStartTime.toFixed(2)}초`);
-  }
+  const targetMeasureStartTime = currentTime + timeToTargetMeasure;
+  
+  console.log(`목표 마디에서 재생 위치: ${targetPlaybackPosition.toFixed(3)}초`);
+  
+  // 아바타를 목표 마디 시작에 예약 (현재 위치에 맞춰서)
+  avatar.isPending = true;
+  avatar.pendingStartTime = targetMeasureStartTime;
+  avatar.playbackStartPosition = targetPlaybackPosition;
+  avatar.originalPlaybackPosition = targetPlaybackPosition;
+  pendingAvatars.set(avatar.id, { avatar, sound });
+  
+  console.log(`[음악 예약 완료] 아바타 ${avatar.id}는 ${timeToTargetMeasure.toFixed(3)}초 후 ${targetPlaybackPosition.toFixed(3)}초 위치에서 재생`);
 }
 
 
@@ -2579,8 +2586,15 @@ function updateMasterClock() {
   const beatsPerSecond = masterClock.bpm / 60.0;
   const totalBeats = elapsedTime * beatsPerSecond;
   
+  // 정확한 박자와 마디 계산
   masterClock.currentBeat = totalBeats % masterClock.beatsPerMeasure;
-  masterClock.currentMeasure = Math.floor(totalBeats / masterClock.beatsPerMeasure);
+  
+  // 총 마디 수 계산
+  const totalMeasures = Math.floor(totalBeats / masterClock.beatsPerMeasure);
+  
+  // 8마디 루프 내에서의 현재 마디와 루프 번호
+  masterClock.currentMeasure = totalMeasures % masterClock.measuresPerLoop;
+  masterClock.currentLoop = Math.floor(totalMeasures / masterClock.measuresPerLoop);
   
   // 다음 마디 시작 시간 계산
   updateNextMeasureStart();
@@ -2591,16 +2605,26 @@ function updateMasterClock() {
 
 // 다음 마디 시작 시간 업데이트
 function updateNextMeasureStart() {
-  const beatsPerSecond = masterClock.bpm / 60.0;
-  const nextMeasureBeats = (masterClock.currentMeasure + 1) * masterClock.beatsPerMeasure;
-  masterClock.nextMeasureStart = masterClock.startTime + (nextMeasureBeats / beatsPerSecond);
+  const measureDuration = getMeasureDuration(masterClock.bpm);
+  const nextMeasureInLoop = (masterClock.currentMeasure + 1) % masterClock.measuresPerLoop;
+  
+  if (nextMeasureInLoop === 0) {
+    // 다음 루프의 시작
+    const nextLoopStart = masterClock.startTime + ((masterClock.currentLoop + 1) * calculateLoopDuration(masterClock.bpm));
+    masterClock.nextMeasureStart = nextLoopStart;
+  } else {
+    // 현재 루프 내 다음 마디
+    const nextMeasureBeats = ((masterClock.currentLoop * masterClock.measuresPerLoop) + nextMeasureInLoop) * masterClock.beatsPerMeasure;
+    const beatsPerSecond = masterClock.bpm / 60.0;
+    masterClock.nextMeasureStart = masterClock.startTime + (nextMeasureBeats / beatsPerSecond);
+  }
 }
 
 // 대기 중인 아바타들 확인 및 재생
 function checkPendingAvatars(currentTime) {
   for (const [avatarId, { avatar, sound }] of pendingAvatars) {
-    // 더 정확한 타이밍을 위해 약간의 여유를 두고 체크
-    if (currentTime >= (avatar.pendingStartTime - 0.02)) { // 20ms 여유
+    // 더 정확한 타이밍을 위해 최소한의 여유만 두고 체크
+    if (currentTime >= (avatar.pendingStartTime - 0.005)) { // 5ms 여유로 줄임
       // 시간이 되었으므로 계산된 재생 위치에서 시작
       const actualPlaybackPosition = avatar.playbackStartPosition;
       console.log(`⏰ ${avatar.nickname} 대기 완료 - ${actualPlaybackPosition.toFixed(2)}초 위치에서 재생 시작`);
