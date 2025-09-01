@@ -250,21 +250,21 @@ const predefinedRecipes = [
 
 // 조합법별 BPM 정보
 const musicBpmInfo = {
-  'pcroom_gaming': 197,
-  'home_console_gaming': 197,
-  'social_media_memories': 197,
-  'sports_activities': 128,
-  'festivals_events': 128,
-  'travel_places': 128,
+  'pcroom_gaming': 170,
+  'home_console_gaming': 170,
+  'social_media_memories': 170,
+  'sports_activities': 170,
+  'festivals_events': 170,
+  'travel_places': 170,
   'family_warmth': 140,
   'school_memories': 140,
   'spring_memories': 140,
-  'nostalgia_longing': 85,
-  'night_dawn': 85,
-  'entertainment_culture': 85,
-  'art_creative': 75,
-  'autumn_memories': 75,
-  'winter_memories': 75
+  'nostalgia_longing': 140,
+  'night_dawn': 140,
+  'entertainment_culture': 140,
+  'art_creative': 130,
+  'autumn_memories': 130,
+  'winter_memories': 130
 };
 
 // 조합법 ID와 음원 파일 세트 매핑 (임시: 대부분 set1 파일 재사용)
@@ -401,7 +401,7 @@ function getMusicFileForRecipeAndPosition(recipeId, position) {
 
 // 선택된 조합법의 BPM 정보 반환
 function getBpmForRecipe(recipeId) {
-  return musicBpmInfo[recipeId] || 197; // 기본값 197 BPM
+  return musicBpmInfo[recipeId] || 170; // 기본값 170 BPM
 }
 
 // ===============================================
@@ -1994,7 +1994,7 @@ function proceedToCustomizing() {
   const selectedMusicPosition = window.selectedPosition || '리드 멜로디';
   const selectedRecipeId = selectedRecipe ? selectedRecipe.id : null;
   const musicFilePath = selectedRecipeId ? getMusicFileForRecipeAndPosition(selectedRecipeId, selectedMusicPosition) : null;
-  const musicBpm = selectedRecipeId ? getBpmForRecipe(selectedRecipeId) : 197;
+  const musicBpm = selectedRecipeId ? getBpmForRecipe(selectedRecipeId) : 170;
 
   // 조합법/세트 정보 보강
   let setName = null;

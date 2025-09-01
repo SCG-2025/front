@@ -21,7 +21,7 @@ let stageSlots = [null, null, null, null, null, null];
 let masterClock = {
   isRunning: false,
   startTime: 0,
-  bpm: 140, // 4/4박자, set3_spring_memories 기준 140 BPM
+  bpm: 170, // 4/4박자, SET1 기준 170 BPM
   beatsPerMeasure: 4,
   currentBeat: 0,
   currentMeasure: 0,

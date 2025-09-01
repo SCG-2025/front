@@ -4,7 +4,8 @@ import { initMediaArt, renderMediaArtScreens, mediaArt, addSongShapes, removeSon
 let filterState = {
   enabled: false, // 기본값 비활성화로 변경
   category: 'all',
-  musicSet: 'all'
+  musicSet: 'all',
+  position: 'all'
 };
 
 let stageAvatars = []; // 무대 전용 아바타들
@@ -327,6 +328,7 @@ function isAvatarMatchingFilter(avatar) {
   
   let categoryMatch = true;
   let musicSetMatch = true;
+  let positionMatch = true;
   
   // 카테고리 필터 확인
   if (filterState.category !== 'all') {
@@ -339,7 +341,13 @@ function isAvatarMatchingFilter(avatar) {
     musicSetMatch = avatarSetName === filterState.musicSet;
   }
   
-  return categoryMatch && musicSetMatch;
+  // 포지션 필터 확인
+  if (filterState.position !== 'all') {
+    const avatarPosition = getAvatarPosition(avatar);
+    positionMatch = avatarPosition === filterState.position;
+  }
+  
+  return categoryMatch && musicSetMatch && positionMatch;
 }
 
 // 아바타의 세트명 추출
@@ -347,9 +355,24 @@ function getAvatarSetName(avatar) {
   if (!avatar.musicType) return null;
   
   if (avatar.musicType.includes('set1_')) return 'set1';
+  if (avatar.musicType.includes('set2_')) return 'set2';
   if (avatar.musicType.includes('set3_')) return 'set3';
   if (avatar.musicType.includes('set4_')) return 'set4';
   if (avatar.musicType.includes('set5_')) return 'set5';
+  
+  return null;
+}
+
+// 아바타의 포지션(파트) 추출
+function getAvatarPosition(avatar) {
+  if (!avatar.musicType) return null;
+  
+  if (avatar.musicType.includes('_bass')) return 'bass';
+  if (avatar.musicType.includes('_drum')) return 'drum';
+  if (avatar.musicType.includes('_chord')) return 'chord';
+  if (avatar.musicType.includes('_lead')) return 'lead';
+  if (avatar.musicType.includes('_fx')) return 'fx';
+  if (avatar.musicType.includes('_sub')) return 'sub';
   
   return null;
 }
@@ -369,7 +392,7 @@ function updateFilterStats() {
   if (statsElement) {
     if (!filterState.enabled) {
       statsElement.textContent = '필터 비활성화 - 전체 보기';
-    } else if (filterState.category === 'all' && filterState.musicSet === 'all') {
+    } else if (filterState.category === 'all' && filterState.musicSet === 'all' && filterState.position === 'all') {
       statsElement.textContent = '전체 아바타 보기 중';
     } else {
       statsElement.textContent = `${visibleCount}/${totalCount} 아바타 표시 중`;
@@ -381,12 +404,15 @@ function updateFilterStats() {
 function resetFilter() {
   filterState.category = 'all';
   filterState.musicSet = 'all';
+  filterState.position = 'all';
   
   const categorySelect = document.getElementById('categoryFilter');
   const musicSetSelect = document.getElementById('musicSetFilter');
+  const positionSelect = document.getElementById('positionFilter');
   
   if (categorySelect) categorySelect.value = 'all';
   if (musicSetSelect) musicSetSelect.value = 'all';
+  if (positionSelect) positionSelect.value = 'all';
   
   updateFilterStats();
 }
@@ -2411,6 +2437,15 @@ window.addEventListener('DOMContentLoaded', function() {
       filterState.musicSet = this.value;
       updateFilterStats();
       console.log('🎯 음악셋 필터 변경:', filterState.musicSet);
+    });
+  }
+
+  const positionSelect = document.getElementById('positionFilter');
+  if (positionSelect) {
+    positionSelect.addEventListener('change', function() {
+      filterState.position = this.value;
+      updateFilterStats();
+      console.log('🎯 포지션 필터 변경:', filterState.position);
     });
   }
 
