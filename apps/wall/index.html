@@ -318,6 +318,42 @@
       box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
     }
 
+    /* 개발자용 스테이지 아바타 토글 버튼 */
+    .toggle-stage-avatars-btn {
+      background: rgba(150, 100, 255, 0.9);
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      min-width: 160px;
+    }
+
+    .toggle-stage-avatars-btn:hover {
+      background: rgba(150, 100, 255, 1);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    }
+
+    .toggle-stage-avatars-btn:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    /* 스테이지 아바타가 숨겨진 상태일 때 */
+    .toggle-stage-avatars-btn.hidden {
+      background: rgba(100, 100, 100, 0.7);
+    }
+
+    .toggle-stage-avatars-btn.hidden:hover {
+      background: rgba(100, 100, 100, 0.9);
+    }
+
     /* 필터 UI 스타일 */
     .filter-container {
       position: fixed;
@@ -511,6 +547,11 @@
     <!-- 아바타 정렬 버튼 (리셋 버튼 왼쪽) -->
     <button id="sortAvatarsBtn" class="sort-avatars-btn">
       📐 아바타 정렬
+    </button>
+    
+    <!-- 개발자용 스테이지 아바타 토글 버튼 -->
+    <button id="toggleStageAvatarsBtn" class="toggle-stage-avatars-btn">
+      🔧 스테이지 아바타 ON/OFF
     </button>
     
     <!-- TODO: 추가 버튼들을 여기에 추가 가능 -->

@@ -294,28 +294,28 @@ const musicFileMapping = {
     '효과음/FX': '../wall/Music/set1_social_media_memories_fx.wav'
   },
   'sports_activities': {
-    '리드 멜로디': '../wall/music/set1_pcroom_gaming_lead.wav',
-    '서브 멜로디': '../wall/music/set1_pcroom_gaming_sub.wav',
-    '코드': '../wall/music/set1_pcroom_gaming_chord.wav',
-    '베이스': '../wall/music/set1_pcroom_gaming_bass.wav',
-    '드럼/퍼커션': '../wall/music/set1_pcroom_gaming_drum.wav',
-    '효과음/FX': '../wall/music/set1_pcroom_gaming_fx.wav'
+    '리드 멜로디': '../wall/Music/set2_sports_activities_lead.wav',
+    '서브 멜로디': '../wall/Music/set2_sports_activities_sub.wav',
+    '코드': '../wall/Music/set2_sports_activities_chord.wav',
+    '베이스': '../wall/Music/set2_sports_activities_bass.wav',
+    '드럼/퍼커션': '../wall/Music/set2_sports_activities_drum.wav',
+    '효과음/FX': '../wall/Music/set2_sports_activities_fx.wav'
   },
   'festivals_events': {
-    '리드 멜로디': '../wall/music/set1_pcroom_gaming_lead.wav',
-    '서브 멜로디': '../wall/music/set1_pcroom_gaming_sub.wav',
-    '코드': '../wall/music/set1_pcroom_gaming_chord.wav',
-    '베이스': '../wall/music/set1_pcroom_gaming_bass.wav',
-    '드럼/퍼커션': '../wall/music/set1_pcroom_gaming_drum.wav',
-    '효과음/FX': '../wall/music/set1_pcroom_gaming_fx.wav'
+    '리드 멜로디': '../wall/Music/set2_festival_events_lead.wav',
+    '서브 멜로디': '../wall/Music/set2_festival_events_sub.wav',
+    '코드': '../wall/Music/set2_festival_events_chords.wav',
+    '베이스': '../wall/Music/set2_festival_events_bass.wav',
+    '드럼/퍼커션': '../wall/Music/set2_festival_events_drums.wav',
+    '효과음/FX': '../wall/Music/set2_festival_events_fx.wav'
   },
   'travel_places': {
-    '리드 멜로디': '../wall/music/set1_pcroom_gaming_lead.wav',
-    '서브 멜로디': '../wall/music/set1_pcroom_gaming_sub.wav',
-    '코드': '../wall/music/set1_pcroom_gaming_chord.wav',
-    '베이스': '../wall/music/set1_pcroom_gaming_bass.wav',
-    '드럼/퍼커션': '../wall/music/set1_pcroom_gaming_drum.wav',
-    '효과음/FX': '../wall/music/set1_pcroom_gaming_fx.wav'
+    '리드 멜로디': '../wall/Music/set2_travel_places_drum_lead.wav',
+    '서브 멜로디': '../wall/Music/set2_travel_places_drum_sub.wav',
+    '코드': '../wall/Music/set2_travel_places_drum_chords.wav',
+    '베이스': '../wall/Music/set2_travel_places_drum_bass.wav',
+    '드럼/퍼커션': '../wall/Music/set2_travel_places_drum.wav',
+    '효과음/FX': '../wall/Music/set2_travel_places_drum_fx.wav'
   },
   'family_warmth': {
     '리드 멜로디': '../wall/Music/set3_family_warmth_lead.wav',

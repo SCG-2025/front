@@ -365,6 +365,14 @@ function drawPixelCloudOdd(g, size) {
   g.ellipse(size*0.25, 0, size*0.5, size*0.3);
   g.ellipse(size*0.1, size*0.15, size*0.4, size*0.3);
 }
+
+function drawPixelCloudRound(g, size) {
+  g.ellipse(-size*0.2, 0, size*0.4, size*0.4);
+  g.ellipse(size*0.1, -size*0.15, size*0.6, size*0.45);
+  g.ellipse(size*0.2, size*0.1, size*0.4, size*0.35);
+  g.ellipse(-size*0.05, size*0.1, size*0.35, size*0.3);
+}
+
 function drawPixelCircleSimple(g, size) {
   g.ellipse(0, 0, size, size);
 }
