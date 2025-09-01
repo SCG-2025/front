@@ -48,6 +48,56 @@ for (let i = 0; i < pcroomPositions.length; i++) {
     pendingStartTime: 0
   });
 }
+
+// 콘솔 게임 세트의 모든 포지션별 아바타를 무대에 추가
+const consolePositions = ['Bass', 'Chord', 'Drum', 'FX', 'Lead', 'Sub'];
+for (let i = 0; i < consolePositions.length; i++) {
+  // 포지션명 표준화
+  const posMap = {
+    Lead: '리드멜로디',
+    Sub: '서브멜로디',
+    Chord: '코드',
+    Bass: '베이스',
+    Drum: '드럼/퍼커션',
+    FX: '효과음/FX'
+  };
+  const stdPos = posMap[consolePositions[i]] || consolePositions[i];
+  stageAvatars.push({
+    id: 'console_avatar_' + i,
+    nickname: `콘솔 게임 (${stdPos})`,
+    x: 1300 + i * 120,
+    y: 300,
+    vx: 0,
+    vy: 0,
+    direction: 1,
+    walkTimer: 0,
+    idleTimer: 0,
+    currentAction: 'idle',
+    state: 'idle',
+    category: '콘솔 게임',
+    memory: `집에서 게임기로 만든 추억입니다. ${stdPos} 파트를 담당합니다!`,
+    keywords: ['세트1', '콘솔', '게임', '집', stdPos],
+    musicPosition: stdPos,
+    selectedRecipe: { name: '콘솔 게임', description: '집에서 게임기로' },
+    extractedKeywords: ['세트1', '콘솔', '게임', '집', stdPos],
+    isDragged: false,
+    dragElevation: 0,
+    dropBounce: 0,
+    dropBounceVel: 0,
+    baseY: 0,
+    clickTimer: 0,
+    isClicked: false,
+    isOnStage: false,
+    stageSlot: -1,
+    isSpecial: true,
+    musicType: 'set1_home_console_gaming_' + consolePositions[i].toLowerCase() + '.wav',
+    musicSet: 'home_console_gaming',
+    setName: 'set1',
+    isPending: false,
+    pendingStartTime: 0
+  });
+}
+
 // musicSet을 세트명으로 매핑하는 함수
 function getSetGroupName(musicSet) {
   return musicSet;
@@ -115,7 +165,7 @@ let stageSlots = [null, null, null, null, null, null];
 let masterClock = {
   isRunning: false,
   startTime: 0,
-  bpm: 110, // 임시 고정값 - 추후 동적 변경
+  bpm: 197, // 게임 세트 기본 BPM으로 변경 (PC룸/콘솔 게임)
   beatsPerMeasure: 4,
   currentBeat: 0,
   currentMeasure: 0,
@@ -147,6 +197,8 @@ const setNames = {
   // 기존
   verification: '검증용 Music Sample',
   pcroom_gaming: 'PC방과 온라인 게임',
+  home_console_gaming: '집에서 게임기로', // 추가
+  social_media_memories: 'SNS와 소셜', // 추가
   // set1 (디지털 & 게임)
   home_console_gaming: '집에서 게임기로',
   social_media_memories: 'SNS 속 디지털 추억',
@@ -461,6 +513,59 @@ function preload() {
     () => console.log('✅ PC룸 Sub 음원 로드 완료'),
     () => console.error('❌ PC룸 Sub 음원 로드 실패')
   );
+
+  // === 콘솔 게임 음원들 로드 (6트랙) ===
+  musicSamples['set1_home_console_gaming_bass.wav'] = loadSound('Music/set1_home_console_gaming_bass.wav',
+    () => console.log('✅ 콘솔 Bass 음원 로드 완료'),
+    () => console.error('❌ 콘솔 Bass 음원 로드 실패')
+  );
+  musicSamples['set1_home_console_gaming_chord.wav'] = loadSound('Music/set1_home_console_gaming_chord.wav',
+    () => console.log('✅ 콘솔 Chord 음원 로드 완료'),
+    () => console.error('❌ 콘솔 Chord 음원 로드 실패')
+  );
+  musicSamples['set1_home_console_gaming_drum.wav'] = loadSound('Music/set1_home_console_gaming_drum.wav',
+    () => console.log('✅ 콘솔 Drum 음원 로드 완료'),
+    () => console.error('❌ 콘솔 Drum 음원 로드 실패')
+  );
+  musicSamples['set1_home_console_gaming_fx.wav'] = loadSound('Music/set1_home_console_gaming_fx.wav',
+    () => console.log('✅ 콘솔 FX 음원 로드 완료'),
+    () => console.error('❌ 콘솔 FX 음원 로드 실패')
+  );
+  musicSamples['set1_home_console_gaming_lead.wav'] = loadSound('Music/set1_home_console_gaming_lead.wav',
+    () => console.log('✅ 콘솔 Lead 음원 로드 완료'),
+    () => console.error('❌ 콘솔 Lead 음원 로드 실패')
+  );
+  musicSamples['set1_home_console_gaming_sub.wav'] = loadSound('Music/set1_home_console_gaming_sub.wav',
+    () => console.log('✅ 콘솔 Sub 음원 로드 완료'),
+    () => console.error('❌ 콘솔 Sub 음원 로드 실패')
+  );
+
+  // === 소셜 미디어 음원들 로드 (6트랙) ===
+  musicSamples['set1_social_media_memories_bass.wav'] = loadSound('Music/set1_social_media_memories_bass.wav',
+    () => console.log('✅ 소셜 Bass 음원 로드 완료'),
+    () => console.error('❌ 소셜 Bass 음원 로드 실패')
+  );
+  musicSamples['set1_social_media_memories_chord.wav'] = loadSound('Music/set1_social_media_memories_chord.wav',
+    () => console.log('✅ 소셜 Chord 음원 로드 완료'),
+    () => console.error('❌ 소셜 Chord 음원 로드 실패')
+  );
+  musicSamples['set1_social_media_memories_drum.wav'] = loadSound('Music/set1_social_media_memories_drum.wav',
+    () => console.log('✅ 소셜 Drum 음원 로드 완료'),
+    () => console.error('❌ 소셜 Drum 음원 로드 실패')
+  );
+  musicSamples['set1_social_media_memories_fx.wav'] = loadSound('Music/set1_social_media_memories_fx.wav',
+    () => console.log('✅ 소셜 FX 음원 로드 완료'),
+    () => console.error('❌ 소셜 FX 음원 로드 실패')
+  );
+  musicSamples['set1_social_media_memories_lead.wav'] = loadSound('Music/set1_social_media_memories_lead.wav',
+    () => console.log('✅ 소셜 Lead 음원 로드 완료'),
+    () => console.error('❌ 소셜 Lead 음원 로드 실패')
+  );
+  musicSamples['set1_social_media_memories_sub.wav'] = loadSound('Music/set1_social_media_memories_sub.wav',
+    () => console.log('✅ 소셜 Sub 음원 로드 완료'),
+    () => console.error('❌ 소셜 Sub 음원 로드 실패')
+  );
+
     // === 가족 따뜻함 음원들 로드 (6트랙) ===
     const familyWarmthFiles = [
       'set3_family_warmth_bass.wav',
@@ -1796,8 +1901,11 @@ function playAvatarMusic(avatar) {
   const sound = musicSamples[avatar.musicType];
   if (!sound) {
     console.warn('⚠️ 음원을 찾을 수 없음:', avatar.musicType, '- 음악 없이 무대에 올라갑니다');
+    console.log('🔍 로딩된 음원 목록:', Object.keys(musicSamples));
     return; // 음악 없이도 무대에 올릴 수 있음
   }
+  
+  console.log(`🎵 ${avatar.nickname} 음악 재생 시작:`, avatar.musicType);
   
   // TODO: 여기서 해당 음악의 BPM 정보 확인 필요
   // const musicBpm = musicBpmDatabase[avatar.musicType]?.bpm || 110;
@@ -1834,27 +1942,44 @@ function startMasterClockFromPosition(startPosition) {
   console.log(`🎯 마스터 클럭 시작 (${startPosition.toFixed(2)}초 위치부터)`);
 }
 
-// 현재 재생 위치에 맞춰 다음 마디에 동기화 (복원 + 대기시간 추가)
+// 현재 재생 위치에 맞춰 다음 마디에 동기화 (개선된 버전)
 function scheduleAvatarForCurrentPosition(avatar, sound, currentPosition) {
-  // 최소 1마디 대기 후 다음 마디에 동기화 (더 여유있게)
+  // 1마디 대기 후 다음 마디에 동기화 (더 빠른 반응)
   const beatsPerSecond = masterClock.bpm / 60.0;
   const secondsPerMeasure = masterClock.beatsPerMeasure / beatsPerSecond;
   const currentMeasure = Math.floor(currentPosition / secondsPerMeasure);
-  const targetMeasure = currentMeasure + 2; // 2마디 뒤로 복원 (더 안정적)
+  const targetMeasure = currentMeasure + 1; // 1마디 뒤로 변경 (더 빠른 동기화)
   const targetMeasureStart = targetMeasure * secondsPerMeasure;
   const waitTime = targetMeasureStart - currentPosition;
   const currentTime = millis() / 1000.0;
 
-  avatar.isPending = true;
-  avatar.pendingStartTime = currentTime + waitTime;
-  avatar.playbackStartPosition = targetMeasureStart; // 마디 시작점에서 재생
-  pendingAvatars.set(avatar.id, { avatar, sound });
-  
-  console.log(`⏰ ${avatar.nickname} 동기화 스케줄링 (2마디 대기):`);
-  console.log(`   현재 위치: ${currentPosition.toFixed(2)}초 (${currentMeasure + 1}마디)`);
-  console.log(`   목표 마디: ${targetMeasure + 1}마디 시작점 (${targetMeasureStart.toFixed(2)}초)`);
-  console.log(`   대기 시간: ${waitTime.toFixed(2)}초`);
-  console.log(`   실행 예정 시각: ${avatar.pendingStartTime.toFixed(2)}초`);
+  // 대기 시간이 너무 짧으면 다음 마디로
+  if (waitTime < 0.1) {
+    const nextTargetMeasure = currentMeasure + 2;
+    const nextTargetMeasureStart = nextTargetMeasure * secondsPerMeasure;
+    const nextWaitTime = nextTargetMeasureStart - currentPosition;
+    
+    avatar.isPending = true;
+    avatar.pendingStartTime = currentTime + nextWaitTime;
+    avatar.playbackStartPosition = nextTargetMeasureStart;
+    pendingAvatars.set(avatar.id, { avatar, sound });
+    
+    console.log(`⏰ ${avatar.nickname} 다음 마디 동기화 스케줄링:`);
+    console.log(`   현재 위치: ${currentPosition.toFixed(2)}초 (${currentMeasure + 1}마디)`);
+    console.log(`   목표 마디: ${nextTargetMeasure + 1}마디 시작점 (${nextTargetMeasureStart.toFixed(2)}초)`);
+    console.log(`   대기 시간: ${nextWaitTime.toFixed(2)}초`);
+  } else {
+    avatar.isPending = true;
+    avatar.pendingStartTime = currentTime + waitTime;
+    avatar.playbackStartPosition = targetMeasureStart;
+    pendingAvatars.set(avatar.id, { avatar, sound });
+    
+    console.log(`⏰ ${avatar.nickname} 동기화 스케줄링:`);
+    console.log(`   현재 위치: ${currentPosition.toFixed(2)}초 (${currentMeasure + 1}마디)`);
+    console.log(`   목표 마디: ${targetMeasure + 1}마디 시작점 (${targetMeasureStart.toFixed(2)}초)`);
+    console.log(`   대기 시간: ${waitTime.toFixed(2)}초`);
+    console.log(`   실행 예정 시각: ${avatar.pendingStartTime.toFixed(2)}초`);
+  }
 }
 
 
