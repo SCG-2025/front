@@ -191,15 +191,31 @@ let playingAvatars = new Set();   // 현재 재생 중 아바타 id
 let pendingAvatars = new Map();   // 다음 마디 대기 중 아바타
 let currentBpm = 197;             // 현재 BPM (검증용)
 
+// 음악 세트별 BPM 정보
+const musicSetBpms = {
+  'pcroom_gaming': 197,
+  'home_console_gaming': 197,
+  'social_media_memories': 197,
+  'sports_activities': 128,
+  'festivals_events': 128,
+  'travel_places': 128,
+  'family_warmth': 140,
+  'school_memories': 140,
+  'spring_memories': 140,
+  'nostalgia_longing': 85,
+  'night_dawn': 85,
+  'entertainment_culture': 85,
+  'art_creative': 75,
+  'autumn_memories': 75,
+  'winter_memories': 75
+};
+
 
 // 세트/테마 한글명 매핑
 const setNames = {
   // 기존
   verification: '검증용 Music Sample',
   pcroom_gaming: 'PC방과 온라인 게임',
-  home_console_gaming: '집에서 게임기로', // 추가
-  social_media_memories: 'SNS와 소셜', // 추가
-  // set1 (디지털 & 게임)
   home_console_gaming: '집에서 게임기로',
   social_media_memories: 'SNS 속 디지털 추억',
   // set2 (활동 & 에너지)
@@ -217,7 +233,7 @@ const setNames = {
   // set5 (창의성 & 계절감)
   art_creative: '미술과 창작활동',
   autumn_memories: '감성적인 가을의 추억',
-  winter_memories: '포근한 겨울의 추억',
+  winter_memories: '포근한 겨울의 추억'
 };
 
 // 무대 테마ID 추론 (무대 위 첫 아바타의 musicSet 우선)
@@ -314,18 +330,20 @@ function drawMusicSetInfo() {
   if (!currentSet) return;
 
   const setName = setNames[currentSet] || currentSet;
+  const setBpm = musicSetBpms[currentSet] || 140;
   const onStageCount = [...stageAvatars, ...avatars].filter(a => a.isOnStage).length;
 
   push();
   fill(255, 255, 255, 200);
-  rect(20, height - 120, 350, 80);
+  rect(20, height - 140, 380, 100);
 
   fill(50);
   textAlign(LEFT);
   textSize(14);
-  text('🎵 현재 무대 세트:', 30, height - 95);
-  text(`${setName}`, 30, height - 75);
-  text(`무대 아바타: ${onStageCount}개`, 30, height - 55);
+  text('🎵 현재 무대 세트:', 30, height - 115);
+  text(`${setName}`, 30, height - 95);
+  text(`무대 아바타: ${onStageCount}개`, 30, height - 75);
+  text(`🎼 BPM: ${setBpm}`, 30, height - 55);
   pop();
 }
 
@@ -612,6 +630,68 @@ function preload() {
         () => console.error(`❌ 학교 기억 ${f} 로드 실패`)
       );
     });
+
+    // === SET4 음원들 로드 (18트랙) ===
+    const set4Files = [
+      // 노스탤지어/그리움
+      'set4_nostalgia_longing_bass.wav',
+      'set4_nostalgia_longing_chord.wav',
+      'set4_nostalgia_longing_drum.wav',
+      'set4_nostalgia_longing_fx.wav',
+      'set4_nostalgia_longing_lead.wav',
+      'set4_nostalgia_longing_sub.wav',
+      // 밤/새벽
+      'set4_night_dawn_bass.wav',
+      'set4_night_dawn_chord.wav',
+      'set4_night_dawn_drum.wav',
+      'set4_night_dawn_fx.wav',
+      'set4_night_dawn_lead.wav',
+      'set4_night_dawn_sub.wav',
+      // 엔터테인먼트/문화
+      'set4_entertainment_culture_bass.wav',
+      'set4_entertainment_culture_chord.wav',
+      'set4_entertainment_culture_drum.wav',
+      'set4_entertainment_culture_fx.wav',
+      'set4_entertainment_culture_lead.wav',
+      'set4_entertainment_culture_sub.wav'
+    ];
+    set4Files.forEach(f => {
+      musicSamples[f] = loadSound(`Music/${f}`,
+        () => console.log(`✅ SET4 ${f} 로드 완료`),
+        () => console.error(`❌ SET4 ${f} 로드 실패`)
+      );
+    });
+
+    // === SET5 음원들 로드 (18트랙) ===
+    const set5Files = [
+      // 예술/창작
+      'set5_art_creative_bass.wav',
+      'set5_art_creative_chord.wav',
+      'set5_art_creative_chord_fx.wav',
+      'set5_art_creative_chord_sub.wav',
+      'set5_art_creative_drum.wav',
+      'set5_art_creative_lead.wav',
+      // 가을 기억
+      'set5_autumn_memories_bass.wav',
+      'set5_autumn_memories_chord.wav',
+      'set5_autumn_memories_drum.wav',
+      'set5_autumn_memories_fx.wav',
+      'set5_autumn_memories_lead.wav',
+      'set5_autumn_memories_sub.wav',
+      // 겨울 기억
+      'set5_winter_memories_bass.wav',
+      'set5_winter_memories_chord.wav',
+      'set5_winter_memories_drum.wav',
+      'set5_winter_memories_fx.wav',
+      'set5_winter_memories_lead.wav',
+      'set5_winter_memories_sub.wav'
+    ];
+    set5Files.forEach(f => {
+      musicSamples[f] = loadSound(`Music/${f}`,
+        () => console.log(`✅ SET5 ${f} 로드 완료`),
+        () => console.error(`❌ SET5 ${f} 로드 실패`)
+      );
+    });
 }
 
 async function initTonePlayers() {
@@ -724,6 +804,283 @@ initMediaArt();
       isSpecial: true,
       musicType: schoolTypes[i],
       musicSet: 'school_memories',
+      isPending: false,
+      pendingStartTime: 0
+    });
+  }
+
+  // SET4 노스탤지어/그리움 아바타 6개 추가
+  const nostalgiaTypes = [
+    'set4_nostalgia_longing_bass.wav',
+    'set4_nostalgia_longing_chord.wav',
+    'set4_nostalgia_longing_drum.wav',
+    'set4_nostalgia_longing_fx.wav',
+    'set4_nostalgia_longing_lead.wav',
+    'set4_nostalgia_longing_sub.wav'
+  ];
+  const stdNostalgiaPositions = ['베이스', '코드', '드럼/퍼커션', '효과음/FX', '리드멜로디', '서브멜로디'];
+  for (let i = 0; i < 6; i++) {
+    stageAvatars.push({
+      id: 'nostalgia_avatar_' + i,
+      nickname: `노스탤지어 (${stdNostalgiaPositions[i]})`,
+      x: random(200, 800),
+      y: random(1600, 1700),
+      vx: random(-1, 1),
+      vy: random(-1, 1),
+      direction: random() > 0.5 ? 1 : -1,
+      walkTimer: random(60, 240),
+      idleTimer: 0,
+      currentAction: 'walking',
+      state: 'idle',
+      category: '노스탤지어',
+      memory: `그리움이 담긴 추억입니다. ${stdNostalgiaPositions[i]} 파트를 담당합니다!`,
+      keywords: ['세트4', '그리움', '노스탤지어', stdNostalgiaPositions[i]],
+      musicPosition: stdNostalgiaPositions[i],
+      selectedRecipe: { name: '노스탤지어', description: '그리운 추억들' },
+      extractedKeywords: ['세트4', '그리움', '노스탤지어', stdNostalgiaPositions[i]],
+      isDragged: false,
+      dragElevation: 0,
+      dropBounce: 0,
+      dropBounceVel: 0,
+      baseY: 0,
+      clickTimer: 0,
+      isClicked: false,
+      isOnStage: false,
+      stageSlot: -1,
+      isSpecial: true,
+      musicType: nostalgiaTypes[i],
+      musicSet: 'nostalgia_longing',
+      setName: 'set4',
+      isPending: false,
+      pendingStartTime: 0
+    });
+  }
+
+  // SET4 밤/새벽 아바타 6개 추가
+  const nightTypes = [
+    'set4_night_dawn_bass.wav',
+    'set4_night_dawn_chord.wav',
+    'set4_night_dawn_drum.wav',
+    'set4_night_dawn_fx.wav',
+    'set4_night_dawn_lead.wav',
+    'set4_night_dawn_sub.wav'
+  ];
+  for (let i = 0; i < 6; i++) {
+    stageAvatars.push({
+      id: 'night_avatar_' + i,
+      nickname: `밤/새벽 (${stdNostalgiaPositions[i]})`,
+      x: random(900, 1500),
+      y: random(1600, 1700),
+      vx: random(-1, 1),
+      vy: random(-1, 1),
+      direction: random() > 0.5 ? 1 : -1,
+      walkTimer: random(60, 240),
+      idleTimer: 0,
+      currentAction: 'walking',
+      state: 'idle',
+      category: '밤/새벽',
+      memory: `고요한 밤과 새벽의 추억입니다. ${stdNostalgiaPositions[i]} 파트를 담당합니다!`,
+      keywords: ['세트4', '밤', '새벽', stdNostalgiaPositions[i]],
+      musicPosition: stdNostalgiaPositions[i],
+      selectedRecipe: { name: '밤/새벽', description: '고요한 시간들' },
+      extractedKeywords: ['세트4', '밤', '새벽', stdNostalgiaPositions[i]],
+      isDragged: false,
+      dragElevation: 0,
+      dropBounce: 0,
+      dropBounceVel: 0,
+      baseY: 0,
+      clickTimer: 0,
+      isClicked: false,
+      isOnStage: false,
+      stageSlot: -1,
+      isSpecial: true,
+      musicType: nightTypes[i],
+      musicSet: 'night_dawn',
+      setName: 'set4',
+      isPending: false,
+      pendingStartTime: 0
+    });
+  }
+
+  // SET4 엔터테인먼트/문화 아바타 6개 추가
+  const entertainmentTypes = [
+    'set4_entertainment_culture_bass.wav',
+    'set4_entertainment_culture_chord.wav',
+    'set4_entertainment_culture_drum.wav',
+    'set4_entertainment_culture_fx.wav',
+    'set4_entertainment_culture_lead.wav',
+    'set4_entertainment_culture_sub.wav'
+  ];
+  for (let i = 0; i < 6; i++) {
+    stageAvatars.push({
+      id: 'entertainment_avatar_' + i,
+      nickname: `문화생활 (${stdNostalgiaPositions[i]})`,
+      x: random(1600, 2200),
+      y: random(1600, 1700),
+      vx: random(-1, 1),
+      vy: random(-1, 1),
+      direction: random() > 0.5 ? 1 : -1,
+      walkTimer: random(60, 240),
+      idleTimer: 0,
+      currentAction: 'walking',
+      state: 'idle',
+      category: '문화생활',
+      memory: `문화와 엔터테인먼트의 추억입니다. ${stdNostalgiaPositions[i]} 파트를 담당합니다!`,
+      keywords: ['세트4', '문화', '엔터테인먼트', stdNostalgiaPositions[i]],
+      musicPosition: stdNostalgiaPositions[i],
+      selectedRecipe: { name: '문화생활', description: '문화와 엔터테인먼트' },
+      extractedKeywords: ['세트4', '문화', '엔터테인먼트', stdNostalgiaPositions[i]],
+      isDragged: false,
+      dragElevation: 0,
+      dropBounce: 0,
+      dropBounceVel: 0,
+      baseY: 0,
+      clickTimer: 0,
+      isClicked: false,
+      isOnStage: false,
+      stageSlot: -1,
+      isSpecial: true,
+      musicType: entertainmentTypes[i],
+      musicSet: 'entertainment_culture',
+      setName: 'set4',
+      isPending: false,
+      pendingStartTime: 0
+    });
+  }
+
+  // SET5 예술/창작 아바타 6개 추가
+  const artTypes = [
+    'set5_art_creative_bass.wav',
+    'set5_art_creative_chord.wav',
+    'set5_art_creative_drum.wav',
+    'set5_art_creative_chord_fx.wav',
+    'set5_art_creative_lead.wav',
+    'set5_art_creative_chord_sub.wav'
+  ];
+  for (let i = 0; i < 6; i++) {
+    stageAvatars.push({
+      id: 'art_avatar_' + i,
+      nickname: `예술창작 (${stdNostalgiaPositions[i]})`,
+      x: random(200, 800),
+      y: random(1500, 1600),
+      vx: random(-1, 1),
+      vy: random(-1, 1),
+      direction: random() > 0.5 ? 1 : -1,
+      walkTimer: random(60, 240),
+      idleTimer: 0,
+      currentAction: 'walking',
+      state: 'idle',
+      category: '예술창작',
+      memory: `창작과 예술의 추억입니다. ${stdNostalgiaPositions[i]} 파트를 담당합니다!`,
+      keywords: ['세트5', '예술', '창작', stdNostalgiaPositions[i]],
+      musicPosition: stdNostalgiaPositions[i],
+      selectedRecipe: { name: '예술창작', description: '창작과 예술 활동' },
+      extractedKeywords: ['세트5', '예술', '창작', stdNostalgiaPositions[i]],
+      isDragged: false,
+      dragElevation: 0,
+      dropBounce: 0,
+      dropBounceVel: 0,
+      baseY: 0,
+      clickTimer: 0,
+      isClicked: false,
+      isOnStage: false,
+      stageSlot: -1,
+      isSpecial: true,
+      musicType: artTypes[i],
+      musicSet: 'art_creative',
+      setName: 'set5',
+      isPending: false,
+      pendingStartTime: 0
+    });
+  }
+
+  // SET5 가을 기억 아바타 6개 추가
+  const autumnTypes = [
+    'set5_autumn_memories_bass.wav',
+    'set5_autumn_memories_chord.wav',
+    'set5_autumn_memories_drum.wav',
+    'set5_autumn_memories_fx.wav',
+    'set5_autumn_memories_lead.wav',
+    'set5_autumn_memories_sub.wav'
+  ];
+  for (let i = 0; i < 6; i++) {
+    stageAvatars.push({
+      id: 'autumn_avatar_' + i,
+      nickname: `가을기억 (${stdNostalgiaPositions[i]})`,
+      x: random(900, 1500),
+      y: random(1500, 1600),
+      vx: random(-1, 1),
+      vy: random(-1, 1),
+      direction: random() > 0.5 ? 1 : -1,
+      walkTimer: random(60, 240),
+      idleTimer: 0,
+      currentAction: 'walking',
+      state: 'idle',
+      category: '가을기억',
+      memory: `가을의 따뜻한 추억입니다. ${stdNostalgiaPositions[i]} 파트를 담당합니다!`,
+      keywords: ['세트5', '가을', '기억', stdNostalgiaPositions[i]],
+      musicPosition: stdNostalgiaPositions[i],
+      selectedRecipe: { name: '가을기억', description: '가을의 추억들' },
+      extractedKeywords: ['세트5', '가을', '기억', stdNostalgiaPositions[i]],
+      isDragged: false,
+      dragElevation: 0,
+      dropBounce: 0,
+      dropBounceVel: 0,
+      baseY: 0,
+      clickTimer: 0,
+      isClicked: false,
+      isOnStage: false,
+      stageSlot: -1,
+      isSpecial: true,
+      musicType: autumnTypes[i],
+      musicSet: 'autumn_memories',
+      setName: 'set5',
+      isPending: false,
+      pendingStartTime: 0
+    });
+  }
+
+  // SET5 겨울 기억 아바타 6개 추가
+  const winterTypes = [
+    'set5_winter_memories_bass.wav',
+    'set5_winter_memories_chord.wav',
+    'set5_winter_memories_drum.wav',
+    'set5_winter_memories_fx.wav',
+    'set5_winter_memories_lead.wav',
+    'set5_winter_memories_sub.wav'
+  ];
+  for (let i = 0; i < 6; i++) {
+    stageAvatars.push({
+      id: 'winter_avatar_' + i,
+      nickname: `겨울기억 (${stdNostalgiaPositions[i]})`,
+      x: random(1600, 2200),
+      y: random(1500, 1600),
+      vx: random(-1, 1),
+      vy: random(-1, 1),
+      direction: random() > 0.5 ? 1 : -1,
+      walkTimer: random(60, 240),
+      idleTimer: 0,
+      currentAction: 'walking',
+      state: 'idle',
+      category: '겨울기억',
+      memory: `겨울의 포근한 추억입니다. ${stdNostalgiaPositions[i]} 파트를 담당합니다!`,
+      keywords: ['세트5', '겨울', '기억', stdNostalgiaPositions[i]],
+      musicPosition: stdNostalgiaPositions[i],
+      selectedRecipe: { name: '겨울기억', description: '겨울의 추억들' },
+      extractedKeywords: ['세트5', '겨울', '기억', stdNostalgiaPositions[i]],
+      isDragged: false,
+      dragElevation: 0,
+      dropBounce: 0,
+      dropBounceVel: 0,
+      baseY: 0,
+      clickTimer: 0,
+      isClicked: false,
+      isOnStage: false,
+      stageSlot: -1,
+      isSpecial: true,
+      musicType: winterTypes[i],
+      musicSet: 'winter_memories',
+      setName: 'set5',
       isPending: false,
       pendingStartTime: 0
     });
@@ -1880,18 +2237,7 @@ window.addEventListener('DOMContentLoaded', function() {
   }
 });
 
-// 음악 재생 함수 (음원이 없어도 오류 없이 처리)
-// TODO: 다중 BPM 지원 시 대폭 수정 필요
-// 
-// 현재 제한사항:
-// - 모든 음악이 동일한 BPM(110)으로 가정하고 동기화
-// - 서로 다른 BPM의 음악 동시 재생 시 박자 불일치 발생 가능
-//
-// 다중 BPM 지원 시 필요한 로직:
-// 1. 아바타 음악 파일에서 BPM 정보 추출 또는 DB 조회
-// 2. 동일한 BPM 그룹끼리만 동기화
-// 3. 서로 다른 BPM 그룹은 독립적으로 관리
-// 4. UI에서 BPM 충돌 상황 사용자에게 경고 표시
+// 음악 재생 함수 (다중 BPM 지원)
 function playAvatarMusic(avatar) {
   if (!avatar.musicType) {
     console.warn('⚠️ 음악 타입이 설정되지 않음:', avatar.nickname, '- 음악 없이 무대에 올라갑니다');
@@ -1907,19 +2253,27 @@ function playAvatarMusic(avatar) {
   
   console.log(`🎵 ${avatar.nickname} 음악 재생 시작:`, avatar.musicType);
   
-  // TODO: 여기서 해당 음악의 BPM 정보 확인 필요
-  // const musicBpm = musicBpmDatabase[avatar.musicType]?.bpm || 110;
-  // const currentMasterBpm = masterClock.bpm;
-  // 
-  // if (musicBpm !== currentMasterBpm && playingAvatars.size > 0) {
-  //   console.warn(`⚠️ BPM 불일치: ${avatar.musicType}(${musicBpm}) vs 현재(${currentMasterBpm})`);
-  //   // 사용자에게 BPM 충돌 경고 표시하거나 별도 그룹으로 처리
-  // }
+  // 아바타의 BPM 확인
+  const avatarBpm = musicSetBpms[avatar.musicSet] || 140;
+  console.log(`🎵 ${avatar.nickname} BPM: ${avatarBpm}, 마스터 BPM: ${masterClock.bpm}`);
+  
+  // BPM 호환성 체크
+  if (playingAvatars.size > 0 && avatarBpm !== masterClock.bpm) {
+    console.warn(`⚠️ BPM 불일치 감지: ${avatar.nickname}(${avatarBpm}) vs 현재 마스터(${masterClock.bpm})`);
+    console.log(`🔄 마스터 클럭을 ${avatarBpm} BPM으로 리셋합니다.`);
+    
+    // 기존 재생 중인 다른 BPM 아바타들 정지
+    resetStage();
+    
+    // 새로운 BPM으로 마스터 클럭 설정
+    masterClock.bpm = avatarBpm;
+  }
   
   // 마스터 클럭이 이미 실행 중이면 재시작하지 않음
   if (!masterClock.isRunning && playingAvatars.size === 0) {
     // 정말 아무것도 재생 중이 아닐 때만 즉시 시작
-    console.log(`🎯 ${avatar.nickname} - 첫 번째 아바타, 즉시 시작`);
+    console.log(`🎯 ${avatar.nickname} - 첫 번째 아바타, BPM ${avatarBpm}으로 즉시 시작`);
+    masterClock.bpm = avatarBpm; // BPM 설정
     startMasterClockFromPosition(0);
     startAvatarMusicFromPosition(avatar, sound, 0);
     addSongShapes(avatar);
