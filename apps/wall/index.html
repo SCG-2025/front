@@ -208,6 +208,25 @@
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
     }
 
+    /* 필터 상태 UI - 화면 상단 중앙 */
+    .filter-status-ui {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 140, 0, 0.9); /* 주황색 배경으로 구분 */
+      color: white;
+      padding: 8px 16px;
+      border-radius: 15px;
+      font-size: 14px;
+      font-weight: bold;
+      z-index: 90; /* 팬 UI(100)보다 낮은 우선순위 */
+      display: none; /* 기본적으로 숨김 */
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+      white-space: nowrap;
+      transition: all 0.3s ease;
+    }
+
     .camera-debug {
       position: fixed;
       top: 60px;
@@ -306,11 +325,60 @@
       right: 20px; /* 오른쪽으로 이동 */
       z-index: 100;
       background: rgba(0, 0, 0, 0.8);
-      border-radius: 12px; /* 둥글기 축소 */
-      padding: 12px; /* 패딩 축소 */
-      min-width: 260px; /* 최소 너비 축소 */
-      max-width: 280px; /* 최대 너비 축소 */
+      border-radius: 20px; /* 다른 버튼들과 같은 둥글기 */
+      padding: 0; /* 패딩 제거 - 내부에서 조절 */
+      width: 250px; /* 버튼 2개 + 간격에 맞춤 (120px + 10px + 120px = 250px) */
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    /* 필터 토글 버튼 */
+    .filter-toggle-btn {
+      width: 100%;
+      background: rgba(100, 150, 255, 0.9);
+      color: white;
+      border: none;
+      padding: 10px 16px; /* 다른 버튼들과 동일한 패딩 */
+      border-radius: 20px; /* 다른 버튼들과 동일한 둥글기 */
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 0; /* 마진 제거 */
+      white-space: nowrap; /* 텍스트 줄바꿈 방지 */
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3); /* 다른 버튼들과 동일한 그림자 */
+    }
+
+    /* 필터가 펼쳐져 있을 때 토글 버튼 스타일 */
+    .filter-content:not(.collapsed) + .filter-toggle-btn,
+    .filter-toggle-btn:not(.collapsed) {
+      border-radius: 20px 20px 0 0; /* 상단만 둥글게 */
+    }
+
+    .filter-toggle-btn:hover {
+      background: rgba(100, 150, 255, 1);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4); /* 다른 버튼들과 동일한 호버 효과 */
+    }
+
+    /* 필터 내용 (접힐 수 있는 부분) */
+    .filter-content {
+      overflow: hidden;
+      transition: max-height 0.3s ease, opacity 0.3s ease;
+      max-height: 1000px; /* 충분히 큰 값 */
+      opacity: 1;
+      padding: 12px; /* 내부 패딩 */
+      padding-top: 15px; /* 상단 패딩 추가 - 토글 버튼과 간격 */
+      border-radius: 0 0 20px 20px; /* 하단만 둥글게 */
+    }
+
+    .filter-content.collapsed {
+      max-height: 0;
+      opacity: 0;
+      padding: 0;
+      margin: 0; /* 마진도 제거 */
     }
 
     .filter-title {
@@ -322,17 +390,17 @@
     }
 
     .filter-group {
-      margin-bottom: 12px; /* 여백 축소 */
+      margin-bottom: 18px; /* 여백 증가 */
     }
 
     .filter-group:last-child {
-      margin-bottom: 0;
+      margin-bottom: 8px; /* 마지막 그룹도 약간의 여백 */
     }
 
     .filter-label {
       color: #ccc;
       font-size: 11px; /* 폰트 크기 축소 */
-      margin-bottom: 6px; /* 여백 축소 */
+      margin-bottom: 8px; /* 여백 증가 */
       display: block;
       font-weight: bold;
     }
@@ -423,6 +491,11 @@
     🖐️ 화면 이동 중
   </div>
   
+  <!-- 필터 상태 UI - 화면 상단 중앙 -->
+  <div id="filterStatusUI" class="filter-status-ui">
+    🔍 필터 적용 중
+  </div>
+  
   <!-- 카메라 디버그 정보 -->
   <div id="cameraDebug" class="camera-debug">
     카메라: (0, 0)
@@ -445,27 +518,33 @@
 
   <!-- 필터링 UI (오른쪽 버튼들 아래) -->
   <div class="filter-container">
-    <div class="filter-title">🔍 아바타 필터</div>
+    <!-- 필터 토글 버튼 -->
+    <button class="filter-toggle-btn" id="filterToggleBtn">
+      🔍 필터 <span id="filterToggleIcon">▶</span>
+    </button>
+    
+    <!-- 접을 수 있는 필터 내용 -->
+    <div class="filter-content collapsed" id="filterContent">
     
     <div class="filter-group">
-      <label class="filter-label">조합법 (추억 내용)</label>
+      <label class="filter-label">조합법 (추억 종류)</label>
       <select class="filter-select" id="categoryFilter">
         <option value="all">전체 보기</option>
-        <option value="PC방">PC방</option>
-        <option value="콘솔 게임">콘솔 게임</option>
-        <option value="SNS 추억">SNS 추억</option>
-        <option value="운동/스포츠">운동/스포츠</option>
-        <option value="축제/이벤트">축제/이벤트</option>
-        <option value="여행지">여행지</option>
-        <option value="가족 따뜻함">가족 따뜻함</option>
-        <option value="봄 기억">봄 기억</option>
-        <option value="학교 기억">학교 기억</option>
-        <option value="노스탤지어">노스탤지어</option>
-        <option value="밤/새벽">밤/새벽</option>
-        <option value="문화생활">문화생활</option>
-        <option value="예술창작">예술창작</option>
-        <option value="가을기억">가을기억</option>
-        <option value="겨울기억">겨울기억</option>
+        <option value="PC방과 온라인 게임">🎮 PC방과 온라인 게임</option>
+        <option value="집에서 게임기로">🏠 집에서 게임기로</option>
+        <option value="SNS 속 디지털 추억">📱 SNS 속 디지털 추억</option>
+        <option value="운동과 스포츠">🏃‍♂️ 운동과 스포츠</option>
+        <option value="축제와 이벤트">🎪 축제와 이벤트</option>
+        <option value="여행지에서의 특별한 경험">✈️ 여행지에서의 특별한 경험</option>
+        <option value="가족과의 따뜻한 시간">👨‍👩‍👧‍👦 가족과의 따뜻한 시간</option>
+        <option value="학창시절 추억">🎓 학창시절 추억</option>
+        <option value="봄의 따뜻한 추억">🌸 봄의 따뜻한 추억</option>
+        <option value="그리운 옛날 생각">💭 그리운 옛날 생각</option>
+        <option value="밤과 새벽">🌙 밤과 새벽</option>
+        <option value="드라마, 영화, 웹툰과 함께">� 드라마, 영화, 웹툰과 함께</option>
+        <option value="미술과 창작활동">🎨 미술과 창작활동</option>
+        <option value="감성적인 가을의 추억">🍂 감성적인 가을의 추억</option>
+        <option value="포근한 겨울의 추억">❄️ 포근한 겨울의 추억</option>
       </select>
     </div>
 
@@ -496,12 +575,12 @@
 
     <div class="filter-buttons">
       <button class="filter-btn filter-reset-btn" id="resetFilterBtn">초기화</button>
-      <button class="filter-btn filter-toggle-btn" id="toggleFilterBtn">필터 켜기</button>
     </div>
 
     <div class="filter-stats" id="filterStats">
       전체 아바타 보기 중
     </div>
+    </div> <!-- filter-content 닫기 -->
   </div>
 
   <!-- 팝업 오버레이 -->

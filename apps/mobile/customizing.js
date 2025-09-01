@@ -402,12 +402,27 @@ import { db } from './firebase-init.js';
     if (isSubmitting) return;
     isSubmitting = true;
 
+    // 한국어 포지션을 영어로 변환
+    const convertPositionToEnglish = (koreanPosition) => {
+      const positionMap = {
+        '리드 멜로디': 'lead',
+        '서브 멜로디': 'sub', 
+        '코드': 'chord',
+        '베이스': 'bass',
+        '드럼/퍼커션': 'drum',
+        '효과음/FX': 'fx'
+      };
+      return positionMap[koreanPosition] || 'bass';
+    };
+
     const data = stripUndefined({
       nickname: memoryData.nickname ?? '',
       memory: memoryData.memory ?? '',
+      category: memoryData.selectedRecipe?.name ?? '가족과의 따뜻한 시간', // 조합법 이름을 그대로 저장
       avatar: avatar, // 순수 JSON
       sound: null,
-      musicPosition: selPosition,
+      musicSet: memoryData.musicSet ?? null, // 음악 세트 정보 추가
+      musicPosition: convertPositionToEnglish(selPosition), // 한국어 포지션을 영어로 변환
       musicFilePath: memoryData.musicFilePath ?? null,
       musicBpm: memoryData.musicBpm ?? null,
       extractedKeywords: memoryData.extractedKeywords ?? null,

@@ -1,12 +1,16 @@
 import { initMediaArt, renderMediaArtScreens, mediaArt, addSongShapes, removeSongShapes} from './mediaArt.js';
 
-// 필터링 시스템
+// 필터링 시스템 (항상 활성화)
 let filterState = {
-  enabled: false, // 기본값 비활성화로 변경
+  enabled: true, // 항상 활성화
   category: 'all',
   musicSet: 'all',
   position: 'all'
 };
+
+// 성능 최적화 변수들
+let performanceMode = false;
+let lastFrameTime = 0;
 
 let stageAvatars = []; // 무대 전용 아바타들
 // 실험용: PC방 세트의 모든 포지션별 아바타를 무대에 추가
@@ -34,11 +38,11 @@ for (let i = 0; i < pcroomPositions.length; i++) {
     idleTimer: 0,
     currentAction: 'idle',
     state: 'idle',
-    category: 'PC방',
+    category: 'PC방과 온라인 게임',
     memory: `PC방에서 만든 추억입니다. ${stdPos} 파트를 담당합니다!`,
     keywords: ['세트1', 'PC방', '음악', stdPos],
     musicPosition: stdPos,
-    selectedRecipe: { name: 'PC방', description: 'PC방 추억' },
+    selectedRecipe: { name: 'PC방과 온라인 게임', description: 'PC방 추억' },
     extractedKeywords: ['세트1', 'PC방', '음악', stdPos],
     isDragged: false,
     dragElevation: 0,
@@ -83,7 +87,7 @@ for (let i = 0; i < consolePositions.length; i++) {
     idleTimer: 0,
     currentAction: 'idle',
     state: 'idle',
-    category: '콘솔 게임',
+    category: '집에서 게임기로',
     memory: `집에서 게임기로 만든 추억입니다. ${stdPos} 파트를 담당합니다!`,
     keywords: ['세트1', '콘솔', '게임', '집', stdPos],
     musicPosition: stdPos,
@@ -132,7 +136,7 @@ for (let i = 0; i < snsPositions.length; i++) {
     idleTimer: 0,
     currentAction: 'idle',
     state: 'idle',
-    category: 'SNS 추억',
+    category: 'SNS 속 디지털 추억',
     memory: `SNS 속 디지털 추억입니다. ${stdPos} 파트를 담당합니다!`,
     keywords: ['세트1', 'SNS', '디지털', '추억', stdPos],
     musicPosition: stdPos,
@@ -181,7 +185,7 @@ for (let i = 0; i < familyPositions.length; i++) {
     idleTimer: 0,
     currentAction: 'idle',
     state: 'idle',
-    category: '가족 따뜻함',
+    category: '가족과의 따뜻한 시간',
     memory: `가족과의 따뜻한 시간 추억입니다. ${stdPos} 파트를 담당합니다!`,
     keywords: ['세트3', '가족', '따뜻함', '시간', stdPos],
     musicPosition: stdPos,
@@ -331,7 +335,7 @@ const setNames = {
   // set2 (활동 & 에너지)
   sports_activities: '운동과 스포츠',
   festivals_events: '축제와 이벤트',
-  travel_places: '여행지의 특별한 경험',
+  travel_places: '여행지에서의 특별한 경험',
   // set3 (따뜻함 & 소통)
   family_warmth: '가족과의 따뜻한 시간',
   school_memories: '학창시절 추억',
@@ -418,87 +422,299 @@ function checkMusicSetCompatibility(newAvatar) {
   return { compatible: true, currentSet: stageSetName };
 }
 
-// ===== 필터링 시스템 =====
+// ===== 필터링 시스템 (성능 최적화) =====
 
-// 아바타가 현재 필터에 맞는지 확인
+// 필터링 캐시 시스템
+let filterCache = new Map();
+let filterCacheVersion = 0;
+
+// 아바타가 현재 필터에 맞는지 확인 (극도 최적화)
 function isAvatarMatchingFilter(avatar) {
-  if (!filterState.enabled) return true;
-  
-  let categoryMatch = true;
-  let musicSetMatch = true;
-  let positionMatch = true;
-  
-  // 카테고리 필터 확인
-  if (filterState.category !== 'all') {
-    categoryMatch = avatar.category === filterState.category;
+  // 필터가 모두 'all'이면 즉시 true 반환
+  if (filterState.category === 'all' && 
+      filterState.musicSet === 'all' && 
+      filterState.position === 'all') {
+    return true;
   }
   
-  // 음악 세트 필터 확인
-  if (filterState.musicSet !== 'all') {
-    const avatarSetName = getAvatarSetName(avatar);
-    musicSetMatch = avatarSetName === filterState.musicSet;
+  // 캐시 키 생성
+  const cacheKey = `${avatar.id}_${filterCacheVersion}`;
+  
+  // 캐시된 결과가 있으면 사용
+  if (filterCache.has(cacheKey)) {
+    return filterCache.get(cacheKey);
   }
   
-  // 포지션 필터 확인
+  let result = true;
+  
+  // 가장 선택적인 필터부터 체크 (빠른 실패)
   if (filterState.position !== 'all') {
     const avatarPosition = getAvatarPosition(avatar);
-    positionMatch = avatarPosition === filterState.position;
+    if (avatarPosition !== filterState.position) {
+      result = false;
+    }
   }
   
-  return categoryMatch && musicSetMatch && positionMatch;
+  if (result && filterState.musicSet !== 'all') {
+    const avatarSetName = getAvatarSetName(avatar);
+    if (avatarSetName !== filterState.musicSet) {
+      result = false;
+    }
+  }
+  
+  if (result && filterState.category !== 'all') {
+    if (avatar.category !== filterState.category) {
+      result = false;
+    }
+  }
+  
+  // 디버깅: 필터링 결과 로그 (더 자주)
+  if (Math.random() < 0.2) { // 20% 확률로 로그 (조합법 디버깅)
+    const avatarSetName = getAvatarSetName(avatar);
+    const avatarPosition = getAvatarPosition(avatar);
+    console.log(`🔍 필터링 체크: ${avatar.nickname || avatar.id} | 
+      타입: ${avatar.isSpecial ? 'DB' : 'Stage'} |
+      Category: "${avatar.category}" vs 필터: "${filterState.category}" (일치: ${avatar.category === filterState.category}) |
+      Set: ${avatarSetName} vs 필터: ${filterState.musicSet} (일치: ${avatarSetName === filterState.musicSet}) |
+      Position: ${avatarPosition} vs 필터: ${filterState.position} (일치: ${avatarPosition === filterState.position}) |
+      결과: ${result ? '매칭' : '필터링됨'}`);
+  }
+  
+  // 결과를 캐시에 저장
+  filterCache.set(cacheKey, result);
+  
+  return result;
 }
 
-// 아바타의 세트명 추출
+// 아바타의 세트명 추출 (캐싱 적용)
+const setNameCache = new Map();
 function getAvatarSetName(avatar) {
+  // 스테이지 아바타는 setName 필드 우선 사용
+  if (avatar.setName) {
+    return avatar.setName;
+  }
+  
+  // 데이터베이스 아바타는 musicSet 필드 사용
+  if (avatar.musicSet) {
+    return avatar.musicSet;
+  }
+  
+  // 스테이지 아바타는 musicType에서 추출 (fallback)
   if (!avatar.musicType) return null;
   
-  if (avatar.musicType.includes('set1_')) return 'set1';
-  if (avatar.musicType.includes('set2_')) return 'set2';
-  if (avatar.musicType.includes('set3_')) return 'set3';
-  if (avatar.musicType.includes('set4_')) return 'set4';
-  if (avatar.musicType.includes('set5_')) return 'set5';
+  // 캐시 확인
+  if (setNameCache.has(avatar.musicType)) {
+    return setNameCache.get(avatar.musicType);
+  }
   
-  return null;
+  let setName = null;
+  
+  // musicType 형식: 'set1_pcroom_gaming_bass.wav' 에서 첫 번째 부분 추출
+  const parts = avatar.musicType.split('_');
+  const firstPart = parts[0]; // 첫 번째 부분이 set명
+  
+  if (firstPart === 'set1') setName = 'set1';
+  else if (firstPart === 'set2') setName = 'set2';
+  else if (firstPart === 'set3') setName = 'set3';
+  else if (firstPart === 'set4') setName = 'set4';
+  else if (firstPart === 'set5') setName = 'set5';
+  
+  // 캐시에 저장
+  setNameCache.set(avatar.musicType, setName);
+  return setName;
 }
 
-// 아바타의 포지션(파트) 추출
+// 아바타의 포지션(파트) 추출 (캐싱 적용)
+const positionCache = new Map();
 function getAvatarPosition(avatar) {
+  // 먼저 musicPosition 필드를 직접 확인 (스테이지와 데이터베이스 아바타 모두)
+  if (avatar.musicPosition) {
+    // 한국어 → 영어 변환
+    const koreanToEnglish = {
+      '리드 멜로디': 'lead',
+      '리드멜로디': 'lead', 
+      '서브 멜로디': 'sub',
+      '서브멜로디': 'sub',
+      '코드': 'chord',
+      '베이스': 'bass',
+      '드럼/퍼커션': 'drum',
+      '드럼': 'drum',
+      '퍼커션': 'drum',
+      '효과음/FX': 'fx',
+      '효과음': 'fx',
+      'FX': 'fx'
+    };
+    
+    return koreanToEnglish[avatar.musicPosition] || avatar.musicPosition.toLowerCase();
+  }
+  
+  // 스테이지 아바타는 musicType에서 추출 (fallback)
   if (!avatar.musicType) return null;
   
-  if (avatar.musicType.includes('_bass')) return 'bass';
-  if (avatar.musicType.includes('_drum')) return 'drum';
-  if (avatar.musicType.includes('_chord')) return 'chord';
-  if (avatar.musicType.includes('_lead')) return 'lead';
-  if (avatar.musicType.includes('_fx')) return 'fx';
-  if (avatar.musicType.includes('_sub')) return 'sub';
+  // 캐시 확인
+  if (positionCache.has(avatar.musicType)) {
+    return positionCache.get(avatar.musicType);
+  }
   
-  return null;
+  let position = null;
+  
+  // musicType 형식: 'set1_pcroom_gaming_bass.wav' 에서 마지막 부분 추출
+  const musicTypeWithoutExt = avatar.musicType.replace('.wav', '');
+  const parts = musicTypeWithoutExt.split('_');
+  const lastPart = parts[parts.length - 1]; // 마지막 부분이 position
+  
+  // position 정규화
+  if (lastPart === 'bass') position = 'bass';
+  else if (lastPart === 'drum') position = 'drum';
+  else if (lastPart === 'chord') position = 'chord';
+  else if (lastPart === 'lead') position = 'lead';
+  else if (lastPart === 'fx') position = 'fx';
+  else if (lastPart === 'sub') position = 'sub';
+  
+  // 캐시에 저장
+  positionCache.set(avatar.musicType, position);
+  return position;
 }
 
-// 필터 적용
+// 필터 캐시 무효화
+function invalidateFilterCache() {
+  filterCacheVersion++;
+  // 메모리 최적화: 캐시 크기가 너무 커지면 초기화
+  if (filterCache.size > 500) {
+    filterCache.clear();
+    console.log('🧹 필터 캐시 정리 완료');
+  }
+}
+
+// 필터 적용 (성능 최적화)
 function applyFilter() {
+  invalidateFilterCache();
   updateFilterStats();
 }
 
-// 필터 통계 업데이트
+// 필터 통계 업데이트 (극도 최적화)
+let statsUpdateTimer = null;
 function updateFilterStats() {
-  const allAvatars = [...stageAvatars, ...avatars];
-  const visibleCount = allAvatars.filter(avatar => isAvatarMatchingFilter(avatar)).length;
-  const totalCount = allAvatars.length;
+  // 더 긴 디바운싱으로 호출 빈도 줄이기
+  if (statsUpdateTimer) {
+    clearTimeout(statsUpdateTimer);
+  }
   
-  const statsElement = document.getElementById('filterStats');
-  if (statsElement) {
-    if (!filterState.enabled) {
-      statsElement.textContent = '필터 비활성화 - 전체 보기';
-    } else if (filterState.category === 'all' && filterState.musicSet === 'all' && filterState.position === 'all') {
-      statsElement.textContent = '전체 아바타 보기 중';
-    } else {
-      statsElement.textContent = `${visibleCount}/${totalCount} 아바타 표시 중`;
+  statsUpdateTimer = setTimeout(() => {
+    const statsElement = document.getElementById('filterStats');
+    const filterStatusUI = document.getElementById('filterStatusUI');
+    if (!statsElement) return;
+    
+    // 모든 필터가 'all'인 경우 빠른 처리
+    if (filterState.category === 'all' && 
+        filterState.musicSet === 'all' && 
+        filterState.position === 'all') {
+      const totalCount = stageAvatars.length + avatars.length;
+      statsElement.textContent = `전체 ${totalCount}개 아바타 보기 중`;
+      // 필터가 모두 초기화된 상태이므로 상태 UI 숨김
+      if (filterStatusUI) {
+        filterStatusUI.style.display = 'none';
+      }
+      return;
     }
+    
+    // 실제 카운팅 (성능 모드에서는 생략)
+    if (performanceMode) {
+      statsElement.textContent = '필터링 중 (성능 모드)';
+      updateFilterStatusUI(); // 필터 상태 UI 업데이트
+      return;
+    }
+    
+    const allAvatars = [...stageAvatars, ...avatars];
+    let visibleCount = 0;
+    let onStageCount = 0;
+    
+    // 배치 처리로 성능 최적화
+    for (let i = 0; i < allAvatars.length; i++) {
+      const avatar = allAvatars[i];
+      
+      // 무대 위 아바타는 항상 보이므로 카운트
+      if (avatar.isOnStage) {
+        onStageCount++;
+        visibleCount++;
+      } else if (isAvatarMatchingFilter(avatar)) {
+        visibleCount++;
+      }
+    }
+    
+    const totalCount = allAvatars.length;
+    let statsText = `${visibleCount}/${totalCount} 아바타 표시 중`;
+    if (onStageCount > 0) {
+      statsText += ` (무대: ${onStageCount})`;
+    }
+    statsElement.textContent = statsText;
+    
+    // 필터 상태 UI 업데이트
+    updateFilterStatusUI();
+  }, 100); // 100ms 디바운싱
+}
+
+// 필터 상태 UI 업데이트 함수
+function updateFilterStatusUI() {
+  const filterStatusUI = document.getElementById('filterStatusUI');
+  if (!filterStatusUI) return;
+  
+  // 팬 UI가 활성화되어 있으면 필터 상태 UI 숨김 (겹침 방지)
+  const panUI = document.getElementById('panUI');
+  if (panUI && panUI.style.display === 'block') {
+    filterStatusUI.style.display = 'none';
+    return;
+  }
+  
+  // 필터가 모두 초기화된 상태인지 확인
+  if (filterState.category === 'all' && 
+      filterState.musicSet === 'all' && 
+      filterState.position === 'all') {
+    filterStatusUI.style.display = 'none';
+    return;
+  }
+  
+  // 활성화된 필터들 수집
+  const activeFilters = [];
+  
+  if (filterState.category !== 'all') {
+    // 카테고리 이름 단축
+    const categoryName = filterState.category.replace('PC방과 온라인 게임', 'PC방 게임')
+                                           .replace('집에서 게임기로', '집 게임기')
+                                           .replace('SNS 속 디지털 추억', 'SNS 추억')
+                                           .replace('운동과 스포츠', '운동')
+                                           .replace('축제와 이벤트', '축제')
+                                           .replace('여행지에서의 특별한 경험', '여행')
+                                           .replace('가족과의 따뜻한 시간', '가족')
+                                           .replace('학창시절 추억', '학창시절')
+                                           .replace('봄의 따뜻한 추억', '봄')
+                                           .replace('그리운 옛날 생각', '옛날')
+                                           .replace('밤과 새벽', '밤/새벽')
+                                           .replace('드라마, 영화, 웹툰과 함께', '영상/웹툰')
+                                           .replace('미술과 창작활동', '미술/창작')
+                                           .replace('감성적인 가을의 추억', '가을')
+                                           .replace('포근한 겨울의 추억', '겨울');
+    activeFilters.push(categoryName);
+  }
+  
+  if (filterState.musicSet !== 'all') {
+    activeFilters.push(filterState.musicSet.toUpperCase());
+  }
+  
+  if (filterState.position !== 'all') {
+    activeFilters.push(filterState.position.toUpperCase());
+  }
+  
+  // 필터 상태 텍스트 생성
+  if (activeFilters.length > 0) {
+    filterStatusUI.textContent = `🔍 ${activeFilters.join(' • ')} 필터링 중`;
+    filterStatusUI.style.display = 'block';
+  } else {
+    filterStatusUI.style.display = 'none';
   }
 }
 
-// 필터 초기화
+// 필터 초기화 (성능 최적화)
 function resetFilter() {
   filterState.category = 'all';
   filterState.musicSet = 'all';
@@ -512,21 +728,11 @@ function resetFilter() {
   if (musicSetSelect) musicSetSelect.value = 'all';
   if (positionSelect) positionSelect.value = 'all';
   
+  invalidateFilterCache();
   updateFilterStats();
 }
 
-// 필터 토글
-function toggleFilter() {
-  filterState.enabled = !filterState.enabled;
-  
-  const toggleBtn = document.getElementById('toggleFilterBtn');
-  if (toggleBtn) {
-    toggleBtn.textContent = filterState.enabled ? '필터 끄기' : '필터 켜기';
-  }
-  
-  updateFilterStats();
-}
-
+// 필터 토글 (성능 최적화)
 // 경고 토스트
 let warningMessage = null;
 let warningTimer = 0;
@@ -994,7 +1200,7 @@ initMediaArt();
       idleTimer: 0,
       currentAction: 'walking',
       state: 'idle',
-      category: '봄 기억',
+      category: '봄의 따뜻한 추억',
       memory: `봄 기억에서 만든 추억입니다. ${stdSpringPositions[i]} 파트를 담당합니다!`,
       keywords: ['세트3', '봄', '음악', stdSpringPositions[i]],
       musicPosition: stdSpringPositions[i],
@@ -1012,6 +1218,7 @@ initMediaArt();
       isSpecial: true,
       musicType: springTypes[i],
       musicSet: 'spring_memories',
+      setName: 'set3',
       isPending: false,
       pendingStartTime: 0
     });
@@ -1040,7 +1247,7 @@ initMediaArt();
       idleTimer: 0,
       currentAction: 'walking',
       state: 'idle',
-      category: '학교 기억',
+      category: '학창시절 추억',
       memory: `학교 기억에서 만든 추억입니다. ${stdSchoolPositions[i]} 파트를 담당합니다!`,
       keywords: ['세트3', '학교', '음악', stdSchoolPositions[i]],
       musicPosition: stdSchoolPositions[i],
@@ -1058,6 +1265,7 @@ initMediaArt();
       isSpecial: true,
       musicType: schoolTypes[i],
       musicSet: 'school_memories',
+      setName: 'set3',
       isPending: false,
       pendingStartTime: 0
     });
@@ -1086,7 +1294,7 @@ initMediaArt();
       idleTimer: 0,
       currentAction: 'walking',
       state: 'idle',
-      category: '노스탤지어',
+      category: '그리운 옛날 생각',
       memory: `그리움이 담긴 추억입니다. ${stdNostalgiaPositions[i]} 파트를 담당합니다!`,
       keywords: ['세트4', '그리움', '노스탤지어', stdNostalgiaPositions[i]],
       musicPosition: stdNostalgiaPositions[i],
@@ -1132,7 +1340,7 @@ initMediaArt();
       idleTimer: 0,
       currentAction: 'walking',
       state: 'idle',
-      category: '밤/새벽',
+      category: '밤과 새벽',
       memory: `고요한 밤과 새벽의 추억입니다. ${stdNostalgiaPositions[i]} 파트를 담당합니다!`,
       keywords: ['세트4', '밤', '새벽', stdNostalgiaPositions[i]],
       musicPosition: stdNostalgiaPositions[i],
@@ -1178,7 +1386,7 @@ initMediaArt();
       idleTimer: 0,
       currentAction: 'walking',
       state: 'idle',
-      category: '문화생활',
+      category: '드라마, 영화, 웹툰과 함께',
       memory: `문화와 엔터테인먼트의 추억입니다. ${stdNostalgiaPositions[i]} 파트를 담당합니다!`,
       keywords: ['세트4', '문화', '엔터테인먼트', stdNostalgiaPositions[i]],
       musicPosition: stdNostalgiaPositions[i],
@@ -1224,7 +1432,7 @@ initMediaArt();
       idleTimer: 0,
       currentAction: 'walking',
       state: 'idle',
-      category: '예술창작',
+      category: '미술과 창작활동',
       memory: `창작과 예술의 추억입니다. ${stdNostalgiaPositions[i]} 파트를 담당합니다!`,
       keywords: ['세트5', '예술', '창작', stdNostalgiaPositions[i]],
       musicPosition: stdNostalgiaPositions[i],
@@ -1270,7 +1478,7 @@ initMediaArt();
       idleTimer: 0,
       currentAction: 'walking',
       state: 'idle',
-      category: '가을기억',
+      category: '감성적인 가을의 추억',
       memory: `가을의 따뜻한 추억입니다. ${stdNostalgiaPositions[i]} 파트를 담당합니다!`,
       keywords: ['세트5', '가을', '기억', stdNostalgiaPositions[i]],
       musicPosition: stdNostalgiaPositions[i],
@@ -1316,7 +1524,7 @@ initMediaArt();
       idleTimer: 0,
       currentAction: 'walking',
       state: 'idle',
-      category: '겨울기억',
+      category: '포근한 겨울의 추억',
       memory: `겨울의 포근한 추억입니다. ${stdNostalgiaPositions[i]} 파트를 담당합니다!`,
       keywords: ['세트5', '겨울', '기억', stdNostalgiaPositions[i]],
       musicPosition: stdNostalgiaPositions[i],
@@ -1362,12 +1570,24 @@ try {
     snapshot.docChanges().forEach(change => {
       if (change.type === 'added') {
         const docData = change.doc.data();
+        console.log('🔍 새 아바타 데이터:', {
+          id: change.doc.id,
+          nickname: docData.nickname,
+          category: docData.category,
+          selectedRecipe: docData.selectedRecipe,
+          selectedRecipeName: docData.selectedRecipe && docData.selectedRecipe.name,
+          finalCategory: docData.category || (docData.selectedRecipe && docData.selectedRecipe.name) || '기타',
+          musicSet: docData.musicSet,
+          musicPosition: docData.musicPosition,
+          musicFilePath: docData.musicFilePath
+        });
+        
         // 아바타 객체 생성: 외형 정보와 커스텀 정보 분리
         const avatar = {
           id: change.doc.id,
           nickname: docData.nickname,
           memory: docData.memory,
-          category: docData.category,
+          category: docData.category || (docData.selectedRecipe && docData.selectedRecipe.name) || '기타', // Firebase category 또는 selectedRecipe.name 사용
           selectedRecipe: docData.selectedRecipe,
           setName: docData.setName,
           musicType: docData.musicType || (docData.avatar && docData.avatar.musicType) || null,
@@ -1453,13 +1673,26 @@ try {
   avatar.musicFilePath = docData.musicFilePath || null;
   avatar.musicSet = docData.musicSet || null;
   avatar.musicBpm = docData.musicBpm || null;
+  avatar.musicPosition = docData.musicPosition || null; // 포지션 필드 추가
   avatar.extractedKeywords = docData.extractedKeywords || [];
+  
   // musicType 자동 할당: musicFilePath > selectedRecipe+musicSet > null
   if (!avatar.musicType) {
     if (avatar.musicFilePath) {
       // 경로가 포함되어 있으면 파일명만 추출
       const fileName = avatar.musicFilePath.split('/').pop();
       avatar.musicType = fileName;
+      
+      // musicType에서 position 추출해서 musicPosition 설정
+      if (!avatar.musicPosition && fileName) {
+        const posList = ['bass','drum','lead','sub','chord','fx'];
+        for (const pos of posList) {
+          if (fileName.toLowerCase().includes(`_${pos}`)) {
+            avatar.musicPosition = pos;
+            break;
+          }
+        }
+      }
     } else if (avatar.selectedRecipe && avatar.musicSet) {
       // position 추출: selectedRecipe에서 bass/drum/lead/sub/chord/fx 등 추출
       let position = 'bass';
@@ -1470,6 +1703,8 @@ try {
           break;
         }
       }
+      // musicPosition 설정
+      avatar.musicPosition = position;
       // musicType 조합
       avatar.musicType = `set3_${avatar.musicSet}_${position}.wav`;
     } else {
@@ -1477,6 +1712,18 @@ try {
     }
   }
   avatars.push(avatar);
+  
+  // 최종 아바타 정보 로그
+  console.log('✅ 아바타 추가 완료:', {
+    id: avatar.id,
+    nickname: avatar.nickname,
+    category: avatar.category,
+    musicSet: avatar.musicSet,
+    musicPosition: avatar.musicPosition,
+    musicType: avatar.musicType,
+    setName: getAvatarSetName(avatar),
+    position: getAvatarPosition(avatar)
+  });
     }
   });
   }, (error) => {
@@ -1488,11 +1735,29 @@ try {
   console.error('Firebase 초기화 오류:', error);
   console.log('Firebase 없이 로컬 모드로 실행합니다.');
 }
+
 // 필요 시 샘플 아바타 렌더(현재 미사용이면 빈 함수로 두세요)
 function drawSampleAvatars() { /* no-op */ }
 
 function draw() {
   background('#222');
+  
+  // 성능 최적화: 프레임 레이트 모니터링 (참고용)
+  const currentTime = millis();
+  const deltaTime = currentTime - (lastFrameTime || currentTime);
+  lastFrameTime = currentTime;
+  
+  // 성능 모드 감지 (렌더링 품질 조정용)
+  if (deltaTime > 25) { // 40 FPS 이하로 떨어지면
+    if (!performanceMode) {
+      performanceMode = true;
+      console.log('⚡ 성능 모드 활성화 (렌더링 품질 조정)');
+    }
+  } else if (performanceMode && deltaTime < 16) { // 60 FPS 이상 복구되면
+    performanceMode = false;
+    console.log('✨ 성능 모드 비활성화');
+  }
+  
   // 카메라 변환
   push();
   translate(-cameraX, -cameraY);
@@ -1505,25 +1770,29 @@ function draw() {
 
   // 공간 렌더
   drawSpaces();
-     renderMediaArtScreens(this, playingAvatars, musicSamples);
+  renderMediaArtScreens(this, playingAvatars, musicSamples);
 
   drawSampleAvatars();
 
+  // 모든 아바타 렌더링 (깜빡임 방지)
   // 무대 아바타들
-  stageAvatars.forEach(avatar => {
+  for (let i = 0; i < stageAvatars.length; i++) {
+    const avatar = stageAvatars[i];
     updateAvatar(avatar);
     drawAvatar(avatar);
-  });
+  }
 
   // 일반 아바타들
-  avatars.forEach(avatar => {
+  for (let i = 0; i < avatars.length; i++) {
+    const avatar = avatars[i];
     updateAvatar(avatar);
     drawAvatar(avatar);
-  });
+  }
 
-  // 성능 디버그 정보 (가끔씩만 출력)
-  if (frameCount % 300 === 0) { // 5초마다 출력 (60fps 기준)
-    console.log(`🔍 성능 정보: 스테이지 아바타 ${stageAvatars.length}개, 일반 아바타 ${avatars.length}개, 필터 상태: ${filterState.enabled ? '켜짐' : '꺼짐'}`);
+  // 성능 디버그 정보 (10초마다 출력)
+  if (frameCount % 600 === 0) {
+    const totalAvatars = stageAvatars.length + avatars.length;
+    console.log(`🔍 렌더링 정보: 전체 ${totalAvatars}개 아바타 렌더링, 성능 모드: ${performanceMode ? '활성' : '비활성'}, FPS: ${Math.round(1000/deltaTime)}`);
   }
 
   pop();
@@ -1643,22 +1912,23 @@ function drawAvatar(avatar) {
 
   const currentY = avatar.y - avatar.dragElevation + avatar.dropBounce;
 
+  // 필터링 체크 - 무대 위 아바타는 항상 표시, 매칭되지 않으면 렌더링하지 않음
+  if (!avatar.isOnStage && (filterState.category !== 'all' || 
+      filterState.musicSet !== 'all' || 
+      filterState.position !== 'all')) {
+    if (!isAvatarMatchingFilter(avatar)) {
+      return; // 필터링에 걸리면 렌더링 생략 (무대 위 아바타 제외)
+    }
+  }
+
+  const isHighlighted = showPopup && popupAvatar && popupAvatar.id === avatar.id;
+
   // 드래그 그림자
   if (avatar.isClicked && avatar.clickTimer > 6 && avatar.dragElevation > 0) {
     push();
     fill(0, 0, 0, 50); noStroke();
     ellipse(avatar.x, avatar.y + 32, 50 - avatar.dragElevation, 15 - avatar.dragElevation/3);
     pop();
-  }
-
-  // 필터링 상태 확인 (성능 최적화: 필터가 비활성화되어 있으면 체크하지 않음)
-  const isMatching = filterState.enabled ? isAvatarMatchingFilter(avatar) : true;
-  const isHighlighted = showPopup && popupAvatar && popupAvatar.id === avatar.id;
-  
-  // 필터링 효과 적용 시작 (필터가 활성화되고 매칭되지 않을 때만)
-  if (filterState.enabled && !isMatching) {
-    push();
-    tint(255, 80); // 매칭되지 않는 아바타는 투명하게
   }
 
   // === 본체 렌더 ===
@@ -1705,26 +1975,16 @@ function drawAvatar(avatar) {
     drawCustomAvatar(avatar.x, currentY, avatar.defaultCustomData, avatar.direction, isHighlighted);
   }
 
-  // 필터링 효과 적용 종료
-  if (filterState.enabled && !isMatching) {
-    pop();
-  }
-
-  // 닉네임 (필터링과 상관없이 표시)
+  // 닉네임 렌더링
   push();
   textAlign(CENTER, BOTTOM);
   textSize(12);
-  if (filterState.enabled && !isMatching) {
-    fill(255, 255, 255, 120); stroke(0, 0, 0, 120); strokeWeight(3); // 매칭되지 않는 아바타는 닉네임도 반투명
-  } else {
-    fill(255); stroke(0); strokeWeight(3);
-  }
+  fill(255); 
+  stroke(0); 
+  strokeWeight(3);
   text(avatar.nickname || '사용자', avatar.x, currentY - 37);
-  if (filterState.enabled && !isMatching) {
-    noStroke(); fill(255, 255, 255, 120);
-  } else {
-    noStroke(); fill(255);
-  }
+  noStroke(); 
+  fill(255);
   text(avatar.nickname || '사용자', avatar.x, currentY - 37);
   pop();
 }
@@ -2767,28 +3027,76 @@ window.addEventListener('DOMContentLoaded', function() {
   const categorySelect = document.getElementById('categoryFilter');
   const musicSetSelect = document.getElementById('musicSetFilter');
   const resetFilterBtn = document.getElementById('resetFilterBtn');
-  const toggleFilterBtn = document.getElementById('toggleFilterBtn');
+  const filterToggleBtn = document.getElementById('filterToggleBtn');
+  const filterContent = document.getElementById('filterContent');
+  const filterToggleIcon = document.getElementById('filterToggleIcon');
+
+  // 필터 토글 기능
+  if (filterToggleBtn && filterContent && filterToggleIcon) {
+    filterToggleBtn.addEventListener('click', function() {
+      const isCollapsed = filterContent.classList.contains('collapsed');
+      
+      if (isCollapsed) {
+        // 펼치기
+        filterContent.classList.remove('collapsed');
+        filterToggleIcon.textContent = '▼';
+        filterToggleBtn.style.borderRadius = '20px 20px 0 0'; // 상단만 둥글게
+        console.log('🔽 필터 펼치기');
+      } else {
+        // 접기
+        filterContent.classList.add('collapsed');
+        filterToggleIcon.textContent = '▶';
+        filterToggleBtn.style.borderRadius = '20px'; // 전체 둥글게
+        console.log('▶ 필터 접기');
+      }
+    });
+    
+    // 초기 상태 설정 (닫혀있는 상태)
+    filterContent.classList.add('collapsed');
+    filterToggleIcon.textContent = '▶';
+    filterToggleBtn.style.borderRadius = '20px';
+  }
 
   if (categorySelect) {
     categorySelect.addEventListener('change', function() {
       filterState.category = this.value;
+      invalidateFilterCache(); // 캐시 무효화
       updateFilterStats();
       console.log('🎯 카테고리 필터 변경:', filterState.category);
+      
+      // 현재 아바타들 카테고리 정보 출력 (더 자세히)
+      const allAvatars = [...stageAvatars, ...avatars];
+      console.log('📊 현재 아바타들의 카테고리 (상세):');
+      allAvatars.slice(0, 10).forEach(a => {
+        const isMatching = a.category === filterState.category || filterState.category === 'all';
+        console.log(`  - ${a.nickname || a.id} (${a.isSpecial ? 'DB' : 'Stage'}): "${a.category}" ${isMatching ? '✅' : '❌'}`);
+      });
     });
   }
 
   if (musicSetSelect) {
     musicSetSelect.addEventListener('change', function() {
       filterState.musicSet = this.value;
+      invalidateFilterCache(); // 캐시 무효화
       updateFilterStats();
       console.log('🎯 음악셋 필터 변경:', filterState.musicSet);
+      
+      // 현재 아바타들 음악셋 정보 출력
+      const allAvatars = [...stageAvatars, ...avatars];
+      console.log('📊 현재 아바타들의 음악셋:', allAvatars.map(a => ({ 
+        nickname: a.nickname || a.id, 
+        musicSet: a.musicSet,
+        setName: getAvatarSetName(a) 
+      })).slice(0, 10)); // 처음 10개만
     });
   }
 
-  const positionSelect = document.getElementById('positionFilter');
-  if (positionSelect) {
-    positionSelect.addEventListener('change', function() {
+  // positionSelect는 위에서 이미 선언됨
+  const positionSelectElement = document.getElementById('positionFilter');
+  if (positionSelectElement) {
+    positionSelectElement.addEventListener('change', function() {
       filterState.position = this.value;
+      invalidateFilterCache(); // 캐시 무효화
       updateFilterStats();
       console.log('🎯 포지션 필터 변경:', filterState.position);
     });
@@ -2802,16 +3110,6 @@ window.addEventListener('DOMContentLoaded', function() {
     });
   } else {
     console.warn('❌ resetFilterBtn을 찾을 수 없음');
-  }
-
-  if (toggleFilterBtn) {
-    toggleFilterBtn.addEventListener('click', function() {
-      console.log('🎯 필터 토글 버튼 클릭됨');
-      toggleFilter();
-      console.log('🎯 필터 토글 완료, 현재 상태:', filterState.enabled ? '켜짐' : '꺼짐');
-    });
-  } else {
-    console.warn('❌ toggleFilterBtn을 찾을 수 없음');
   }
 });
 
@@ -3250,14 +3548,23 @@ function stopAvatarMusic(avatar) {
 // 패닝 UI 업데이트 함수
 function updatePanningUI() {
   const panUI = document.getElementById('panUI');
+  const filterStatusUI = document.getElementById('filterStatusUI');
   const cameraDebug = document.getElementById('cameraDebug');
   const canvas = document.querySelector('canvas');
   
   if (isPanning) {
     panUI.style.display = 'block';
+    // 팬 UI가 활성화되면 필터 상태 UI 숨김 (겹침 방지)
+    if (filterStatusUI) {
+      filterStatusUI.style.display = 'none';
+    }
     if (canvas) canvas.style.cursor = 'grabbing';
   } else {
     panUI.style.display = 'none';
+    // 팬 UI가 비활성화되면 필터 상태 UI 다시 표시 (필터가 활성화된 경우)
+    if (filterStatusUI) {
+      updateFilterStatusUI(); // 필터 상태에 따라 다시 표시
+    }
     if (canvas) canvas.style.cursor = 'default';
   }
   
