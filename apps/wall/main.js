@@ -3273,21 +3273,25 @@ function resetStage() {
   console.log('🎭 === 무대 리셋 종료 ===');
 }
 
-// 아바타 정렬
+// 아바타 정렬 (개수 적응형)
 function sortAvatars() {
-  console.log('📐 === 아바타 정렬 시작 ===');
+  console.log('📐 === 아바타 정렬 시스템 시작 ===');
 
   try {
     if (typeof isInStageArea !== 'function') {
-      throw new Error('❌ isInStageArea 함수가 정의되지 않음 (배포 환경 오류)');
+      throw new Error('❌ isInStageArea 함수가 정의되지 않음');
     }
 
     const sortBtn = document.getElementById('sortAvatarsBtn');
-    if (sortBtn) { sortBtn.disabled = true; sortBtn.textContent = '📐 정렬 중...'; }
+    if (sortBtn) { 
+      sortBtn.disabled = true; 
+      sortBtn.textContent = '📐 정렬 중...'; 
+    }
 
     isSorting = true;
     sortingAnimations = [];
 
+    // 모든 아바타 수집
     let allStageAvatars = [...stageAvatars];
     let allRegularAvatars = [...avatars];
     let allAvatars = [...allStageAvatars, ...allRegularAvatars];
@@ -3295,277 +3299,253 @@ function sortAvatars() {
     console.log('🔍 아바타 현황:', {
       totalAvatars: allAvatars.length,
       stageAvatars: allStageAvatars.length,
-      regularAvatars: allRegularAvatars.length
+      regularAvatars: allRegularAvatars.length,
+      filterState: filterState
     });
 
-    // 정렬 대상: 무대에 없고 idle인 아바타만
+    // 정렬 대상: 무대에 없고 idle이며 필터링으로 보이는 아바타만
     let sortableAvatars = allAvatars.filter(avatar => {
       const isIdle = avatar.state === 'idle';
       const inStageArea = isInStageArea(avatar.x, avatar.y);
       const isDefinitelyOnStage = avatar.isOnStage || inStageArea || (avatar.stageSlot !== undefined && avatar.stageSlot !== -1);
       const notSorting = avatar.currentAction !== 'sorting';
       const isValid = avatar && typeof avatar.x === 'number' && typeof avatar.y === 'number';
-      return isIdle && !isDefinitelyOnStage && notSorting && isValid;
+      
+      // 필터링 체크: 보이는 아바타만 정렬 대상으로 포함
+      const isVisible = avatar.isOnStage || isAvatarMatchingFilter(avatar);
+      
+      return isIdle && !isDefinitelyOnStage && notSorting && isValid && isVisible;
     });
 
-    console.log('🎯 정렬 대상 필터링 결과:', {
-      sortableCount: sortableAvatars.length,
-      maxCapacity: 100,
-      canSort: sortableAvatars.length <= 100
-    });
+    console.log('🎯 정렬 대상:', sortableAvatars.length + '개 (필터링 적용됨)');
 
     if (sortableAvatars.length === 0) {
-      console.log('📋 정렬할 아바타가 없음');
+      console.log('📋 정렬할 아바타가 없음 (필터링 후)');
       finishSorting();
       return;
     }
 
-    if (sortableAvatars.length > 100) {
-      console.warn('⚠️ 정렬 대상이 100개를 초과함. 처음 100개만 정렬');
-      sortableAvatars = sortableAvatars.slice(0, 100);
+    if (sortableAvatars.length > 150) {
+      console.warn('⚠️ 정렬 대상이 150개를 초과함. 처음 150개만 정렬');
+      sortableAvatars = sortableAvatars.slice(0, 150);
     }
 
-    // 정렬 영역 정의 (기존보다 약간 확장)
+    console.log('✅ 최종 정렬 대상:', sortableAvatars.length + '개 (최대 150개까지 지원)');
+
+    // 정렬 영역 정의 (무대 아래 자유 구역)
     const freeAreaStartY = 900;
     const freeAreaEndY = 1600;
-    const freeAreaStartX = 150; // 시작점을 약간 왼쪽으로
-    const freeAreaEndX = 2410; // 끝점을 약간 오른쪽으로
+    const freeAreaStartX = 150;
+    const freeAreaEndX = 2410;
+    const centerX = (freeAreaStartX + freeAreaEndX) / 2;
+    const centerY = (freeAreaStartY + freeAreaEndY) / 2;
 
-    const freeAreaCenterX = (freeAreaStartX + freeAreaEndX) / 2;
-    const freeAreaCenterY = (freeAreaStartY + freeAreaEndY) / 2;
+    const count = sortableAvatars.length;
+    let positions = [];
 
-    console.log('📏 정렬 영역:', {
-      width: freeAreaEndX - freeAreaStartX,
-      height: freeAreaEndY - freeAreaStartY,
-      centerX: freeAreaCenterX,
-      centerY: freeAreaCenterY
-    });
-
-    // 100개까지 자연스럽게 정렬할 수 있는 개선된 시스템
-    console.log('🔧 정렬 대상 아바타 수:', sortableAvatars.length);
-    
-    if (sortableAvatars.length === 1) {
-      // 1개일 때는 중앙에 배치
-      const animation = {
-        avatar: sortableAvatars[0],
-        startX: sortableAvatars[0].x,
-        startY: sortableAvatars[0].y,
-        targetX: freeAreaCenterX,
-        targetY: freeAreaCenterY,
-        progress: 0,
-        duration: 1.0,
-        easing: 'easeOutCubic'
-      };
-      sortingAnimations.push(animation);
-      sortableAvatars[0].currentAction = 'sorting';
-      sortableAvatars[0].vx = 0; sortableAvatars[0].vy = 0;
+    // 🎯 개수별 적응형 배치 알고리즘
+    if (count === 1) {
+      // 1개: 중앙 배치
+      positions = [{ x: centerX, y: centerY }];
+      console.log('📍 배치 방식: 중앙 단일 배치');
       
-    } else if (sortableAvatars.length <= 40) {
-      // 40개까지: 다중 동심원 배치 (기존 방식 개선)
-      console.log('⭕ 다중 동심원 배치');
-      const ringSpacing = 120; // 링 간격 늘림
-      const avatarSpacing = 100; // 아바타 간격 늘림
-      let avatarIndex = 0;
-      let currentRing = 0;
-      
-      while (avatarIndex < sortableAvatars.length) {
-        const ringRadius = 140 + (currentRing * ringSpacing);
-        const maxAvatarsInRing = Math.max(6, Math.floor((2 * Math.PI * ringRadius) / avatarSpacing));
-        const avatarsInThisRing = Math.min(maxAvatarsInRing, sortableAvatars.length - avatarIndex);
-        
-        if (avatarsInThisRing <= 0) break;
-        
-        const angleStep = (2 * Math.PI) / avatarsInThisRing;
-        const startAngle = currentRing * 0.5; // 링별로 회전 오프셋
-        
-        console.log(`🔵 링 ${currentRing}: 반지름=${ringRadius}, 아바타=${avatarsInThisRing}개`);
-        
-        for (let i = 0; i < avatarsInThisRing; i++) {
-          const angle = startAngle + i * angleStep;
-          const targetX = freeAreaCenterX + Math.cos(angle) * ringRadius;
-          const targetY = freeAreaCenterY + Math.sin(angle) * ringRadius;
-          
-          // 경계 체크 및 조정
-          const clampedX = Math.max(freeAreaStartX + 60, Math.min(freeAreaEndX - 60, targetX));
-          const clampedY = Math.max(freeAreaStartY + 60, Math.min(freeAreaEndY - 60, targetY));
-          
-          const avatar = sortableAvatars[avatarIndex];
-          const animation = {
-            avatar,
-            startX: avatar.x,
-            startY: avatar.y,
-            targetX: clampedX,
-            targetY: clampedY,
-            progress: 0,
-            duration: 1.0 + (currentRing * 0.15),
-            easing: 'easeOutCubic'
-          };
-          sortingAnimations.push(animation);
-          avatar.currentAction = 'sorting';
-          avatar.vx = 0; avatar.vy = 0;
-          avatarIndex++;
-        }
-        currentRing++;
+    } else if (count <= 8) {
+      // 2-8개: 원형 배치 (간격 확대)
+      const radius = Math.min(300, Math.max(120, count * 35));
+      for (let i = 0; i < count; i++) {
+        const angle = (i / count) * 2 * Math.PI - Math.PI / 2;
+        positions.push({
+          x: centerX + Math.cos(angle) * radius,
+          y: centerY + Math.sin(angle) * radius
+        });
       }
+      console.log('🔵 배치 방식: 원형 배치 (반지름:', radius + ')');
+      
+    } else if (count <= 20) {
+      // 9-20개: 이중 동심원 배치 (간격 확대)
+      const innerRadius = 180;
+      const outerRadius = 350;
+      const innerCount = Math.ceil(count / 2);
+      const outerCount = count - innerCount;
+      
+      // 내부 원
+      for (let i = 0; i < innerCount; i++) {
+        const angle = (i / innerCount) * 2 * Math.PI;
+        positions.push({
+          x: centerX + Math.cos(angle) * innerRadius,
+          y: centerY + Math.sin(angle) * innerRadius
+        });
+      }
+      
+      // 외부 원 (약간 회전된 위치)
+      for (let i = 0; i < outerCount; i++) {
+        const angle = (i / outerCount) * 2 * Math.PI + (Math.PI / outerCount);
+        positions.push({
+          x: centerX + Math.cos(angle) * outerRadius,
+          y: centerY + Math.sin(angle) * outerRadius
+        });
+      }
+      console.log('⭕ 배치 방식: 이중 동심원 배치 (내부:', innerCount, '/ 외부:', outerCount + ')');
+      
+    } else if (count <= 50) {
+      // 21-50개: 삼중 동심원 배치 (간격 확대)
+      const radiuses = [150, 280, 420];
+      const countsPerCircle = [
+        Math.floor(count / 3),
+        Math.floor(count / 3),
+        count - 2 * Math.floor(count / 3)
+      ];
+      
+      let totalPlaced = 0;
+      for (let circle = 0; circle < 3; circle++) {
+        const radius = radiuses[circle];
+        const circleCount = countsPerCircle[circle];
+        const angleOffset = circle * (Math.PI / 6); // 각 원마다 약간씩 회전
+        
+        for (let i = 0; i < circleCount; i++) {
+          const angle = (i / circleCount) * 2 * Math.PI + angleOffset;
+          positions.push({
+            x: centerX + Math.cos(angle) * radius,
+            y: centerY + Math.sin(angle) * radius
+          });
+          totalPlaced++;
+        }
+      }
+      console.log('🎯 배치 방식: 삼중 동심원 배치 (', countsPerCircle.join('/'), ')');
       
     } else {
-      // 41-100개: 사각형 꼭짓점부터 자연스럽게 채워나가는 배치
-      console.log('�️ 사각형 꼭짓점 기반 자연스러운 배치');
+      // 51개 이상: 고밀도 다중 동심원 + 격자 혼합 배치
+      console.log('🎯 고밀도 배치 시작 - 아바타 개수:', count);
       
-      const margin = 80;
-      const areaStartX = freeAreaStartX + margin;
-      const areaStartY = freeAreaStartY + margin;
-      const areaEndX = freeAreaEndX - margin;
-      const areaEndY = freeAreaEndY - margin;
-      const areaWidth = areaEndX - areaStartX;
-      const areaHeight = areaEndY - areaStartY;
-      
-      console.log('� 배치 영역:', { areaWidth, areaHeight, totalAvatars: sortableAvatars.length });
-      
-      // 배치할 위치들을 미리 계산
-      const positions = [];
-      
-      // 1단계: 사각형 테두리 (꼭짓점부터 시계방향)
-      const perimeterSpacing = 90;
-      
-      // 상단 테두리 (왼쪽 → 오른쪽)
-      for (let x = areaStartX; x <= areaEndX; x += perimeterSpacing) {
-        positions.push({ x, y: areaStartY, layer: 'perimeter' });
-      }
-      
-      // 우측 테두리 (위 → 아래, 상단 모서리 제외)
-      for (let y = areaStartY + perimeterSpacing; y <= areaEndY; y += perimeterSpacing) {
-        positions.push({ x: areaEndX, y, layer: 'perimeter' });
-      }
-      
-      // 하단 테두리 (오른쪽 → 왼쪽, 우측 모서리 제외)
-      for (let x = areaEndX - perimeterSpacing; x >= areaStartX; x -= perimeterSpacing) {
-        positions.push({ x, y: areaEndY, layer: 'perimeter' });
-      }
-      
-      // 좌측 테두리 (아래 → 위, 하단과 상단 모서리 제외)
-      for (let y = areaEndY - perimeterSpacing; y > areaStartY; y -= perimeterSpacing) {
-        positions.push({ x: areaStartX, y, layer: 'perimeter' });
-      }
-      
-      // 2단계: 내부 채우기 (나선형)
-      const innerSpacing = 85;
-      const innerStartX = areaStartX + perimeterSpacing;
-      const innerStartY = areaStartY + perimeterSpacing;
-      const innerEndX = areaEndX - perimeterSpacing;
-      const innerEndY = areaEndY - perimeterSpacing;
-      
-      if (innerEndX > innerStartX && innerEndY > innerStartY) {
-        // 내부 영역을 나선형으로 채우기
-        let currentX = innerStartX;
-        let currentY = innerStartY;
-        let direction = 'right'; // right, down, left, up
-        let steps = 0;
-        let maxSteps = Math.floor((innerEndX - innerStartX) / innerSpacing);
+      if (count <= 75) {
+        // 51-75개: 4중 동심원 배치
+        const radiuses = [120, 200, 300, 420];
+        const countsPerCircle = [
+          Math.min(16, Math.floor(count * 0.25)),
+          Math.min(20, Math.floor(count * 0.3)),
+          Math.min(24, Math.floor(count * 0.3)),
+          count - Math.min(16, Math.floor(count * 0.25)) - Math.min(20, Math.floor(count * 0.3)) - Math.min(24, Math.floor(count * 0.3))
+        ];
         
-        while (positions.length < sortableAvatars.length && steps < 100) { // 무한루프 방지
-          if (currentX >= innerStartX && currentX <= innerEndX && 
-              currentY >= innerStartY && currentY <= innerEndY) {
-            positions.push({ 
-              x: currentX, 
-              y: currentY, 
-              layer: 'inner',
-              spiralStep: steps 
+        let totalPlaced = 0;
+        for (let circle = 0; circle < 4; circle++) {
+          const radius = radiuses[circle];
+          const circleCount = countsPerCircle[circle];
+          if (circleCount <= 0) continue;
+          
+          const angleOffset = circle * (Math.PI / 8); // 각 원마다 회전
+          
+          for (let i = 0; i < circleCount; i++) {
+            const angle = (i / circleCount) * 2 * Math.PI + angleOffset;
+            positions.push({
+              x: centerX + Math.cos(angle) * radius,
+              y: centerY + Math.sin(angle) * radius
             });
+            totalPlaced++;
           }
-          
-          // 나선형 이동
-          switch (direction) {
-            case 'right':
-              currentX += innerSpacing;
-              if (currentX > innerEndX - (steps * innerSpacing)) {
-                direction = 'down';
-                currentY += innerSpacing;
-              }
-              break;
-            case 'down':
-              currentY += innerSpacing;
-              if (currentY > innerEndY - (steps * innerSpacing)) {
-                direction = 'left';
-                currentX -= innerSpacing;
-              }
-              break;
-            case 'left':
-              currentX -= innerSpacing;
-              if (currentX < innerStartX + (steps * innerSpacing)) {
-                direction = 'up';
-                currentY -= innerSpacing;
-                steps++;
-              }
-              break;
-            case 'up':
-              currentY -= innerSpacing;
-              if (currentY < innerStartY + (steps * innerSpacing)) {
-                direction = 'right';
-                currentX += innerSpacing;
-              }
-              break;
-          }
-          
-          if (positions.length >= sortableAvatars.length) break;
         }
-      }
-      
-      // 3단계: 부족한 위치는 중앙 주변에 원형으로 추가
-      if (positions.length < sortableAvatars.length) {
-        const remaining = sortableAvatars.length - positions.length;
-        console.log(`🔄 ${remaining}개 위치 부족, 중앙 원형으로 추가`);
+        console.log('🔵 배치 방식: 4중 동심원 배치 (', countsPerCircle.join('/'), ')');
         
-        const centerRadius = 200;
-        const centerAngleStep = (2 * Math.PI) / remaining;
+      } else {
+        // 76-100개: 초고밀도 혼합 배치
+        const innerCount = Math.min(20, Math.floor(count * 0.25));
+        const middleCount = Math.min(28, Math.floor(count * 0.35));
+        const outerGridCount = count - innerCount - middleCount;
         
-        for (let i = 0; i < remaining; i++) {
-          const angle = i * centerAngleStep;
-          const x = freeAreaCenterX + Math.cos(angle) * centerRadius;
-          const y = freeAreaCenterY + Math.sin(angle) * centerRadius;
-          
-          positions.push({ 
-            x: Math.max(areaStartX, Math.min(areaEndX, x)), 
-            y: Math.max(areaStartY, Math.min(areaEndY, y)), 
-            layer: 'center' 
+        // 1단계: 내부 원형 (작은 반지름)
+        const innerRadius = 140;
+        for (let i = 0; i < innerCount; i++) {
+          const angle = (i / innerCount) * 2 * Math.PI;
+          positions.push({
+            x: centerX + Math.cos(angle) * innerRadius,
+            y: centerY + Math.sin(angle) * innerRadius
           });
         }
+        
+        // 2단계: 중간 원형 (중간 반지름)
+        const middleRadius = 260;
+        for (let i = 0; i < middleCount; i++) {
+          const angle = (i / middleCount) * 2 * Math.PI + (Math.PI / middleCount);
+          positions.push({
+            x: centerX + Math.cos(angle) * middleRadius,
+            y: centerY + Math.sin(angle) * middleRadius
+          });
+        }
+        
+        // 3단계: 외곽 고밀도 격자 배치
+        const gridMargin = 60; // 마진 축소로 공간 확보
+        const gridStartX = freeAreaStartX + gridMargin;
+        const gridEndX = freeAreaEndX - gridMargin;
+        const gridStartY = freeAreaStartY + gridMargin;
+        const gridEndY = freeAreaEndY - gridMargin;
+        const gridSpacing = 120; // 간격 축소로 고밀도 배치
+        
+        const gridCols = Math.floor((gridEndX - gridStartX) / gridSpacing);
+        const gridRows = Math.ceil(outerGridCount / gridCols);
+        
+        for (let i = 0; i < outerGridCount; i++) {
+          const col = i % gridCols;
+          const row = Math.floor(i / gridCols);
+          
+          let x = gridStartX + col * gridSpacing;
+          let y = gridStartY + row * gridSpacing;
+          
+          // 중간 원형 영역과 겹치면 위치 조정
+          const distFromCenter = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
+          if (distFromCenter < middleRadius + 60) {
+            // 중앙에서 밀어내기
+            const pushAngle = Math.atan2(y - centerY, x - centerX);
+            const pushDistance = middleRadius + 80;
+            x = centerX + Math.cos(pushAngle) * pushDistance;
+            y = centerY + Math.sin(pushAngle) * pushDistance;
+            
+            // 경계 안전장치
+            x = Math.max(gridStartX, Math.min(gridEndX, x));
+            y = Math.max(gridStartY, Math.min(gridEndY, y));
+          }
+          
+          positions.push({ x, y });
+        }
+        console.log('🌟 배치 방식: 초고밀도 혼합 배치 (내부:', innerCount, '/ 중간:', middleCount, '/ 격자:', outerGridCount + ')');
+      }
+    }
+
+    // 위치 안전성 검증 및 애니메이션 생성
+    sortableAvatars.forEach((avatar, index) => {
+      if (index >= positions.length) {
+        console.warn('⚠️ 아바타 인덱스 초과:', index, '/', positions.length);
+        return;
       }
       
-      console.log('📍 생성된 위치 수:', positions.length, '/ 필요한 위치:', sortableAvatars.length);
+      const pos = positions[index];
       
-      // 아바타를 위치에 배치
-      sortableAvatars.forEach((avatar, index) => {
-        if (index < positions.length) {
-          const pos = positions[index];
-          const animation = {
-            avatar,
-            startX: avatar.x,
-            startY: avatar.y,
-            targetX: pos.x,
-            targetY: pos.y,
-            progress: 0,
-            duration: 1.0 + (index * 0.02), // 순차적 배치
-            easing: 'easeOutCubic'
-          };
-          sortingAnimations.push(animation);
-          avatar.currentAction = 'sorting';
-          avatar.vx = 0; avatar.vy = 0;
-        }
-      });
-    }
-    
-    console.log('✅ 정렬 애니메이션 생성 완료:', {
-      totalAnimations: sortingAnimations.length,
-      targetAvatars: sortableAvatars.length,
-      layoutType: sortableAvatars.length <= 1 ? '중앙배치' : 
-                  sortableAvatars.length <= 40 ? '다중원형' : '사각형나선'
+      // 경계 안전장치
+      const safeX = Math.max(freeAreaStartX + 50, Math.min(freeAreaEndX - 50, pos.x));
+      const safeY = Math.max(freeAreaStartY + 50, Math.min(freeAreaEndY - 50, pos.y));
+
+      const animation = {
+        avatar,
+        startX: avatar.x,
+        startY: avatar.y,
+        targetX: safeX,
+        targetY: safeY,
+        progress: 0,
+        duration: 1.8, // 조금 더 부드럽게
+        easing: 'easeOutCubic'
+      };
+      
+      sortingAnimations.push(animation);
+      avatar.currentAction = 'sorting';
+      avatar.vx = 0; 
+      avatar.vy = 0;
     });
+
+    console.log('✅ 스마트 정렬 애니메이션 생성 완료:', sortingAnimations.length + '개');
+    
   } catch (error) {
     console.error('❌ 아바타 정렬 중 오류 발생:', error);
     finishSorting();
   }
-  console.log('📐 === 아바타 정렬 애니메이션 시작 ===');
 }
 
 function updateSortingAnimations() {
@@ -3580,19 +3560,19 @@ function updateSortingAnimations() {
       allCompleted = false;
       animation.progress = Math.min(1, animation.progress + deltaTime / animation.duration);
       
-      // 더 부드러운 easing 함수 적용
+      // 부드러운 easing 적용
       let easedProgress;
       if (animation.easing === 'easeOutCubic') {
         easedProgress = 1 - Math.pow(1 - animation.progress, 3);
       } else {
-        easedProgress = animation.progress; // 기본 선형
+        easedProgress = animation.progress;
       }
       
-      // 보간으로 위치 계산
+      // 위치 계산
       animation.avatar.x = animation.startX + (animation.targetX - animation.startX) * easedProgress;
       animation.avatar.y = animation.startY + (animation.targetY - animation.startY) * easedProgress;
       
-      // 아바타가 경계를 벗어나지 않도록 안전장치
+      // 경계 안전장치
       const safeMargin = 20;
       animation.avatar.x = Math.max(safeMargin, Math.min(width - safeMargin, animation.avatar.x));
       animation.avatar.y = Math.max(safeMargin, Math.min(height - safeMargin, animation.avatar.y));
@@ -3605,14 +3585,8 @@ function updateSortingAnimations() {
     }
   });
 
-  // 진행률 로깅 (10% 단위로)
-  const progressPercent = Math.floor((completedCount / sortingAnimations.length) * 100);
-  if (progressPercent > 0 && progressPercent % 20 === 0) {
-    console.log(`📈 정렬 진행률: ${progressPercent}% (${completedCount}/${sortingAnimations.length})`);
-  }
-
   if (allCompleted) {
-    console.log('🎯 모든 정렬 애니메이션 완료');
+    console.log('✅ 모든 정렬 애니메이션 완료');
     finishSorting();
   }
 }
@@ -4525,4 +4499,3 @@ function startPCRoomMusic(avatar) {
     console.warn(`⚠️ ${avatar.nickname}의 음원 파일을 찾을 수 없음: ${avatar.musicType}`);
   }
 }
-
