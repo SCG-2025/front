@@ -107,6 +107,104 @@ for (let i = 0; i < consolePositions.length; i++) {
   });
 }
 
+// SNS 추억 세트의 모든 포지션별 아바타를 무대에 추가
+const snsPositions = ['Bass', 'Chord', 'Drum', 'FX', 'Lead', 'Sub'];
+for (let i = 0; i < snsPositions.length; i++) {
+  // 포지션명 표준화
+  const posMap = {
+    Lead: '리드멜로디',
+    Sub: '서브멜로디',
+    Chord: '코드',
+    Bass: '베이스',
+    Drum: '드럼/퍼커션',
+    FX: '효과음/FX'
+  };
+  const stdPos = posMap[snsPositions[i]] || snsPositions[i];
+  stageAvatars.push({
+    id: 'sns_avatar_' + i,
+    nickname: `SNS 추억 (${stdPos})`,
+    x: 100 + i * 120,
+    y: 420,
+    vx: 0,
+    vy: 0,
+    direction: 1,
+    walkTimer: 0,
+    idleTimer: 0,
+    currentAction: 'idle',
+    state: 'idle',
+    category: 'SNS 추억',
+    memory: `SNS 속 디지털 추억입니다. ${stdPos} 파트를 담당합니다!`,
+    keywords: ['세트1', 'SNS', '디지털', '추억', stdPos],
+    musicPosition: stdPos,
+    selectedRecipe: { name: 'SNS 추억', description: 'SNS 속 디지털 추억' },
+    extractedKeywords: ['세트1', 'SNS', '디지털', '추억', stdPos],
+    isDragged: false,
+    dragElevation: 0,
+    dropBounce: 0,
+    dropBounceVel: 0,
+    baseY: 0,
+    clickTimer: 0,
+    isClicked: false,
+    isOnStage: false,
+    stageSlot: -1,
+    isSpecial: true,
+    musicType: 'set1_social_media_memories_' + snsPositions[i].toLowerCase() + '.wav',
+    musicSet: 'social_media_memories',
+    setName: 'set1',
+    isPending: false,
+    pendingStartTime: 0
+  });
+}
+
+// 가족 따뜻함 세트의 모든 포지션별 아바타를 무대에 추가
+const familyPositions = ['Bass', 'Chord', 'Drum', 'FX', 'Lead', 'Sub'];
+for (let i = 0; i < familyPositions.length; i++) {
+  // 포지션명 표준화
+  const posMap = {
+    Lead: '리드멜로디',
+    Sub: '서브멜로디',
+    Chord: '코드',
+    Bass: '베이스',
+    Drum: '드럼/퍼커션',
+    FX: '효과음/FX'
+  };
+  const stdPos = posMap[familyPositions[i]] || familyPositions[i];
+  stageAvatars.push({
+    id: 'family_avatar_' + i,
+    nickname: `가족 따뜻함 (${stdPos})`,
+    x: 100 + i * 120,
+    y: 480,
+    vx: 0,
+    vy: 0,
+    direction: 1,
+    walkTimer: 0,
+    idleTimer: 0,
+    currentAction: 'idle',
+    state: 'idle',
+    category: '가족 따뜻함',
+    memory: `가족과의 따뜻한 시간 추억입니다. ${stdPos} 파트를 담당합니다!`,
+    keywords: ['세트3', '가족', '따뜻함', '시간', stdPos],
+    musicPosition: stdPos,
+    selectedRecipe: { name: '가족 따뜻함', description: '가족과의 따뜻한 시간' },
+    extractedKeywords: ['세트3', '가족', '따뜻함', '시간', stdPos],
+    isDragged: false,
+    dragElevation: 0,
+    dropBounce: 0,
+    dropBounceVel: 0,
+    baseY: 0,
+    clickTimer: 0,
+    isClicked: false,
+    isOnStage: false,
+    stageSlot: -1,
+    isSpecial: true,
+    musicType: 'set3_family_warmth_' + familyPositions[i].toLowerCase() + '.wav',
+    musicSet: 'family_warmth',
+    setName: 'set3',
+    isPending: false,
+    pendingStartTime: 0
+  });
+}
+
 // musicSet을 세트명으로 매핑하는 함수
 function getSetGroupName(musicSet) {
   return musicSet;
