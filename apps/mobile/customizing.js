@@ -17,7 +17,7 @@ import { db } from './firebase-init.js';
 (() => {
   /* ---------- 전역 상태 ---------- */
   const musicPositions = ['리드 멜로디', '서브 멜로디', '코드', '베이스', '드럼/퍼커션', '효과음/FX'];
-  const categories = ['바디', '헤드', '윙', '피부색', '눈색']; // 하단 카테고리 (성별 제거)
+  const categories = ['바디', '헤드', '소품', '눈색']; // 하단 카테고리 (성별 제거)
 
 
 
@@ -65,10 +65,10 @@ import { db } from './firebase-init.js';
   // write에서 넘어온 avatarData가 있으면 그대로 사용, 없으면 최소 기본값
   const avatar = savedAvatar && typeof savedAvatar === 'object'
     ? { ...savedAvatar }
-    : { gender: 'female', bodyIdx: 0, headIdx: null, wingOn: false, skin: '#ffdbac', eyes: '#000' };
+    : { gender: 'female', bodyIdx: 0, headIdx: null, sopumOnOn: false, eyes: 0 };
 
   // 이미지 캐시
-  const IMG = { female: [], male: [], heads: [], wing: null };
+  const IMG = { female: [], male: [], heads: [], sopum: [], eye: [] };
   function preload() {
     IMG.female = Catalog.female.map(p => loadImage(p));
     IMG.male = Catalog.male.map(p => loadImage(p));
@@ -294,11 +294,15 @@ import { db } from './firebase-init.js';
         avatar.sopumOn = false; saveAvatarToLocal();
         renderAvatar(); refreshSummary();
       });
-      const on = createDiv('').parent(inventoryDiv).style(commonCard()).mousePressed(() => {
-        avatar.sopumOn = true; saveAvatarToLocal();
-        renderAvatar(); refreshSummary();
+      Catalog.sopum.forEach((imgPath, idx) => {
+        const card = createDiv('').parent(inventoryDiv).style(commonCard()).mousePressed(() => {
+          avatar.sopumOn = true;
+          avatar.sopumIdx = idx;
+          saveAvatarToLocal();
+          renderAvatar(); refreshSummary();
+        });
+        createImg(imgPath, '').parent(card).style('width', '90%');
       });
-      createImg(Catalog.sopum, '').parent(on).style('width', '90%');
       return;
     }
 
@@ -351,12 +355,11 @@ import { db } from './firebase-init.js';
     translate(px, py);
     scale(scaleFactor);
 
-    // Sopum (뒤)
-    if (avatar.sopumOn && IMG.sopum) {
+    if (avatar.sopumOn && IMG.sopum && typeof avatar.sopumIdx === 'number') {
       const w = OFFSETS.sopum[avatar.gender];
-      image(IMG.sopum, w.x + vOff.x, w.y + vOff.y, w.s, w.s);
+      const sopumImg = IMG.sopum[avatar.sopumIdx];
+      if (sopumImg) image(sopumImg, w.x + vOff.x, w.y + vOff.y, w.s, w.s);
     }
-
     // BODY
     if (bodyImg) {
       image(bodyImg, vOff.x, vOff.y, baseS, baseS);
