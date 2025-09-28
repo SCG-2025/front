@@ -53,12 +53,11 @@ import { db } from './firebase-init.js';
   }
 
   const Catalog = {
-    female: makeVariants('fe', 5),   // fe.png ~ fe(5).png (5개)
-    male: makeVariants('ma', 4),   // ma.png ~ ma(4).png (4개)
-    heads: makeVariants('head', 8), // head.png ~ head(8).png (8개)
-    sopum: makeVariants('sopum', 2),
+    female: makeVariants('fe', 9),   // fe.png ~ fe(5).png (5개)
+    male: makeVariants('ma', 9),   // ma.png ~ ma(4).png (4개)
+    heads: makeVariants('head', 11), // head.png ~ head(8).png (8개)
+    sopum: makeVariants('sopum', 11),
     eye: makeVariants('eye', 4),
-    wing: 'assets/wing.png'
   };
 
   // localStorage에서 기존 아바타 데이터를 가져오거나 기본값 사용
@@ -74,13 +73,14 @@ import { db } from './firebase-init.js';
     IMG.female = Catalog.female.map(p => loadImage(p));
     IMG.male = Catalog.male.map(p => loadImage(p));
     IMG.heads = Catalog.heads.map(p => loadImage(p));
-    IMG.wing = loadImage(Catalog.wing);
+    IMG.sopum = Catalog.sopum.map(p => loadImage(p));
+    IMG.eye = Catalog.eye.map(p => loadImage(p));
   }
 
   /* ---------- 오프셋(레이어 보정) ---------- */
   const OFFSETS = {
     body: { s: 200 },
-    wing: {
+    sopum: {
       female: { x: -6, y: -10, s: 200 },
       male: { x: -4, y: -8, s: 200 }
     },
