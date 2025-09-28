@@ -258,6 +258,18 @@ import { db } from './firebase-init.js';
       });
       return;
     }
+    // 3) 눈색
+    if (selCat === '눈색') {
+      Catalog.eye.forEach((imgPath, idx) => {
+        const card = createDiv('').parent(inventoryDiv)
+          .style(commonCard()).mousePressed(() => {
+            avatar.eyes = idx; saveAvatarToLocal();
+            renderAvatar(); refreshSummary();
+          });
+        createImg(imgPath, '').parent(card).style('width', '90%');
+      });
+      return;
+    }
 
     // 3) 헤드(없음 + 목록)
     if (selCat === '헤드') {
@@ -276,54 +288,33 @@ import { db } from './firebase-init.js';
       return;
     }
 
-    // 4) 윙(OFF/ON)
-    if (selCat === '윙') {
+    // 4)소품(OFF/ON)
+    if (selCat === '소품') {
       createDiv('OFF').parent(inventoryDiv).style(commonCard()).mousePressed(() => {
-        avatar.wingOn = false; saveAvatarToLocal();
+        avatar.sopumOn = false; saveAvatarToLocal();
         renderAvatar(); refreshSummary();
       });
       const on = createDiv('').parent(inventoryDiv).style(commonCard()).mousePressed(() => {
-        avatar.wingOn = true; saveAvatarToLocal();
+        avatar.sopumOn = true; saveAvatarToLocal();
         renderAvatar(); refreshSummary();
       });
-      createImg(Catalog.wing, '').parent(on).style('width', '90%');
+      createImg(Catalog.sopum, '').parent(on).style('width', '90%');
       return;
     }
 
-    // 5) 색상(피부/눈)
-    if (selCat === '피부색' || selCat === '눈색') {
-      const colors = selCat === '피부색' ? SKIN_COLORS : EYE_COLORS;
-      colors.forEach(col => {
-        const card = createDiv('').parent(inventoryDiv).style(commonCard());
-        card.style('background', col).attribute('title', col);
-        card.mousePressed(() => {
-          equip(selCat, { color: col });
-          saveAvatarToLocal();
-        });
-      });
-      return;
-    }
-  }
 
-  /* ---------- 장착/요약 ---------- */
-  function equip(cat, obj) {
-    if (cat === '피부색') avatar.skin = obj.color;
-    else if (cat === '눈색') avatar.eyes = obj.color;
-    renderAvatar(); refreshSummary();
   }
-
   function refreshSummary() {
     const bodyName = `${avatar.gender}-${(avatar.bodyIdx ?? 0) + 1}`;
     const headName = (avatar.headIdx == null) ? '-' : `head-${avatar.headIdx + 1}`;
-    const wingName = avatar.wingOn ? 'wing' : '-';
+    const sopumName = avatar.sopumOn ? 'sopum' : '-';
 
     summaryDiv.html(`
       <strong>선택 항목</strong><br>
       성별: ${avatar.gender}<br>
       바디: ${bodyName}<br>
       헤드: ${headName}<br>
-      윙: ${wingName}<br>
-      피부: ${avatar.skin}<br>
+      소품: ${sopumName}<br>
       눈: ${avatar.eyes}<br>
       포지션: ${selPosition}
     `);
@@ -360,10 +351,10 @@ import { db } from './firebase-init.js';
     translate(px, py);
     scale(scaleFactor);
 
-    // WING (뒤)
-    if (avatar.wingOn && IMG.wing) {
-      const w = OFFSETS.wing[avatar.gender];
-      image(IMG.wing, w.x + vOff.x, w.y + vOff.y, w.s, w.s);
+    // Sopum (뒤)
+    if (avatar.sopumOn && IMG.sopum) {
+      const w = OFFSETS.sopum[avatar.gender];
+      image(IMG.sopum, w.x + vOff.x, w.y + vOff.y, w.s, w.s);
     }
 
     // BODY
