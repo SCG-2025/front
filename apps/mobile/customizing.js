@@ -56,7 +56,7 @@ import { db } from './firebase-init.js';
     female: makeVariants('fe', 9),   // fe.png ~ fe(5).png (5개)
     male: makeVariants('ma', 9),   // ma.png ~ ma(4).png (4개)
     heads: makeVariants('head', 11), // head.png ~ head(8).png (8개)
-    sopum: makeVariants('sopum', 11),
+    sopum: makeVariants('sopum', 9),
     eye: makeVariants('eye', 4),
   };
 
@@ -81,7 +81,7 @@ import { db } from './firebase-init.js';
   const OFFSETS = {
     body: { s: 200 },
     sopum: {
-      female: { x: -6, y: -10, s: 200 },
+      female: { x: -58, y: 43, s: 60 },
       male: { x: -4, y: -8, s: 200 }
     },
     head: {
