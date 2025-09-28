@@ -80,6 +80,10 @@ import { db } from './firebase-init.js';
   /* ---------- 오프셋(레이어 보정) ---------- */
   const OFFSETS = {
     body: { s: 200 },
+    eye: {
+      female: { x: 0, y: -10, s: 60 },
+      male: { x: 0, y: -10, s: 60 }
+    },
     sopum: {
       female: { x: -58, y: 43, s: 60 },
       male: { x: -4, y: -8, s: 200 }
@@ -371,7 +375,12 @@ import { db } from './firebase-init.js';
       const headImg = IMG.heads[avatar.headIdx];
       if (headImg) image(headImg, h.x + vOff.x, h.y + vOff.y, h.s, h.s);
     }
-
+    // EYE (맨 위에)
+    if (typeof avatar.eyes === 'number' && IMG.eye[avatar.eyes]) {
+      const e = OFFSETS.eye[avatar.gender];
+      const eyeImg = IMG.eye[avatar.eyes];
+      image(eyeImg, e.x + vOff.x, e.y + vOff.y, e.s, e.s);
+    }
     pop();
   }
 
