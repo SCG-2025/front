@@ -19,17 +19,7 @@ import { db } from './firebase-init.js';
   const musicPositions = ['리드 멜로디', '서브 멜로디', '코드', '베이스', '드럼/퍼커션', '효과음/FX'];
   const categories = ['바디', '헤드', '윙', '피부색', '눈색']; // 하단 카테고리 (성별 제거)
 
-  // 색상 팔레트
-  const SKIN_COLORS = [
-    '#ffdbac','#d3a871ff','#c58b3fff','#d4851dff','#e8f4fd','#b3d9f2','#85c1e9',
-    '#5dade2','#fdf2e9','#fae5d3','#f8c471','#f39c12','#ebf5fb','#d6eaf8','#3498db',
-    '#f8f9fa','#e9ecef','#ced4da','#adb5bd','#f4f3ff','#e8e6ff','#d1c4e9','#b39ddb'
-  ];
-  const EYE_COLORS = [
-    '#ff3c0bff','#e98e18ff','#e4c516ff','#60ff17ff','#3498db','#2980b9','#1f4e79',
-    '#154360','#e67e22','#d35400','#a04000','#6e2c00','#6c757d','#495057','#343a40',
-    '#212529','#9575cd','#7e57c2','#673ab7','#512da8'
-  ];
+
 
   // write.js에서 전달받은 메모리 데이터
   let memoryData = null;
@@ -53,22 +43,22 @@ import { db } from './firebase-init.js';
     const variants = [];
     // 첫 번째 파일 (기본 파일)
     variants.push(`assets/${prefix}.png`);
-    
+
     // 나머지 파일들 (괄호 포함)
     for (let i = 2; i <= count; i++) {
       variants.push(`assets/${prefix}(${i}).png`);
     }
-    
+
     return variants;
   }
 
   const Catalog = {
     female: makeVariants('fe', 5),   // fe.png ~ fe(5).png (5개)
-    male:   makeVariants('ma', 4),   // ma.png ~ ma(4).png (4개)
-    heads:  makeVariants('head', 8), // head.png ~ head(8).png (8개)
-    sopum: makeVariants('sopum',2),
+    male: makeVariants('ma', 4),   // ma.png ~ ma(4).png (4개)
+    heads: makeVariants('head', 8), // head.png ~ head(8).png (8개)
+    sopum: makeVariants('sopum', 2),
     eye: makeVariants('eye', 4),
-    wing:   'assets/wing.png'
+    wing: 'assets/wing.png'
   };
 
   // localStorage에서 기존 아바타 데이터를 가져오거나 기본값 사용
@@ -82,9 +72,9 @@ import { db } from './firebase-init.js';
   const IMG = { female: [], male: [], heads: [], wing: null };
   function preload() {
     IMG.female = Catalog.female.map(p => loadImage(p));
-    IMG.male   = Catalog.male.map(p => loadImage(p));
-    IMG.heads  = Catalog.heads.map(p => loadImage(p));
-    IMG.wing   = loadImage(Catalog.wing);
+    IMG.male = Catalog.male.map(p => loadImage(p));
+    IMG.heads = Catalog.heads.map(p => loadImage(p));
+    IMG.wing = loadImage(Catalog.wing);
   }
 
   /* ---------- 오프셋(레이어 보정) ---------- */
@@ -92,16 +82,16 @@ import { db } from './firebase-init.js';
     body: { s: 200 },
     wing: {
       female: { x: -6, y: -10, s: 200 },
-      male:   { x: -4,  y: -8,  s: 200 }
+      male: { x: -4, y: -8, s: 200 }
     },
     head: {
       female: { x: 0, y: -15, s: 200 },
-      male:   { x: 0, y: -16, s: 200 }
+      male: { x: 0, y: -16, s: 200 }
     }
   };
   const BODY_VARIANT_OFFSET = {
-    female: { 0:{x:0,y:0}, 1:{x:2,y:-2}, 2:{x:1,y:0}, 3:{x:-1,y:0}, 4:{x:0,y:2} },
-    male:   { 0:{x:0,y:0}, 1:{x:1,y:-2}, 2:{x:2,y:0}, 3:{x:0,y:0} }
+    female: { 0: { x: 0, y: 0 }, 1: { x: 2, y: -2 }, 2: { x: 1, y: 0 }, 3: { x: -1, y: 0 }, 4: { x: 0, y: 2 } },
+    male: { 0: { x: 0, y: 0 }, 1: { x: 1, y: -2 }, 2: { x: 2, y: 0 }, 3: { x: 0, y: 0 } }
   };
 
   /* ---------- 유틸 ---------- */
@@ -109,7 +99,7 @@ import { db } from './firebase-init.js';
     return JSON.parse(JSON.stringify(obj));
   }
   function saveAvatarToLocal() {
-    try { localStorage.setItem('avatarData', JSON.stringify(avatar)); } catch {}
+    try { localStorage.setItem('avatarData', JSON.stringify(avatar)); } catch { }
   }
 
   /* ---------- p5 기본 ---------- */
@@ -135,7 +125,7 @@ import { db } from './firebase-init.js';
       if (savedAvatar && typeof savedAvatar === 'object') {
         Object.assign(avatar, savedAvatar);
       }
-    } catch {}
+    } catch { }
 
     // 캔버스
     const cv = createCanvas(windowWidth, windowHeight * 0.6);
@@ -208,7 +198,7 @@ import { db } from './firebase-init.js';
         .parent(positionBar)
         .mousePressed(() => {
           selPosition = position;
-          try { localStorage.setItem('musicPosition', selPosition); } catch {}
+          try { localStorage.setItem('musicPosition', selPosition); } catch { }
           fillInventory();
         })
         .style('flex', '1').style('min-width', '90px');
@@ -354,16 +344,16 @@ import { db } from './firebase-init.js';
       // 렌더러가 없으면 배경색으로 대체
       background(255);
     }
-    
+
     const cx = width / 2, cy = height / 2;
     renderAvatarAt(cx, cy, 1.2);
   }
 
   function renderAvatarAt(px, py, scaleFactor = 1.0) {
     const bodyPool = avatar.gender === 'female' ? IMG.female : IMG.male;
-    const bodyImg  = bodyPool[avatar.bodyIdx];
+    const bodyImg = bodyPool[avatar.bodyIdx];
     const baseS = OFFSETS.body.s;
-    const vOff  = BODY_VARIANT_OFFSET[avatar.gender]?.[avatar.bodyIdx] ?? { x: 0, y: 0 };
+    const vOff = BODY_VARIANT_OFFSET[avatar.gender]?.[avatar.bodyIdx] ?? { x: 0, y: 0 };
 
     push();
     imageMode(CENTER);
@@ -406,7 +396,7 @@ import { db } from './firebase-init.js';
     const convertPositionToEnglish = (koreanPosition) => {
       const positionMap = {
         '리드 멜로디': 'lead',
-        '서브 멜로디': 'sub', 
+        '서브 멜로디': 'sub',
         '코드': 'chord',
         '베이스': 'bass',
         '드럼/퍼커션': 'drum',
@@ -456,33 +446,33 @@ import { db } from './firebase-init.js';
 
   function showConfirmationModal() {
     const modal = createDiv('')
-      .style('position','fixed').style('top','0').style('left','0')
-      .style('width','100vw').style('height','100vh')
-      .style('background','rgba(0,0,0,0.5)').style('display','flex')
-      .style('justify-content','center').style('align-items','center')
-      .style('z-index','1000');
+      .style('position', 'fixed').style('top', '0').style('left', '0')
+      .style('width', '100vw').style('height', '100vh')
+      .style('background', 'rgba(0,0,0,0.5)').style('display', 'flex')
+      .style('justify-content', 'center').style('align-items', 'center')
+      .style('z-index', '1000');
 
     const modalContent = createDiv('').parent(modal)
-      .style('background','white').style('padding','20px')
-      .style('border-radius','12px').style('text-align','center')
-      .style('max-width','320px').style('width','80%');
+      .style('background', 'white').style('padding', '20px')
+      .style('border-radius', '12px').style('text-align', 'center')
+      .style('max-width', '320px').style('width', '80%');
 
     createP('정말로 제출하시겠습니까?').parent(modalContent)
-      .style('margin','0 0 20px 0').style('font-weight','bold');
+      .style('margin', '0 0 20px 0').style('font-weight', 'bold');
 
     const btns = createDiv('').parent(modalContent)
-      .style('display','flex').style('gap','10px').style('justify-content','center');
+      .style('display', 'flex').style('gap', '10px').style('justify-content', 'center');
 
     createButton('예').parent(btns)
-      .style('padding','10px 18px').style('border','none')
-      .style('border-radius','8px').style('background','#4CAF50')
-      .style('color','white').style('cursor','pointer')
+      .style('padding', '10px 18px').style('border', 'none')
+      .style('border-radius', '8px').style('background', '#4CAF50')
+      .style('color', 'white').style('cursor', 'pointer')
       .mousePressed(() => { modal.remove(); proceedWithSubmission(); });
 
     createButton('아니요').parent(btns)
-      .style('padding','10px 18px').style('border','none')
-      .style('border-radius','8px').style('background','#757575')
-      .style('color','white').style('cursor','pointer')
+      .style('padding', '10px 18px').style('border', 'none')
+      .style('border-radius', '8px').style('background', '#757575')
+      .style('color', 'white').style('cursor', 'pointer')
       .mousePressed(() => { modal.remove(); });
   }
 
@@ -491,7 +481,7 @@ import { db } from './firebase-init.js';
     planeX = -120;
     planeY = height * 0.65;
     avatarX = width / 2;
-    avatarY = height / 2;     
+    avatarY = height / 2;
     jumpProgress = 0;
     loop(); // draw 루프 시작
   }
@@ -539,7 +529,7 @@ import { db } from './firebase-init.js';
         setTimeout(() => {
           animationState = 'idle';
           alert('제출되었습니다!');
-          try { localStorage.removeItem('memoryData'); } catch {}
+          try { localStorage.removeItem('memoryData'); } catch { }
           window.location.href = 'index.html';
         }, 500);
       }
