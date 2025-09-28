@@ -81,7 +81,7 @@ import { db } from './firebase-init.js';
   const OFFSETS = {
     body: { s: 200 },
     eye: {
-      female: { x: 0, y: -10, s: 60 },
+      female: { x: 0, y: 0, s: 200 },
       male: { x: 0, y: -10, s: 60 }
     },
     sopum: {
