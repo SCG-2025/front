@@ -3660,17 +3660,8 @@ function finishSorting() {
 }
 
 // HTML 팝업 이벤트 리스너 설정
-function initializeEventListeners() {
+function setupEventListeners() {
   console.log('🔧 이벤트 리스너 등록 중...');
-  
-  // DOM이 로드되었는지 확인
-  if (document.readyState === 'loading') {
-    // 아직 로딩 중이면 DOMContentLoaded를 기다림
-    document.addEventListener('DOMContentLoaded', initializeEventListeners);
-    return;
-  }
-  
-  console.log('✅ DOM 준비 완료, 이벤트 리스너 등록 시작');
   
   document.getElementById('popupOverlay').addEventListener('click', function(e) {
     if (e.target === this) {
@@ -3737,60 +3728,34 @@ function initializeEventListeners() {
   }
 
   // 개발자용 스테이지 아바타 토글 버튼 이벤트 리스너 추가
-  console.log('🔍 스테이지 아바타 토글 버튼 검색 중...');
   const toggleStageAvatarsBtn = document.getElementById('toggleStageAvatarsBtn');
-  console.log('🔍 toggleStageAvatarsBtn 요소:', toggleStageAvatarsBtn);
-  
   if (toggleStageAvatarsBtn) {
     console.log('✅ 스테이지 아바타 토글 버튼 찾음, 이벤트 리스너 등록');
     
     // 전역 변수로 스테이지 아바타 표시 상태 관리
     window.showStageAvatars = true; // 초기에는 표시
     
-    // 클릭 이벤트를 강제로 등록 (multiple methods)
-    toggleStageAvatarsBtn.onclick = function(e) {
-      console.log('🎯 스테이지 아바타 토글 버튼 클릭됨 (onclick)');
-      handleStageAvatarToggle();
-    };
-    
     toggleStageAvatarsBtn.addEventListener('click', function(e) {
-      console.log('🎯 스테이지 아바타 토글 버튼 클릭됨 (addEventListener)');
-      handleStageAvatarToggle();
-    });
-    
-    // 터치 이벤트도 추가
-    toggleStageAvatarsBtn.addEventListener('touchstart', function(e) {
-      e.preventDefault();
-      console.log('🎯 스테이지 아바타 토글 버튼 터치됨');
-      handleStageAvatarToggle();
-    });
-    
-    function handleStageAvatarToggle() {
+      console.log('🎯 스테이지 아바타 토글 버튼 클릭됨');
+      
       // 상태 토글
       window.showStageAvatars = !window.showStageAvatars;
       
       // 버튼 텍스트 및 스타일 업데이트
       if (window.showStageAvatars) {
-        toggleStageAvatarsBtn.textContent = '🔧 스테이지 아바타 ON/OFF';
-        toggleStageAvatarsBtn.classList.remove('hidden');
+        this.textContent = '🔧 스테이지 아바타 ON/OFF';
+        this.classList.remove('hidden');
         console.log('✅ 스테이지 아바타 표시 활성화');
       } else {
-        toggleStageAvatarsBtn.textContent = '🔧 스테이지 아바타 숨김';
-        toggleStageAvatarsBtn.classList.add('hidden');
+        this.textContent = '🔧 스테이지 아바타 숨김';
+        this.classList.add('hidden');
         console.log('❌ 스테이지 아바타 표시 비활성화');
       }
       
       console.log('🎮 현재 스테이지 아바타 표시 상태:', window.showStageAvatars);
-    }
-    
+    });
   } else {
     console.error('❌ 스테이지 아바타 토글 버튼을 찾을 수 없음!');
-    console.log('🔍 현재 DOM 상태:', {
-      allButtons: document.querySelectorAll('button').length,
-      buttonIds: Array.from(document.querySelectorAll('button[id]')).map(b => b.id),
-      bodyLoaded: !!document.body,
-      readyState: document.readyState
-    });
   }
 
   // 필터 이벤트 리스너 추가
@@ -3802,33 +3767,8 @@ function initializeEventListeners() {
   const filterToggleIcon = document.getElementById('filterToggleIcon');
 
   // 필터 토글 기능
-  console.log('🔍 필터 토글 관련 요소 확인:', {
-    filterToggleBtn: !!filterToggleBtn,
-    filterContent: !!filterContent,
-    filterToggleIcon: !!filterToggleIcon
-  });
-  
   if (filterToggleBtn && filterContent && filterToggleIcon) {
-    console.log('✅ 필터 토글 버튼 찾음, 이벤트 리스너 등록');
-    
-    // 다중 이벤트 등록
-    filterToggleBtn.onclick = function() {
-      console.log('🎯 필터 토글 버튼 클릭됨 (onclick)');
-      handleFilterToggle();
-    };
-    
     filterToggleBtn.addEventListener('click', function() {
-      console.log('🎯 필터 토글 버튼 클릭됨 (addEventListener)');
-      handleFilterToggle();
-    });
-    
-    filterToggleBtn.addEventListener('touchstart', function(e) {
-      e.preventDefault();
-      console.log('🎯 필터 토글 버튼 터치됨');
-      handleFilterToggle();
-    });
-    
-    function handleFilterToggle() {
       const isCollapsed = filterContent.classList.contains('collapsed');
       
       if (isCollapsed) {
@@ -3844,14 +3784,12 @@ function initializeEventListeners() {
         filterToggleBtn.style.borderRadius = '20px'; // 전체 둥글게
         console.log('▶ 필터 접기');
       }
-    }
+    });
     
     // 초기 상태 설정 (닫혀있는 상태)
     filterContent.classList.add('collapsed');
     filterToggleIcon.textContent = '▶';
     filterToggleBtn.style.borderRadius = '20px';
-  } else {
-    console.warn('❌ 필터 토글 관련 요소를 찾을 수 없음');
   }
 
   if (categorySelect) {
@@ -3899,48 +3837,24 @@ function initializeEventListeners() {
     });
   }
 
-  console.log('🔍 필터 리셋 버튼 검색 중...');
-  console.log('🔍 resetFilterBtn 요소:', resetFilterBtn);
-  
   if (resetFilterBtn) {
-    console.log('✅ 필터 리셋 버튼 찾음, 이벤트 리스너 등록');
-    
-    // 다중 이벤트 등록으로 안전성 확보
-    resetFilterBtn.onclick = function() {
-      console.log('🎯 필터 리셋 버튼 클릭됨 (onclick)');
-      handleFilterReset();
-    };
-    
     resetFilterBtn.addEventListener('click', function() {
-      console.log('🎯 필터 리셋 버튼 클릭됨 (addEventListener)');
-      handleFilterReset();
-    });
-    
-    resetFilterBtn.addEventListener('touchstart', function(e) {
-      e.preventDefault();
-      console.log('🎯 필터 리셋 버튼 터치됨');
-      handleFilterReset();
-    });
-    
-    function handleFilterReset() {
-      console.log('🎯 필터 리셋 실행');
+      console.log('🎯 필터 리셋 버튼 클릭됨');
       resetFilter();
       console.log('🎯 필터 리셋 완료');
-    }
-    
+    });
   } else {
     console.warn('❌ resetFilterBtn을 찾을 수 없음');
-    console.log('🔍 필터 관련 요소들:', {
-      categorySelect: !!categorySelect,
-      musicSetSelect: !!musicSetSelect,
-      filterToggleBtn: !!filterToggleBtn,
-      filterContent: !!filterContent
-    });
   }
 }
 
-// 이벤트 리스너 초기화 호출
-initializeEventListeners();
+// DOM이 준비되면 이벤트 리스너 설정
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', setupEventListeners);
+} else {
+  // 이미 로드되었으면 바로 실행
+  setupEventListeners();
+}
 
 // 음악 재생 함수 (다중 BPM 지원)
 function playAvatarMusic(avatar) {
