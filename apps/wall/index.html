@@ -9,8 +9,41 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.3/p5.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.3/addons/p5.sound.min.js"></script>
-  <script type="module" src="./firebase-init.js"></script>
-  <script type="module" src="./main.js"></script>
+  
+  <!-- Firebase 무한로딩 방지 강력한 해결책 -->
+  <script>
+    // 즉시 오프라인 모드로 설정하여 Firebase 연결 문제 우회
+    window.OFFLINE_MODE = true;
+    console.log('오프라인 모드로 시작 - Firebase 연결 문제 우회');
+    
+    // main.js 즉시 로드
+    document.addEventListener('DOMContentLoaded', function() {
+      const mainScript = document.createElement('script');
+      mainScript.type = 'module';
+      mainScript.src = './main.js';
+      document.head.appendChild(mainScript);
+    });
+    
+    // Firebase 초기화는 선택적으로 시도 (백그라운드)
+    setTimeout(() => {
+      try {
+        const firebaseScript = document.createElement('script');
+        firebaseScript.type = 'module';
+        firebaseScript.src = './firebase-init.js';
+        firebaseScript.onload = () => {
+          console.log('Firebase 연결 성공 (백그라운드)');
+          window.OFFLINE_MODE = false;
+        };
+        firebaseScript.onerror = () => {
+          console.log('Firebase 연결 실패 - 오프라인 모드 유지');
+        };
+        document.head.appendChild(firebaseScript);
+      } catch (error) {
+        console.log('Firebase 초기화 오류 - 오프라인 모드 유지');
+      }
+    }, 100);
+  </script>
+  
   <script>
     // 브라우저 기본 스크롤 완전히 비활성화
     document.addEventListener('DOMContentLoaded', function() {

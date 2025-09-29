@@ -36,7 +36,38 @@
 </head>
 
 <body>
-    <script type="module" src="firebase-init.js"></script>
-<script type="module" src="./customizing.js"></script></body>
+    <!-- Firebase 무한로딩 방지 -->
+    <script>
+        window.OFFLINE_MODE = true;
+        console.log('커스터마이징 페이지 오프라인 모드로 시작');
+        
+        // customizing.js 즉시 로드
+        document.addEventListener('DOMContentLoaded', function() {
+            const script = document.createElement('script');
+            script.type = 'module';
+            script.src = './customizing.js';
+            document.head.appendChild(script);
+        });
+        
+        // Firebase는 백그라운드에서 선택적으로 로드
+        setTimeout(() => {
+            try {
+                const firebaseScript = document.createElement('script');
+                firebaseScript.type = 'module';
+                firebaseScript.src = 'firebase-init.js';
+                firebaseScript.onload = () => {
+                    console.log('Firebase 연결 성공 (백그라운드)');
+                    window.OFFLINE_MODE = false;
+                };
+                firebaseScript.onerror = () => {
+                    console.log('Firebase 연결 실패 - 오프라인 모드 유지');
+                };
+                document.head.appendChild(firebaseScript);
+            } catch (error) {
+                console.log('Firebase 초기화 오류 - 오프라인 모드 유지');
+            }
+        }, 100);
+    </script>
+</body>
 
 </html>

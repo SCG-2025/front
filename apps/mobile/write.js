@@ -2045,7 +2045,7 @@ const Catalog = {
   female: makeVariants('fe', 5),
   male: makeVariants('ma', 4),
   heads: makeVariants('head', 8),
-  wing: 'assets/wing.png'
+  wing: null // wing.png 파일이 없어서 비활성화
 };
 
 // 기본 아바타(WRITE 초기 미리보기용)
@@ -2082,7 +2082,12 @@ function preload() {
     IMG.female = Catalog.female.map(p => loadImage(p, () => { }, () => { }));
     IMG.male = Catalog.male.map(p => loadImage(p, () => { }, () => { }));
     IMG.heads = Catalog.heads.map(p => loadImage(p, () => { }, () => { }));
-    IMG.wing = loadImage(Catalog.wing, () => { }, () => { });
+    // wing 파일이 존재하지 않아서 조건부 로드
+    if (Catalog.wing) {
+      IMG.wing = loadImage(Catalog.wing, () => { }, () => { });
+    } else {
+      IMG.wing = null;
+    }
     IMG._ok = true;
   } catch (e) {
     console.warn('스프라이트 로드 실패, 기본 도형으로 폴백:', e);
