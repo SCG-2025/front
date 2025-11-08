@@ -551,6 +551,153 @@
       transform: none;
       box-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
     }
+
+    /* 세트 공간 이동 내비게이션 */
+    .set-navigation {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 12px;
+      z-index: 1000;
+    }
+
+    .set-btn {
+      background: linear-gradient(145deg, rgba(60, 60, 70, 0.9), rgba(40, 40, 50, 0.9));
+      border: 3px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      padding: 15px 18px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      text-align: center;
+      line-height: 1.1;
+      cursor: pointer;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      min-width: 80px;
+      backdrop-filter: blur(15px);
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .set-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.6s ease;
+    }
+
+    .set-btn:hover::before {
+      left: 100%;
+    }
+
+    .set-btn .icon {
+      font-size: 20px;
+      display: block;
+      margin-bottom: 4px;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    }
+
+    .set-btn .label {
+      font-size: 9px;
+      opacity: 0.9;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .set-btn:hover {
+      transform: translateY(-3px) scale(1.05);
+      border-color: rgba(255, 255, 255, 0.4);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    /* SET별 테마 색상 */
+    .set-btn[data-set="set1"] {
+      background: linear-gradient(145deg, rgba(0, 120, 255, 0.8), rgba(0, 80, 200, 0.8));
+      border-color: rgba(0, 150, 255, 0.3);
+    }
+
+    .set-btn[data-set="set1"]:hover {
+      background: linear-gradient(145deg, rgba(0, 140, 255, 0.9), rgba(0, 100, 220, 0.9));
+      box-shadow: 0 8px 25px rgba(0, 120, 255, 0.4);
+    }
+
+    .set-btn[data-set="set2"] {
+      background: linear-gradient(145deg, rgba(255, 120, 0, 0.8), rgba(220, 80, 0, 0.8));
+      border-color: rgba(255, 140, 0, 0.3);
+    }
+
+    .set-btn[data-set="set2"]:hover {
+      background: linear-gradient(145deg, rgba(255, 140, 0, 0.9), rgba(240, 100, 0, 0.9));
+      box-shadow: 0 8px 25px rgba(255, 120, 0, 0.4);
+    }
+
+    .set-btn[data-set="set3"] {
+      background: linear-gradient(145deg, rgba(50, 180, 100, 0.8), rgba(30, 140, 80, 0.8));
+      border-color: rgba(70, 200, 120, 0.3);
+    }
+
+    .set-btn[data-set="set3"]:hover {
+      background: linear-gradient(145deg, rgba(70, 200, 120, 0.9), rgba(50, 160, 100, 0.9));
+      box-shadow: 0 8px 25px rgba(50, 180, 100, 0.4);
+    }
+
+    .set-btn[data-set="set4"] {
+      background: linear-gradient(145deg, rgba(180, 50, 150, 0.8), rgba(140, 30, 120, 0.8));
+      border-color: rgba(200, 70, 170, 0.3);
+    }
+
+    .set-btn[data-set="set4"]:hover {
+      background: linear-gradient(145deg, rgba(200, 70, 170, 0.9), rgba(160, 50, 140, 0.9));
+      box-shadow: 0 8px 25px rgba(180, 50, 150, 0.4);
+    }
+
+    .set-btn[data-set="set5"] {
+      background: linear-gradient(145deg, rgba(255, 200, 0, 0.8), rgba(200, 150, 0, 0.8));
+      border-color: rgba(255, 220, 0, 0.3);
+    }
+
+    .set-btn[data-set="set5"]:hover {
+      background: linear-gradient(145deg, rgba(255, 220, 0, 0.9), rgba(220, 170, 0, 0.9));
+      box-shadow: 0 8px 25px rgba(255, 200, 0, 0.4);
+    }
+
+    .set-btn.active {
+      transform: translateY(-2px) scale(1.08);
+      border-width: 4px;
+      box-shadow: 0 0 30px rgba(255, 255, 255, 0.3), inset 0 2px 10px rgba(255, 255, 255, 0.2);
+    }
+
+    .set-btn.active[data-set="set1"] {
+      border-color: rgba(0, 200, 255, 0.8);
+      box-shadow: 0 0 30px rgba(0, 150, 255, 0.6), inset 0 2px 10px rgba(255, 255, 255, 0.2);
+    }
+
+    .set-btn.active[data-set="set2"] {
+      border-color: rgba(255, 180, 0, 0.8);
+      box-shadow: 0 0 30px rgba(255, 140, 0, 0.6), inset 0 2px 10px rgba(255, 255, 255, 0.2);
+    }
+
+    .set-btn.active[data-set="set3"] {
+      border-color: rgba(100, 220, 140, 0.8);
+      box-shadow: 0 0 30px rgba(70, 200, 120, 0.6), inset 0 2px 10px rgba(255, 255, 255, 0.2);
+    }
+
+    .set-btn.active[data-set="set4"] {
+      border-color: rgba(220, 100, 190, 0.8);
+      box-shadow: 0 0 30px rgba(200, 70, 170, 0.6), inset 0 2px 10px rgba(255, 255, 255, 0.2);
+    }
+
+    .set-btn.active[data-set="set5"] {
+      border-color: rgba(255, 240, 0, 0.8);
+      box-shadow: 0 0 30px rgba(255, 220, 0, 0.6), inset 0 2px 10px rgba(255, 255, 255, 0.2);
+    }
   </style>
 </head>
 
@@ -565,9 +712,33 @@
     🔍 필터 적용 중
   </div>
   
-  <!-- 카메라 디버그 정보 -->
-  <div id="cameraDebug" class="camera-debug">
+  <!-- 카메라 디버그 정보 - 전시용으로 숨김 -->
+  <div id="cameraDebug" class="camera-debug" style="display: none;">
     카메라: (0, 0)
+  </div>
+
+  <!-- 세트 공간 이동 버튼들 -->
+  <div class="set-navigation">
+    <button class="set-btn active" data-set="set1">
+      <div class="icon">🎮</div>
+      <div class="label">게임/디지털</div>
+    </button>
+    <button class="set-btn" data-set="set2">
+      <div class="icon">⚡</div>
+      <div class="label">활동/에너지</div>
+    </button>
+    <button class="set-btn" data-set="set3">
+      <div class="icon">💚</div>
+      <div class="label">기억/성장</div>
+    </button>
+    <button class="set-btn" data-set="set4">
+      <div class="icon">🎭</div>
+      <div class="label">감성/문화</div>
+    </button>
+    <button class="set-btn" data-set="set5">
+      <div class="icon">🎨</div>
+      <div class="label">창작/계절</div>
+    </button>
   </div>
 
   <!-- 상단 오른쪽 버튼들 -->
@@ -622,7 +793,8 @@
       </select>
     </div>
 
-    <div class="filter-group">
+    <!-- 음악 세트 필터 - 세트별 공간 분리로 인해 비활성화 -->
+    <div class="filter-group" style="display: none;">
       <label class="filter-label">음악 세트 (BPM)</label>
       <select class="filter-select" id="musicSetFilter">
         <option value="all">전체 보기</option>

@@ -1,4 +1,5 @@
-import { initMediaArt, renderMediaArtScreens, mediaArt, addSongShapes, removeSongShapes} from './mediaArt.js';
+// 미디어 아트는 별도 빔 프로젝터에서 처리되므로 메인 화면에서는 주석 처리
+// import { initMediaArt, renderMediaArtScreens, mediaArt, addSongShapes, removeSongShapes} from './mediaArt.js';
 
 // 필터링 시스템 (항상 활성화)
 let filterState = {
@@ -724,7 +725,7 @@ function getMusicSetGroup(musicSet) {
     null: 'SET_UNKNOWN'
   };
   
-  return musicSetToSetGroup[musicSet] || 'UNKNOWN';
+  return musicSetToSetGroup[musicSet] || 'SET_UNKNOWN';
 }
 /*
 ==========================================
@@ -765,6 +766,22 @@ let cameraX = 0;
 let cameraY = 0;
 let isPanning = false;
 let panStart = { x: 0, y: 0 };
+
+// 세트 공간 분리 시스템
+let currentSetSpace = 'set1'; // 현재 보고 있는 세트 공간
+const setSpacePositions = {
+  'set1': { x: 0, y: 0 },       // SET1: 게임/디지털 공간
+  'set2': { x: 2560, y: 0 },    // SET2: 활동/에너지 공간  
+  'set3': { x: 0, y: 1760 },    // SET3: 기억/성장 공간
+  'set4': { x: 2560, y: 1760 }, // SET4: 감성/문화 공간
+  'set5': { x: 1280, y: 880 }   // SET5: 창작/계절 공간 (중앙)
+};
+
+// 각 세트별 캔버스 크기 (프로젝터별 독립 공간)
+const setCanvasSize = {
+  width: 2560,
+  height: 1760
+};
 
 // 아바타 정렬 관련 변수들
 let isSorting = false;
@@ -996,6 +1013,12 @@ function checkMusicSetCompatibility(newAvatar) {
     inferred: newSetName,
     setGroup: newSetGroup
   });
+  
+  // UNKNOWN 세트는 호환되지 않음을 더 명확히 처리
+  if (stageSetGroup === 'SET_UNKNOWN' || newSetGroup === 'SET_UNKNOWN') {
+    console.log(`❌ UNKNOWN 세트 감지: stage=${stageSetGroup}, new=${newSetGroup}`);
+    return { compatible: false, currentSet: stageSetGroup, reason: 'unknown_set' };
+  }
   
   // 포지션명 표준화 함수
   function extractPositionName(pos) {
@@ -1875,7 +1898,10 @@ function setup() {
   cameraX = 0; cameraY = 0;
   window.scrollTo(0, 0);
   initTonePlayers();
-initMediaArt();
+  
+  // 미디어 아트는 별도 빔 프로젝터에서 처리
+  // initMediaArt();
+  
   // 봄 기억/학교 기억 아바타 6개 (set3)
   const springTypes = [
     'set3_spring_memories_bass.wav',
@@ -1987,9 +2013,30 @@ function isPCRoomPlaying() {
 }
 
 // Firebase 데이터 처리 (에러 핸들링 추가)
+console.log('🔥 Firebase 연결 시작...');
 try {
   onSnapshot(collection(db, 'memories'), (snapshot) => {
+    console.log(`🔥 Firebase 연결 성공! 총 ${snapshot.size}개 문서 발견`);
     console.log('[main.js] onSnapshot fired, docs:', snapshot.size);
+    
+    // 모든 문서 상세 정보 출력
+    console.log('📋 Firebase 문서들:');
+    snapshot.docs.forEach((doc, index) => {
+      const data = doc.data();
+      console.log(`  ${index + 1}. ID: ${doc.id}`, {
+        nickname: data.nickname,
+        memory: data.memory?.substring(0, 50) + '...',
+        category: data.category,
+        selectedRecipe: data.selectedRecipe,
+        setName: data.setName,
+        musicSet: data.musicSet
+      });
+    });
+    
+    // 기존 Firebase 아바타 전체 제거 (새로 로딩)
+    avatars.length = 0;
+    console.log('🗑️ 기존 Firebase 아바타 배열 초기화됨');
+    
     snapshot.docChanges().forEach(change => {
       if (change.type === 'added') {
         const docData = change.doc.data();
@@ -2008,6 +2055,7 @@ try {
           selectedRecipe: docData.selectedRecipe,
           selectedRecipeName: docData.selectedRecipe && docData.selectedRecipe.name,
           finalCategory: docData.category || (docData.selectedRecipe && docData.selectedRecipe.name) || '기타',
+          setName: docData.setName || 'set1 (기본값)',
           musicSet: docData.musicSet,
           musicPosition: docData.musicPosition,
           musicFilePath: docData.musicFilePath
@@ -2020,7 +2068,7 @@ try {
           memory: docData.memory,
           category: docData.category || (docData.selectedRecipe && docData.selectedRecipe.name) || '기타', // Firebase category 또는 selectedRecipe.name 사용
           selectedRecipe: docData.selectedRecipe,
-          setName: docData.setName,
+          setName: docData.setName || 'set1', // setName이 없으면 기본값 set1로 설정
           musicType: docData.musicType || (docData.avatar && docData.avatar.musicType) || null,
           musicSet: docData.musicSet,
           musicPosition: docData.musicPosition,
@@ -2133,8 +2181,9 @@ try {
       } else {
         // musicSet이 없는 경우 selectedRecipeName 또는 category로 추론
         const recipeNameToMusicSet = {
+          // 정확한 이름들
           '가족과의 따뜻한 시간': 'family_warmth',
-          '학창시절 추억': 'school_memories',
+          '학창시절 추억': 'school_memories', 
           '봄의 따뜻한 추억': 'spring_memories',
           'PC방과 온라인 게임': 'pcroom_gaming',
           '집에서 게임기로': 'home_console_gaming',
@@ -2147,20 +2196,59 @@ try {
           '드라마, 영화, 웹툰과 함께': 'entertainment_culture',
           '미술과 창작활동': 'art_creative',
           '감성적인 가을의 추억': 'autumn_memories',
-          '포근한 겨울의 추억': 'winter_memories'
+          '포근한 겨울의 추억': 'winter_memories',
+          // 변형된 이름들 (실제 Firebase 데이터에서 올 수 있는)
+          '가족': 'family_warmth',
+          '가족과의 시간': 'family_warmth',
+          '가족 추억': 'family_warmth',
+          '게임': 'pcroom_gaming',
+          'PC방': 'pcroom_gaming',
+          '콘솔': 'home_console_gaming',
+          '게임기': 'home_console_gaming',
+          'SNS': 'social_media_memories',
+          '소셜미디어': 'social_media_memories',
+          '운동': 'sports_activities',
+          '스포츠': 'sports_activities',
+          '축제': 'festivals_events',
+          '이벤트': 'festivals_events',
+          '여행': 'travel_places',
+          '그리움': 'nostalgia_longing',
+          '향수': 'nostalgia_longing',
+          '밤': 'night_dawn',
+          '새벽': 'night_dawn',
+          '드라마': 'entertainment_culture',
+          '영화': 'entertainment_culture',
+          '웹툰': 'entertainment_culture',
+          '미술': 'art_creative',
+          '창작': 'art_creative',
+          '가을': 'autumn_memories',
+          '겨울': 'winter_memories',
+          // 기타 가능한 값들
+          '기타': 'family_warmth'
         };
         
         let inferredMusicSet = null;
         
+        // selectedRecipe.name 추출
+        const selectedRecipeName = docData.selectedRecipe && docData.selectedRecipe.name ? docData.selectedRecipe.name : null;
+        const categoryName = docData.category || null;
+        
+        console.log(`🔍 ${avatar.nickname} 데이터 분석:`, {
+          selectedRecipe: docData.selectedRecipe,
+          selectedRecipeName: selectedRecipeName,
+          category: categoryName,
+          musicSet: docData.musicSet
+        });
+        
         // 1. selectedRecipeName으로 추론 시도
-        if (docData.selectedRecipeName && recipeNameToMusicSet[docData.selectedRecipeName]) {
-          inferredMusicSet = recipeNameToMusicSet[docData.selectedRecipeName];
-          console.log(`🔧 ${avatar.nickname}의 musicSet을 selectedRecipeName으로 추론: ${docData.selectedRecipeName} → ${inferredMusicSet}`);
+        if (selectedRecipeName && recipeNameToMusicSet[selectedRecipeName]) {
+          inferredMusicSet = recipeNameToMusicSet[selectedRecipeName];
+          console.log(`🔧 ${avatar.nickname}의 musicSet을 selectedRecipeName으로 추론: ${selectedRecipeName} → ${inferredMusicSet}`);
         }
         // 2. category로 추론 시도
-        else if (docData.category && recipeNameToMusicSet[docData.category]) {
-          inferredMusicSet = recipeNameToMusicSet[docData.category];
-          console.log(`🔧 ${avatar.nickname}의 musicSet을 category로 추론: ${docData.category} → ${inferredMusicSet}`);
+        else if (categoryName && recipeNameToMusicSet[categoryName]) {
+          inferredMusicSet = recipeNameToMusicSet[categoryName];
+          console.log(`🔧 ${avatar.nickname}의 musicSet을 category로 추론: ${categoryName} → ${inferredMusicSet}`);
         }
         
         if (inferredMusicSet) {
@@ -2168,9 +2256,11 @@ try {
           avatar.setName = getSetGroupName(inferredMusicSet);
           console.log(`✅ ${avatar.nickname}의 musicSet 추론 완료: ${inferredMusicSet}`);
         } else {
-          console.warn(`⚠️ ${avatar.nickname}의 selectedRecipeName "${docData.selectedRecipeName}" 또는 category "${docData.category}"를 musicSet으로 변환할 수 없음`);
-          avatar.musicSet = 'unknown';
-          avatar.setName = '알 수 없는 세트';
+          console.warn(`⚠️ ${avatar.nickname}의 selectedRecipeName "${selectedRecipeName}" 또는 category "${categoryName}"를 musicSet으로 변환할 수 없음`);
+          // 기본값으로 설정하여 최소한 표시되도록 함
+          avatar.musicSet = 'family_warmth'; // 기본값
+          avatar.setName = 'set1'; // 기본 세트
+          console.log(`🔧 ${avatar.nickname}에게 기본값 할당: family_warmth → set1`);
         }
       }
 
@@ -2253,6 +2343,7 @@ try {
     }
   }
   avatars.push(avatar);
+  console.log(`✅ 새 Firebase 아바타 추가됨: ${avatar.nickname} (${avatar.setName}) - 총 ${avatars.length}개`);
   
   // 모든 아바타 데이터 검증 및 수정
   validateAndFixAllAvatars();
@@ -2309,18 +2400,104 @@ try {
   });
     }
   });
+  
+  // 🔥 Firebase 데이터 로딩 완료 요약
+  console.log('🔥=== Firebase 데이터 로딩 완료 ===');
+  console.log(`📊 총 ${avatars.length}개 아바타 로딩됨`);
+  console.log('🎭 아바타 목록:');
+  avatars.forEach((avatar, index) => {
+    console.log(`  ${index + 1}. ${avatar.nickname} (${avatar.setName})`);
+  });
+  console.log('==========================================');
+  
   }, (error) => {
-    console.error('Firebase 연결 오류:', error);
+    console.error('❌ Firebase 연결 오류:', error);
     console.log('Firebase 없이 로컬 모드로 실행합니다.');
     // Firebase 없이도 앱이 작동하도록 기본 아바타 추가 등 필요시 추가
   });
 } catch (error) {
-  console.error('Firebase 초기화 오류:', error);
+  console.error('❌ Firebase 초기화 오류:', error);
   console.log('Firebase 없이 로컬 모드로 실행합니다.');
 }
 
+// 아바타 현황 확인을 위한 디버깅 함수
+function logAvatarStatus() {
+  console.log('📊 === 아바타 현황 ===');
+  console.log(`🎭 스테이지 아바타: ${stageAvatars.length}개`);
+  console.log(`🔥 Firebase 아바타: ${avatars.length}개`);
+  console.log(`📍 현재 세트: ${currentSetSpace}`);
+  
+  if (avatars.length > 0) {
+    console.log('🔥 Firebase 아바타 목록:');
+    avatars.forEach((avatar, index) => {
+      console.log(`  ${index + 1}. ${avatar.nickname} (${avatar.setName || '세트없음'})`);
+    });
+  }
+  
+  if (stageAvatars.length > 0) {
+    console.log('🎭 스테이지 아바타 목록:');
+    stageAvatars.slice(0, 5).forEach((avatar, index) => {
+      console.log(`  ${index + 1}. ${avatar.nickname} (${avatar.setName || '세트없음'})`);
+    });
+    if (stageAvatars.length > 5) {
+      console.log(`  ... 외 ${stageAvatars.length - 5}개 더`);
+    }
+  }
+}
+
+// 테스트용 Firebase 아바타 추가 (Firebase 연결 없을 때 대비)
+function addTestFirebaseAvatars() {
+  if (avatars.length === 0) {
+    console.log('🧪 테스트용 Firebase 아바타 추가 중...');
+    
+    const testAvatars = [
+      {
+        id: 'test_1',
+        nickname: '테스트가족1',
+        memory: '가족과의 따뜻한 추억',
+        category: '가족과의 따뜻한 시간',
+        setName: 'set1',
+        musicSet: 'family_warmth',
+        x: 500, y: 900, vx: 0, vy: 0,
+        state: 'idle', direction: 1,
+        walkTimer: 0, idleTimer: 60,
+        currentAction: 'idle', isDragged: false,
+        isOnStage: false, stageSlot: -1,
+        customData: { bodyIdx: 0, gender: 'female' }
+      },
+      {
+        id: 'test_2', 
+        nickname: '테스트게임2',
+        memory: 'PC방에서의 게임 추억',
+        category: 'PC방과 온라인 게임',
+        setName: 'set1',
+        musicSet: 'pcroom_gaming',
+        x: 700, y: 900, vx: 0, vy: 0,
+        state: 'idle', direction: 1,
+        walkTimer: 0, idleTimer: 120,
+        currentAction: 'idle', isDragged: false,
+        isOnStage: false, stageSlot: -1,
+        customData: { bodyIdx: 1, gender: 'male' }
+      }
+    ];
+    
+    testAvatars.forEach(avatar => {
+      avatars.push(avatar);
+      console.log(`✅ 테스트 아바타 추가: ${avatar.nickname}`);
+    });
+  }
+}
+
+// 3초 후 테스트 아바타 추가 (Firebase 로딩 기다림)
+setTimeout(addTestFirebaseAvatars, 3000);
+
+// 5초마다 아바타 현황 출력
+setInterval(logAvatarStatus, 5000);
+
 // 필요 시 샘플 아바타 렌더(현재 미사용이면 빈 함수로 두세요)
-function drawSampleAvatars() { /* no-op */ }
+function drawSampleAvatars() { 
+  // 현재는 비어있음 - 스테이지 아바타들이 대신 표시됨
+}
 
 // 모든 아바타의 musicSet과 setName을 점검하고 수정하는 함수
 function validateAndFixAllAvatars() {
@@ -2436,24 +2613,58 @@ function draw() {
 
   // 공간 렌더
   drawSpaces();
-  renderMediaArtScreens(this, playingAvatars, musicSamples);
+  
+  // 미디어 아트는 별도 빔 프로젝터에서 처리되므로 메인 화면에서 제거
+  // renderMediaArtScreens(this, playingAvatars, musicSamples);
 
   drawSampleAvatars();
 
-  // 스테이지 아바타들 (개발자용 토글로 제어)
+  // 스테이지 아바타들 (개발자용 토글로 제어) - 현재 세트 공간의 아바타만 표시
   if (window.showStageAvatars !== false) { // 기본값은 true
     for (let i = 0; i < stageAvatars.length; i++) {
       const avatar = stageAvatars[i];
-      updateAvatar(avatar);
-      drawAvatar(avatar);
+      // 현재 세트 공간에 해당하는 아바타만 표시 - getAvatarSetName() 함수 사용
+      const avatarSetName = getAvatarSetName(avatar) || 'set1';
+      const shouldShow = avatarSetName === currentSetSpace || 
+                        (avatarSetName === '알 수 없는 세트' && currentSetSpace === 'set1');
+      if (shouldShow) {
+        updateAvatar(avatar);
+        drawAvatar(avatar);
+      }
     }
   }
 
-  // 일반 아바타들 (데이터베이스에서 온 실제 아바타들은 항상 표시)
+  // 일반 아바타들 (데이터베이스에서 온 실제 아바타들) - 현재 세트 공간의 아바타만 표시  
+  let renderedCount = 0;
   for (let i = 0; i < avatars.length; i++) {
     const avatar = avatars[i];
-    updateAvatar(avatar);
-    drawAvatar(avatar);
+    // 현재 세트 공간에 해당하는 아바타만 표시 - getAvatarSetName() 함수 사용
+    const avatarSetName = getAvatarSetName(avatar) || 'set1';
+    const shouldShow = avatarSetName === currentSetSpace || 
+                      (avatarSetName === '알 수 없는 세트' && currentSetSpace === 'set1');
+    
+    // 디버깅: 각 아바타의 렌더링 조건 확인
+    if (frameCount % 300 === 0) { // 5초마다 한 번씩만 로그
+      console.log(`🎨 ${avatar.nickname} 렌더링 체크:`, {
+        setName: avatarSetName,
+        currentSetSpace: currentSetSpace,
+        shouldShow: shouldShow,
+        x: avatar.x,
+        y: avatar.y,
+        state: avatar.state
+      });
+    }
+    
+    if (shouldShow) {
+      updateAvatar(avatar);
+      drawAvatar(avatar);
+      renderedCount++;
+    }
+  }
+  
+  // 렌더링 통계 (5초마다)
+  if (frameCount % 300 === 0) {
+    console.log(`🎨 렌더링 통계: ${renderedCount}/${avatars.length}개 아바타 표시됨 (${currentSetSpace})`);
   }
 
   // 성능 디버그 정보 (10초마다 출력)
@@ -2466,12 +2677,13 @@ function draw() {
 
   // UI
   updatePanningUI();
-  drawMusicSetInfo();
+  // drawMusicSetInfo(); // 디버깅 정보 숨김 - 전시용
   drawWarningMessage();
 
-  if (masterClock.isRunning) {
-    drawMusicDebugInfo();
-  }
+  // 음악 디버깅 정보 숨김 - 전시용
+  // if (masterClock.isRunning) {
+  //   drawMusicDebugInfo();
+  // }
 
 }
 
@@ -2519,26 +2731,44 @@ function updateAvatar(avatar) {
       avatar.direction *= -1;
       avatar.x = constrain(avatar.x, 0, 2560);
     }
-    if (avatar.y < 480 || avatar.y > 1760) {
+    
+    // Y축 이동 범위를 무대 양 사이드 포함하도록 확장
+    const minY = 50; // 화면 상단 여유 공간 (무대 위쪽도 활동 가능)
+    const maxY = 1760; // 화면 하단
+    if (avatar.y < minY || avatar.y > maxY) {
       avatar.vy *= -1;
-      avatar.y = constrain(avatar.y, 480, 1760);
+      avatar.y = constrain(avatar.y, minY, maxY);
     }
 
-    // 무대 영역 밀어내기(무대아바타 제외)
+    // 무대 영역 밀어내기(무대아바타 제외) - 무대 자체만 피하고 양 사이드는 자유롭게
     if (!avatar.isOnStage && !avatar.isDragged) {
-      const stageLeft = 853, stageRight = 1707, stageTop = 480, stageBottom = 800;
+      const stageW = 2560 * 0.6; // 60% 너비
+      const stageX = (2560 - stageW) / 2; // 중앙 정렬
+      const stageY = 200; // 새로운 Y 위치
+      const stageH = 400; // 새로운 높이
+      
+      const stageLeft = stageX;
+      const stageRight = stageX + stageW;
+      const stageTop = stageY;
+      const stageBottom = stageY + stageH;
+      
+      // 무대 영역에만 침범했을 때만 밀어내기 (양 옆은 자유롭게 활동 가능)
       if (avatar.y >= stageTop && avatar.y <= stageBottom && avatar.x >= stageLeft && avatar.x <= stageRight) {
         const centerX = (stageLeft + stageRight) / 2;
         const centerY = (stageTop + stageBottom) / 2;
         const dx = avatar.x - centerX;
         const dy = avatar.y - centerY;
+        
+        // 더 부드러운 밀어내기를 위해 거리 계산
         if (Math.abs(dx) > Math.abs(dy)) {
+          // 좌우로 밀어내기
           avatar.vx *= -1;
           avatar.direction *= -1;
-          avatar.x = dx > 0 ? stageRight + 5 : stageLeft - 5;
+          avatar.x = dx > 0 ? stageRight + 10 : stageLeft - 10; // 여유 공간 증가
         } else {
+          // 상하로 밀어내기
           avatar.vy *= -1;
-          avatar.y = dy > 0 ? stageBottom + 5 : stageTop - 5;
+          avatar.y = dy > 0 ? stageBottom + 10 : stageTop - 10; // 여유 공간 증가
         }
       }
     }
@@ -2702,11 +2932,17 @@ function drawCustomAvatar(x, y, avatarData, direction, isHighlighted) {
 
 // 스테이지/공간
 function getStageSlotPosition(slotIndex) {
-  const stageW = 2560 / 3;
+  // 새로운 중앙 배치된 무대에 맞는 위치 계산
+  const stageW = 2560 * 0.6; // 60% 너비
   const stageX = (2560 - stageW) / 2;
-  const stageY = 640;
+  const stageY = 200; // 새로운 무대 Y 위치
+  const stageH = 400; // 새로운 무대 높이
+  
   const spacing = stageW / 7;
-  return { x: stageX + spacing * (slotIndex + 1), y: stageY };
+  return { 
+    x: stageX + spacing * (slotIndex + 1), 
+    y: stageY + stageH / 2 // 무대 중앙 높이
+  };
 }
 
 function findNearestEmptyStageSlot(x, y) {
@@ -2726,36 +2962,75 @@ function findNearestEmptyStageSlot(x, y) {
 }
 
 function isInStageArea(x, y) {
-  const stageLeft = 853, stageRight = 1707, stageTop = 480, stageBottom = 800;
+  // 새로운 중앙 배치된 무대 영역
+  const stageW = 2560 * 0.6; // 60% 너비
+  const stageX = (2560 - stageW) / 2; // 중앙 정렬
+  const stageY = 200; // 새로운 Y 위치
+  const stageH = 400; // 새로운 높이
+  
+  const stageLeft = stageX;
+  const stageRight = stageX + stageW;
+  const stageTop = stageY;
+  const stageBottom = stageY + stageH;
+  
   return x >= stageLeft && x <= stageRight && y >= stageTop && y <= stageBottom;
 }
 
 function drawSpaces() {
-  // 스크린 영역(상단)
-  fill('#cccccc');
-  rect(0, 0, 2560, 480);
+  // 미디어 아트 스크린 영역 제거 - 별도 빔 프로젝터에서 처리
+  // fill('#cccccc');
+  // rect(0, 0, 2560, 480);
 
-  // 무대 (가운데 1/3)
-  const stageW = 2560 / 3;
+  // 무대를 화면 중앙으로 확장 배치 (기존 1/3에서 더 넓게)
+  const stageW = 2560 * 0.6; // 60% 너비로 확장
   const stageX = (2560 - stageW) / 2;
+  const stageY = 200; // 더 위쪽으로 이동
+  const stageH = 400; // 높이 증가
+  
+  // 무대 색깔은 그대로 유지
   fill('#a67c52');
-  rect(stageX, 480, stageW, 320);
+  rect(stageX, stageY, stageW, stageH);
 
-  // 자유 공간
-  fill('#7ecbff');
-  noStroke();
-  rect(0, 800, 2560, 960);
-  rect(0, 480, stageX, 320);
-  rect(stageX + stageW, 480, stageX, 320);
-
-  // 스크린 3분할 표시선
-  stroke('#888');
-  strokeWeight(2);
-  for (let i = 1; i < 3; i++) {
-    line((2560 / 3) * i, 0, (2560 / 3) * i, 480);
+  // 자유 공간 (세트별 테마 색상으로 바닥 배경 변경)
+  let floorColor = '#7ecbff'; // 기본 하늘색
+  
+  // 현재 세트 공간에 따른 바닥 색상 설정 (부드럽고 눈에 편한 톤)
+  switch (currentSetSpace) {
+    case 'set1': // 🎮 게임/디지털 - 부드러운 블루 계열
+      floorColor = '#a8c8ec';
+      break;
+    case 'set2': // ⚡ 활동/에너지 - 부드러운 오렌지 계열  
+      floorColor = '#f4b07a';
+      break;
+    case 'set3': // 💚 기억/성장 - 부드러운 그린 계열
+      floorColor = '#9bc59d';
+      break;
+    case 'set4': // 🎭 감성/문화 - 부드러운 퍼플 계열
+      floorColor = '#beb4e8';
+      break;
+    case 'set5': // 🎨 창작/계절 - 부드러운 골드 계열
+      floorColor = '#f7d794';
+      break;
+    default:
+      floorColor = '#a8d0f0'; // 기본값도 좀 더 부드럽게
   }
+  
+  fill(floorColor);
   noStroke();
+  
+  // 무대를 제외한 모든 영역
+  rect(0, 0, 2560, stageY); // 무대 위쪽
+  rect(0, stageY + stageH, 2560, 1760 - (stageY + stageH)); // 무대 아래쪽
+  rect(0, stageY, stageX, stageH); // 무대 왼쪽
+  rect(stageX + stageW, stageY, stageX, stageH); // 무대 오른쪽
 
+  // 스크린 분할선 제거 (더 이상 필요 없음)
+  // stroke('#888');
+  // strokeWeight(2);
+  // for (let i = 1; i < 3; i++) {
+  //   line((2560 / 3) * i, 0, (2560 / 3) * i, 480);
+  // }
+  // noStroke();
 
 }
 // 마우스 이벤트 처리
@@ -2881,10 +3156,14 @@ function mouseDragged() {
 
     selectedAvatar.x = constrain(selectedAvatar.x, 0, 2560);
 
+    // Y축 이동 범위를 무대 양 사이드 포함하도록 확장
+    const minY = 50; // 화면 상단 여유 공간 (무대 위쪽과 양 옆 모두 활동 가능)
+    const maxY = 1760; // 화면 하단
+    
     if (selectedAvatar.isSpecial) {
-      selectedAvatar.y = constrain(selectedAvatar.y, 450, 1760);
+      selectedAvatar.y = constrain(selectedAvatar.y, minY - 20, maxY); // 특수 아바타는 약간 더 높이 이동 가능
     } else {
-      selectedAvatar.y = constrain(selectedAvatar.y, 480, 1760);
+      selectedAvatar.y = constrain(selectedAvatar.y, minY, maxY);
     }
 
     if (!selectedAvatar.isSpecial) {
@@ -2956,7 +3235,7 @@ function mouseReleased() {
           }
         }
         if (conflict) {
-          selectedAvatar.y = 850;
+          selectedAvatar.y = 800; // 새로운 무대 아래 자유 공간으로
           selectedAvatar.isOnStage = false;
           selectedAvatar.currentAction = 'idle';
           selectedAvatar.idleTimer = random(30, 120);
@@ -2982,7 +3261,7 @@ function mouseReleased() {
           playAvatarMusic(selectedAvatar);
         } else {
           console.log('⚠️ 무대 슬롯이 모두 차있습니다!');
-          selectedAvatar.y = 850;
+          selectedAvatar.y = 800; // 새로운 무대 아래 자유 공간으로
           selectedAvatar.isOnStage = false;
           if (selectedAvatar.stageSlot !== -1) {
             stageSlots[selectedAvatar.stageSlot] = null;
@@ -3184,8 +3463,8 @@ function resetStage() {
     playingAvatars.clear();
     pendingAvatars.clear();
     
-    // 미디어아트 리셋: 모든 도형 제거
-    mediaArt.removeSongShapes();
+    // 미디어아트는 별도 빔 프로젝터에서 처리되므로 주석 처리
+    // mediaArt.removeSongShapes();
 
     // 강화된 음악 정지 로직
     console.log('🔇 모든 음악 강제 정지 시작...');
@@ -3236,21 +3515,28 @@ function resetStage() {
     masterClock.currentMeasure = 0;
 
     let removedCount = 0;
+    // 현재 세트의 스테이지 아바타만 리셋
     stageAvatars.forEach(avatar => {
-      if (avatar.isOnStage) {
+      const avatarSetName = avatar.setName || 'set1';
+      const shouldReset = avatarSetName === currentSetSpace || (avatarSetName === '알 수 없는 세트' && currentSetSpace === 'set1');
+      if (avatar.isOnStage && shouldReset) {
         avatar.isOnStage = false;
         avatar.stageSlot = -1;
-        avatar.y = 850;
+        avatar.y = 800; // 새로운 무대 아래 자유 공간으로
         avatar.currentAction = 'idle';
         avatar.idleTimer = random(30, 120);
         removedCount++;
       }
     });
+    // 현재 세트의 일반 아바타만 리셋
     avatars.forEach(avatar => {
-      if (avatar.isOnStage) {
+      const avatarSetName = avatar.setName || 'set1';
+      const shouldReset = avatarSetName === currentSetSpace || (avatarSetName === '알 수 없는 세트' && currentSetSpace === 'set1');
+      if (avatar.isOnStage && shouldReset) {
         avatar.isOnStage = false;
         avatar.stageSlot = -1;
-        avatar.y = 1200;
+        // 새로운 레이아웃에 맞는 자유 공간으로 이동
+        avatar.y = 800; // 무대 아래 자유 공간으로
         avatar.currentAction = 'idle';
         avatar.idleTimer = random(30, 120);
         removedCount++;
@@ -3259,7 +3545,7 @@ function resetStage() {
 
     for (let i = 0; i < stageSlots.length; i++) stageSlots[i] = null;
 
-    console.log(`✅ 무대 리셋 완료! ${removedCount}개 아바타 제거됨`);
+    console.log(`✅ 무대 리셋 완료! ${currentSetSpace} 세트에서 ${removedCount}개 아바타 제거됨`);
 
     setTimeout(() => { updateResetButton(); }, 100);
   } catch (error) {
@@ -3292,12 +3578,18 @@ function sortAvatars() {
     isSorting = true;
     sortingAnimations = [];
 
-    // 모든 아바타 수집
-    let allStageAvatars = [...stageAvatars];
-    let allRegularAvatars = [...avatars];
+    // 현재 세트 공간의 아바타만 수집 (세트별 분리)
+    let allStageAvatars = stageAvatars.filter(avatar => {
+      const avatarSetName = avatar.setName || 'set1';
+      return avatarSetName === currentSetSpace || (avatarSetName === '알 수 없는 세트' && currentSetSpace === 'set1');
+    });
+    let allRegularAvatars = avatars.filter(avatar => {
+      const avatarSetName = avatar.setName || 'set1';
+      return avatarSetName === currentSetSpace || (avatarSetName === '알 수 없는 세트' && currentSetSpace === 'set1');
+    });
     let allAvatars = [...allStageAvatars, ...allRegularAvatars];
 
-    console.log('🔍 아바타 현황:', {
+    console.log('🔍 아바타 현황 (' + currentSetSpace + ' 세트):', {
       totalAvatars: allAvatars.length,
       stageAvatars: allStageAvatars.length,
       regularAvatars: allRegularAvatars.length,
@@ -3333,11 +3625,12 @@ function sortAvatars() {
 
     console.log('✅ 최종 정렬 대상:', sortableAvatars.length + '개 (최대 150개까지 지원)');
 
-    // 정렬 영역 정의 (무대 아래 자유 구역)
-    const freeAreaStartY = 900;
-    const freeAreaEndY = 1600;
-    const freeAreaStartX = 150;
-    const freeAreaEndX = 2410;
+    // 정렬 영역 정의 (무대 양 사이드 포함하여 전체 화면 활용)
+    // 무대 자체만 피하고 나머지 전 영역에서 아바타 배치
+    const freeAreaStartY = 60; // 화면 상단 여백 (무대 위쪽도 포함)
+    const freeAreaEndY = 1660; // 화면 하단 여백
+    const freeAreaStartX = 100; // 좌측 여백
+    const freeAreaEndX = 2460; // 우측 여백
     const centerX = (freeAreaStartX + freeAreaEndX) / 2;
     const centerY = (freeAreaStartY + freeAreaEndY) / 2;
 
@@ -3520,9 +3813,36 @@ function sortAvatars() {
       
       const pos = positions[index];
       
+      // 무대 영역 충돌 체크 및 조정
+      const stageW = 2560 * 0.6;
+      const stageX = (2560 - stageW) / 2;
+      const stageY = 200;
+      const stageH = 400;
+      
+      let adjustedX = pos.x;
+      let adjustedY = pos.y;
+      
+      // 무대 영역에 겹치면 가장 가까운 바깥쪽으로 이동
+      if (adjustedY >= stageY && adjustedY <= stageY + stageH && 
+          adjustedX >= stageX && adjustedX <= stageX + stageW) {
+        
+        const centerX = stageX + stageW / 2;
+        const centerY = stageY + stageH / 2;
+        const dx = adjustedX - centerX;
+        const dy = adjustedY - centerY;
+        
+        if (Math.abs(dx) > Math.abs(dy)) {
+          // 좌우로 밀어내기
+          adjustedX = dx > 0 ? stageX + stageW + 30 : stageX - 30;
+        } else {
+          // 상하로 밀어내기  
+          adjustedY = dy > 0 ? stageY + stageH + 30 : stageY - 30;
+        }
+      }
+      
       // 경계 안전장치
-      const safeX = Math.max(freeAreaStartX + 50, Math.min(freeAreaEndX - 50, pos.x));
-      const safeY = Math.max(freeAreaStartY + 50, Math.min(freeAreaEndY - 50, pos.y));
+      const safeX = Math.max(freeAreaStartX + 50, Math.min(freeAreaEndX - 50, adjustedX));
+      const safeY = Math.max(freeAreaStartY + 50, Math.min(freeAreaEndY - 50, adjustedY));
 
       const animation = {
         avatar,
@@ -3846,6 +4166,22 @@ function setupEventListeners() {
   } else {
     console.warn('❌ resetFilterBtn을 찾을 수 없음');
   }
+
+  // 세트 내비게이션 버튼들 이벤트 리스너
+  const setButtons = document.querySelectorAll('.set-btn');
+  setButtons.forEach(btn => {
+    btn.addEventListener('click', function() {
+      const targetSet = this.getAttribute('data-set');
+      if (targetSet && targetSet !== currentSetSpace) {
+        switchToSetSpace(targetSet);
+      }
+    });
+  });
+
+  // 초기 조합법 필터 설정 (현재 세트에 맞게)
+  setTimeout(() => {
+    updateCombinationFilterForSet(currentSetSpace);
+  }, 1000); // Firebase 데이터 로딩을 기다림
 }
 
 // DOM이 준비되면 이벤트 리스너 설정
@@ -3854,6 +4190,83 @@ if (document.readyState === 'loading') {
 } else {
   // 이미 로드되었으면 바로 실행
   setupEventListeners();
+}
+
+// 세트 공간 이동 함수
+function switchToSetSpace(setName) {
+  console.log(`🚀 세트 공간 이동: ${currentSetSpace} → ${setName}`);
+  
+  // 현재 세트 공간 변경
+  currentSetSpace = setName;
+  
+  // 카메라 위치 리셋 (각 세트 공간이 독립적이므로)
+  cameraX = 0;
+  cameraY = 0;
+  
+  // UI 버튼 상태 업데이트
+  document.querySelectorAll('.set-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  document.querySelector(`[data-set="${setName}"]`).classList.add('active');
+  
+  // 현재 세트에 맞는 조합법 필터 업데이트
+  updateCombinationFilterForSet(setName);
+  
+  // 리셋 버튼 상태 업데이트 (현재 세트의 무대 상태 반영)
+  updateResetButton();
+  
+  console.log(`✅ ${setName} 공간으로 이동 완료`);
+}
+
+// 세트별 조합법 필터 업데이트 함수  
+function updateCombinationFilterForSet(setName) {
+  const categorySelect = document.getElementById('categoryFilter');
+  if (!categorySelect) return;
+  
+  // 모든 옵션 제거
+  categorySelect.innerHTML = '<option value="all">전체 보기</option>';
+  
+  // 현재 세트에 해당하는 조합법만 추가
+  const setAvatars = [...stageAvatars, ...avatars].filter(avatar => {
+    const avatarSetName = avatar.setName || 'set1';
+    return avatarSetName === setName || (avatarSetName === '알 수 없는 세트' && setName === 'set1');
+  });
+  const categories = new Set();
+  
+  setAvatars.forEach(avatar => {
+    if (avatar.category && avatar.category !== 'all') {
+      categories.add(avatar.category);
+    }
+  });
+  
+  // 조합법 목록을 정렬해서 추가
+  Array.from(categories).sort().forEach(category => {
+    const option = document.createElement('option');
+    option.value = category;
+    option.textContent = getCategoryDisplayName(category);
+    categorySelect.appendChild(option);
+  });
+  
+  console.log(`📋 ${setName} 조합법 필터 업데이트 완료: ${categories.size}개 카테고리`);
+}
+
+// 카테고리 표시명 반환 함수
+function getCategoryDisplayName(category) {
+  const categoryNames = {
+    'pcroom_gaming': 'PC방 게임',
+    'home_console_gaming': '집에서 콘솔',
+    'social_media_memories': 'SNS 추억',
+    'festivals_events': '축제/이벤트',
+    'sports_activities': '스포츠/활동',
+    'family_warmth': '가족 온기',
+    'entertainment_culture': '엔터테인먼트/문화',
+    'night_dawn': '밤/새벽',
+    'nostalgia_longing': '그리움/향수',
+    'art_creative': '미술/창작',
+    'autumn_memories': '가을 추억',
+    'winter_memories': '겨울 추억'
+  };
+  return categoryNames[category] || category;
 }
 
 // 음악 재생 함수 (다중 BPM 지원)
@@ -3944,14 +4357,14 @@ function playAvatarMusic(avatar) {
     masterClock.bpm = avatarBpm; // BPM 설정
     startMasterClockFromPosition(0);
     startAvatarMusicFromPosition(avatar, sound, 0);
-    addSongShapes(avatar);
+    // addSongShapes(avatar); // 미디어아트는 별도 빔 프로젝터에서 처리
   } else {
     // 두번째 이후 아바타: 현재 재생 위치에 맞춰 즉시 재생
     console.log(`🎵 ${avatar.nickname} - 현재 위치에 맞춰 즉시 재생`);
     const currentPosition = getCurrentPlaybackPosition();
     console.log(`현재 재생 위치: ${currentPosition.toFixed(3)}초`);
     startAvatarMusicFromPosition(avatar, sound, currentPosition);
-    addSongShapes(avatar);
+    // addSongShapes(avatar); // 미디어아트는 별도 빔 프로젝터에서 처리
   }
 }
 
@@ -4101,7 +4514,7 @@ function checkPendingAvatars(currentTime) {
       console.log(`   예정 시간: ${avatar.pendingStartTime.toFixed(3)}, 실제 시간: ${currentTime.toFixed(3)}, 차이: ${(currentTime - avatar.pendingStartTime).toFixed(3)}초`);
       
       startAvatarMusicFromPosition(avatar, sound, actualPlaybackPosition);
-      addSongShapes(avatar);
+      // addSongShapes(avatar); // 미디어아트는 별도 빔 프로젝터에서 처리
       
       // 대기 목록에서 제거
       avatar.isPending = false;
@@ -4329,7 +4742,7 @@ function stopAvatarMusic(avatar) {
       console.log(`🎯 마스터 클럭 유지 중 (재생: ${playingAvatars.size}개, 대기: ${pendingAvatars.size}개)`);
     }
     
-    removeSongShapes(avatar); // ✅
+    // removeSongShapes(avatar); // 미디어아트는 별도 빔 프로젝터에서 처리
 
     
   } catch (error) {
@@ -4360,23 +4773,23 @@ function updatePanningUI() {
     if (canvas) canvas.style.cursor = 'default';
   }
   
-  // 카메라 디버그 정보 (개발용)
-  if (cameraDebug) {
-    const canvasWidth = 2560;
-    const canvasHeight = 1760;
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const maxCameraX = Math.max(0, canvasWidth - viewportWidth);
-    const maxCameraY = Math.max(0, canvasHeight - viewportHeight);
-    
-    cameraDebug.innerHTML = `카메라: (${Math.round(cameraX)}, ${Math.round(cameraY)}) | 최대: (${maxCameraX}, ${maxCameraY})<br>패닝: ${isPanning} | 뷰포트: ${viewportWidth}x${viewportHeight}`;
-    cameraDebug.style.display = 'block';
-    
-    // 실시간으로 카메라 값이 바뀌는지 확인 (너무 많은 로그 방지)
-    if (isPanning) {
-      console.log('📊 실시간 카메라:', cameraX, cameraY, '/', maxCameraX, maxCameraY);
-    }
-  }
+  // 카메라 디버그 정보 숨김 - 전시용
+  // if (cameraDebug) {
+  //   const canvasWidth = 2560;
+  //   const canvasHeight = 1760;
+  //   const viewportWidth = window.innerWidth;
+  //   const viewportHeight = window.innerHeight;
+  //   const maxCameraX = Math.max(0, canvasWidth - viewportWidth);
+  //   const maxCameraY = Math.max(0, canvasHeight - viewportHeight);
+  //   
+  //   cameraDebug.innerHTML = `카메라: (${Math.round(cameraX)}, ${Math.round(cameraY)}) | 최대: (${maxCameraX}, ${maxCameraY})<br>패닝: ${isPanning} | 뷰포트: ${viewportWidth}x${viewportHeight}`;
+  //   cameraDebug.style.display = 'block';
+  //   
+  //   // 실시간으로 카메라 값이 바뀌는지 확인 (너무 많은 로그 방지)
+  //   if (isPanning) {
+  //     console.log('📊 실시간 카메라:', cameraX, cameraY, '/', maxCameraX, maxCameraY);
+  //   }
+  // }
   
   // 리셋 버튼 상태 업데이트
   updateResetButton();
@@ -4387,17 +4800,21 @@ function updateResetButton() {
   const resetBtn = document.getElementById('resetStageBtn');
   if (!resetBtn) return;
   
-  // 무대에 아바타가 있는지 확인
+  // 현재 세트의 무대에 있는 아바타만 확인
   let stageAvatarCount = 0;
   
-  // 무대아바타 확인
+  // 현재 세트의 무대아바타 확인
   stageAvatars.forEach(avatar => {
-    if (avatar.isOnStage) stageAvatarCount++;
+    const avatarSetName = avatar.setName || 'set1';
+    const shouldCount = avatarSetName === currentSetSpace || (avatarSetName === '알 수 없는 세트' && currentSetSpace === 'set1');
+    if (avatar.isOnStage && shouldCount) stageAvatarCount++;
   });
   
-  // 일반 아바타 확인
+  // 현재 세트의 일반 아바타 확인
   avatars.forEach(avatar => {
-    if (avatar.isOnStage) stageAvatarCount++;
+    const avatarSetName = avatar.setName || 'set1';
+    const shouldCount = avatarSetName === currentSetSpace || (avatarSetName === '알 수 없는 세트' && currentSetSpace === 'set1');
+    if (avatar.isOnStage && shouldCount) stageAvatarCount++;
   });
   
   if (stageAvatarCount > 0) {
@@ -4451,7 +4868,7 @@ function startMusicForAvatar(avatar) {
     
     // 재생 중인 아바타 목록에 추가
     playingAvatars.add(avatar.id);
-    addSongShapes(avatar);
+    // addSongShapes(avatar); // 미디어아트는 별도 빔 프로젝터에서 처리
     console.log(`✅ ${avatar.nickname} 음원 재생 시작됨`);
   } else {
     console.warn(`⚠️ ${avatar.nickname}의 음원 파일을 찾을 수 없음: ${avatar.musicType}`);
@@ -4502,7 +4919,7 @@ function startPCRoomMusic(avatar) {
     
     // 재생 중인 아바타 목록에 추가
     playingAvatars.add(avatar.id);
-    addSongShapes(avatar);
+    // addSongShapes(avatar); // 미디어아트는 별도 빔 프로젝터에서 처리
     console.log(`✅ ${avatar.nickname} PC룸 음원 재생 시작됨`);
   } else {
     console.warn(`⚠️ ${avatar.nickname}의 음원 파일을 찾을 수 없음: ${avatar.musicType}`);
