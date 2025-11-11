@@ -851,17 +851,6 @@ function getMeasureDuration(bpm) {
   return masterClock.beatsPerMeasure / beatsPerSecond; // 1마디 길이 (초)
 }
 
-// 무대 테마ID 추론 (무대 위 첫 아바타의 musicSet 우선)
-function getCurrentStageThemeId() {
-  const onStage = [...stageAvatars, ...avatars].filter(a => a.isOnStage);
-  if (onStage.length === 0) return null;
-  for (const a of onStage) {
-    if (a.musicSet) return a.musicSet;
-  }
-  // 폴백: 카테고리 최빈값 → 간단화하여 pcroom_gaming
-  return 'pcroom_gaming';
-}
-
 // 현재 무대 세트 id (호환성 검사용)
 function getCurrentStageSet() {
   const onStageAvatars = [...stageAvatars, ...avatars].filter(avatar => avatar.isOnStage);
@@ -1013,8 +1002,6 @@ function checkMusicSetCompatibility(newAvatar) {
   console.log(`✅ 호환 가능: ${newSetName} / ${newPosition}`);
   return { compatible: true, currentSet: stageSetGroup };
 }
-
-// ===== 필터링 시스템 (성능 최적화) =====
 
 // 필터링 캐시 시스템
 let filterCache = new Map();
@@ -1200,11 +1187,6 @@ function invalidateFilterCache() {
   }
 }
 
-// 필터 적용 (성능 최적화)
-function applyFilter() {
-  invalidateFilterCache();
-  updateFilterStats();
-}
 
 // 필터 통계 업데이트 (극도 최적화)
 let statsUpdateTimer = null;
@@ -1411,28 +1393,6 @@ function showMusicSetWarning(avatar, currentSetGroup) {
   warningTimer = 180; // 약 3초
 }
 
-// 무대의 현재 음악 세트 표시
-function drawMusicSetInfo() {
-  const currentSet = getCurrentStageSet();
-  if (!currentSet) return;
-
-  const setName = setNames[currentSet] || currentSet;
-  const setBpm = musicSetBpms[currentSet] || 140;
-  const onStageCount = [...stageAvatars, ...avatars].filter(a => a.isOnStage).length;
-
-  push();
-  fill(255, 255, 255, 200);
-  rect(20, height - 140, 380, 100);
-
-  fill(50);
-  textAlign(LEFT);
-  textSize(14);
-  text('🎵 현재 무대 세트:', 30, height - 115);
-  text(`${setName}`, 30, height - 95);
-  text(`무대 아바타: ${onStageCount}개`, 30, height - 75);
-  text(`🎼 BPM: ${setBpm}`, 30, height - 55);
-  pop();
-}
 
 // 경고 토스트 렌더
 function drawWarningMessage() {
@@ -1956,21 +1916,7 @@ function setup() {
 
 }
 
-function isPCRoomPlaying() {
-  const pcRoomOnStage = stageAvatars.filter(a =>
-    a.isOnStage && a.musicType && a.musicType.includes('_gaming_')
-  );
-  if (pcRoomOnStage.length === 0) return false;
 
-  for (const a of pcRoomOnStage) {
-    const s = musicSamples[a.musicType];
-    if (s && s.isPlaying && s.isPlaying()) return true;
-  }
-  return false;
-}
-
-// Firebase 데이터 처리 (에러 핸들링 추가)
-console.log('🔥 Firebase 연결 시작...');
 try {
   onSnapshot(collection(db, 'memories'), (snapshot) => {
     console.log(`🔥 Firebase 연결 성공! 총 ${snapshot.size}개 문서 발견`);
@@ -2379,20 +2325,15 @@ try {
 
 // 아바타 현황 확인을 위한 디버깅 함수
 function logAvatarStatus() {
-  console.log('📊 === 아바타 현황 ===');
-  console.log(`🎭 스테이지 아바타: ${stageAvatars.length}개`);
-  console.log(`🔥 Firebase 아바타: ${avatars.length}개`);
-  console.log(`📍 현재 세트: ${currentSetSpace}`);
 
   if (avatars.length > 0) {
-    console.log('🔥 Firebase 아바타 목록:');
+
     avatars.forEach((avatar, index) => {
       console.log(`  ${index + 1}. ${avatar.nickname} (${avatar.setName || '세트없음'})`);
     });
   }
 
   if (stageAvatars.length > 0) {
-    console.log('🎭 스테이지 아바타 목록:');
     stageAvatars.slice(0, 5).forEach((avatar, index) => {
       console.log(`  ${index + 1}. ${avatar.nickname} (${avatar.setName || '세트없음'})`);
     });
@@ -2405,7 +2346,6 @@ function logAvatarStatus() {
 // 테스트용 Firebase 아바타 추가 (Firebase 연결 없을 때 대비)
 function addTestFirebaseAvatars() {
   if (avatars.length === 0) {
-    console.log('🧪 테스트용 Firebase 아바타 추가 중...');
 
     const testAvatars = [
       {
@@ -2440,7 +2380,6 @@ function addTestFirebaseAvatars() {
 
     testAvatars.forEach(avatar => {
       avatars.push(avatar);
-      console.log(`✅ 테스트 아바타 추가: ${avatar.nickname}`);
     });
   }
 }
