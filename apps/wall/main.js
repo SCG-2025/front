@@ -770,7 +770,14 @@ console.log('🔧 아바타 정렬 시스템 초기화:', {
 // 음원 관련 변수들
 let musicSamples = {};
 let tonePlayers = {}; // Tone.js 플레이어들
-
+let videoCatalog = [
+  'Media/video1.mp4', 'Media/video2.mp4', 'Media/video3.mp4', 'Media/video4.mp4', 'Media/video5.mp4',
+  'Media/video6.mp4', 'Media/video7.mp4', 'Media/video8.mp4', 'Media/video9.mp4', 'Media/video10.mp4',
+  'Media/video11.mp4', 'Media/video12.mp4', 'Media/video13.mp4', 'Media/video14.mp4', 'Media/video15.mp4'
+];
+let videoPlayers = {};       // index -> p5.MediaElement
+let videoReady = {};         // index -> boolean
+let currentVideo = null;
 // 무대 슬롯 관리 (6개 슬롯)
 let stageSlots = [null, null, null, null, null, null];
 
@@ -2397,7 +2404,6 @@ function drawSampleAvatars() {
 
 // 모든 아바타의 musicSet과 setName을 점검하고 수정하는 함수
 function validateAndFixAllAvatars() {
-  console.log('🔍 모든 아바타 데이터 점검 시작...');
 
   let fixedCount = 0;
 
@@ -2490,11 +2496,9 @@ function draw() {
   if (deltaTime > 25) { // 40 FPS 이하로 떨어지면
     if (!performanceMode) {
       performanceMode = true;
-      console.log('⚡ 성능 모드 활성화 (렌더링 품질 조정)');
     }
   } else if (performanceMode && deltaTime < 16) { // 60 FPS 이상 복구되면
     performanceMode = false;
-    console.log('✨ 성능 모드 비활성화');
   }
 
   // 카메라 변환
@@ -2782,8 +2786,6 @@ function drawAvatar(avatar) {
   pop();
 }
 
-// 커스터마이징 아바타 렌더
-// 커스터마이징 아바타 렌더
 function drawCustomAvatar(x, y, avatarData, direction, isHighlighted) {
   push();
   translate(x, y);
