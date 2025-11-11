@@ -797,7 +797,11 @@ let masterClock = {
 let playingAvatars = new Set();   // 현재 재생 중 아바타 id
 let pendingAvatars = new Map();   // 다음 마디 대기 중 아바타
 let currentBpm = 170;             // 현재 BPM (검증용)
-
+let videoWindow = null;
+function openVideoWindow() {
+  videoWindow = window.open('video-player.html', 'videoPlayerWindow', 'width=800,height=600');
+  console.log('비디오 플레이어 창이 열렸습니다.');
+}
 // 음악 세트별 BPM 정보
 const musicSetBpms = {
   'pcroom_gaming': 170,
@@ -3361,11 +3365,6 @@ function resetStage() {
     playingAvatars.clear();
     pendingAvatars.clear();
 
-    // 미디어아트는 별도 빔 프로젝터에서 처리되므로 주석 처리
-    // mediaArt.removeSongShapes();
-
-    // 강화된 음악 정지 로직
-    console.log('🔇 모든 음악 강제 정지 시작...');
 
     // 1. Tone.js 플레이어 정지
     let tonePlayerCount = 0;
@@ -3393,7 +3392,9 @@ function resetStage() {
         }
       }
     });
-
+    if (videoWindow) {
+      videoWindow.postMessage({ type: 'RESET_STAGE' }, '*'); // '*' 대신 event.origin 권장
+    }
     // 3. Tone.js Transport 정지 (마스터 클럭)
     try {
       if (Tone.Transport.state === 'started') {
@@ -4169,6 +4170,7 @@ function getCategoryDisplayName(category) {
 
 // 음악 재생 함수 (다중 BPM 지원)
 function playAvatarMusic(avatar) {
+
   if (!avatar.musicType) {
     console.warn('⚠️ 음악 타입이 설정되지 않음:', avatar.nickname, '- 음악 없이 무대에 올라갑니다');
     return; // 음악 없이도 무대에 올릴 수 있음
