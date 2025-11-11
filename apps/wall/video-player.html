@@ -5,11 +5,19 @@
     <title>Video Player</title>
     <style>
         body {
-            background-color: black;
+            background-color: #1a1a1a;
             margin: 0;
+            overflow: hidden;
         }
 
         video {
+            width: 100vw;
+            height: 100vh;
+            display: none;
+        }
+
+        #canvas {
+            display: block;
             width: 100vw;
             height: 100vh;
         }
@@ -17,62 +25,196 @@
 </head>
 
 <body>
-    <video id="avatarVideo" controls muted autoplay loop></video>
+    <canvas id="canvas"></canvas>
+    <video id="avatarVideo" muted loop style="display: none;"></video>
 
     <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
         const videoPlayer = document.getElementById('avatarVideo');
 
-        // 비디오 샘플 (musicSamples와 유사하게)
+        // 캔버스 크기 설정
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // 비디오 샘플
         const videoSamples = {
-            'pcroom_gaming': '/Media/video1.mp4',
-            'home_console_gaming': '/Media/video2.mp4',
-            'social_media_memories': '/Media/video3.mp4',
-            'sports_activities': '/Media/video4.mp4',
-            'festivals_events': '/Media/video5.mp4',
-            'travel_places': '/Media/video6.mp4',
-            'family_warmth': '/Media/video7.mp4',
-            'school_memories': '/Media/video8.mp4',
-            'spring_memories': '/Media/video9.mp4',
-            'nostalgia_longing': '/Media/video10.mp4',
-            'night_dawn': '/Media/video11.mp4',
-            'entertainment_culture': '/Media/video12.mp4',
-            'art_creative': '/Media/video13.mp4',
-            'autumn_memories': '/Media/video14.mp4',
-            'winter_memories': '/Media/video15.mp4'
-
+            'pcroom_gaming': 'Media/video1.mp4',
+            'home_console_gaming': 'Media/video2.mp4',
+            'social_media_memories': 'Media/video3.mp4',
+            'sports_activities': 'Media/video4.mp4',
+            'festivals_events': 'Media/video5.mp4',
+            'travel_places': 'Media/video6.mp4',
+            'family_warmth': 'Media/video7.mp4',
+            'school_memories': 'Media/video8.mp4',
+            'spring_memories': 'Media/video9.mp4',
+            'nostalgia_longing': 'Media/video10.mp4',
+            'night_dawn': 'Media/video11.mp4',
+            'entertainment_culture': 'Media/video12.mp4',
+            'art_creative': 'Media/video13.mp4',
+            'autumn_memories': 'Media/video14.mp4',
+            'winter_memories': 'Media/video15.mp4'
         };
 
-        // BPM에 따른 재생 속도 설정 (옵션)
-        const musicSetBpms = {
-            'home_console_gaming': 140,
-            'pcroom_gaming': 140,
-            'festivals_events': 170, // 예시: 축제는 170 BPM
-            'family_warmth': 120,
-            // ...
+        // 포지션 매핑
+        const posMap = {
+            'Lead': 1,
+            '리드멜로디': 1,
+            'Sub': 2,
+            '서브멜로디': 2,
+            'Chord': 3,
+            'Chords': 3,
+            '코드': 3,
+            'Bass': 4,
+            '베이스': 4,
+            'Drum': 5,
+            'Drums': 5,
+            'Drum_Bass': 5,
+            'Drum_Chords': 5,
+            'Drum_FX': 5,
+            'Drum_Lead': 5,
+            'Drum_Sub': 5,
+            '드럼/퍼커션': 5,
+            'FX': 6,
+            'Chord_FX': 6,
+            '효과음/FX': 6
         };
 
-        /**
-         * 메인 창으로부터 메시지를 받습니다.
-         */
+        // 상태 변수
+        let floatingImages = [];
+        let currentImageNum = 0;
+        let displayMode = 'none'; // 'image', 'video', 'none'
+
+        // 떠다니는 이미지 생성 클래스
+        class FloatingImage {
+            constructor(x, y, imageNum) {
+                this.x = x;
+                this.y = y;
+                this.imageNum = imageNum;
+                this.vx = (Math.random() - 0.5) * 4; // 더 다양한 속도
+                this.vy = (Math.random() - 0.5) * 4;
+                this.size = 200 + Math.random() * 150; // 더 큰 크기 (200-350px)
+                this.opacity = 0.6 + Math.random() * 0.4; // 투명도 60-100%
+                this.rotation = Math.random() * Math.PI * 2;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.08;
+                this.image = null;
+                this.loaded = false;
+                this.alpha = 1;
+                this.fadeOutSpeed = 0.003; // 매우 천천히 페이드 아웃
+                this.lifespan = 20000; // 20초 정도 지속
+                this.birthTime = Date.now();
+                this.loadImage();
+            }
+
+            loadImage() {
+                this.image = new Image();
+                this.image.src = `Img/${this.imageNum}.png`;
+                this.image.onload = () => {
+                    this.loaded = true;
+                };
+                this.image.onerror = () => {
+                    console.warn(`이미지 로드 실패: Img/${this.imageNum}.png`);
+                };
+            }
+
+            update() {
+                // 양쪽 끝에서 반사
+                if (this.x < -100) this.vx = Math.abs(this.vx);
+                if (this.x > canvas.width + 100) this.vx = -Math.abs(this.vx);
+                if (this.y < -100) this.vy = Math.abs(this.vy);
+                if (this.y > canvas.height + 100) this.vy = -Math.abs(this.vy);
+
+                this.x += this.vx;
+                this.y += this.vy;
+                this.rotation += this.rotationSpeed;
+
+                // 시간이 지남에 따라 점점 투명해짐
+                const ageRatio = (Date.now() - this.birthTime) / this.lifespan;
+                this.alpha = Math.max(0, 1 - ageRatio * 0.5);
+            }
+
+            draw(ctx) {
+                if (!this.loaded || this.alpha <= 0) return;
+
+                ctx.save();
+                ctx.globalAlpha = this.alpha * this.opacity;
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+                ctx.drawImage(this.image, -this.size / 2, -this.size / 2, this.size, this.size);
+                ctx.restore();
+            }
+
+            isAlive() {
+                return this.alpha > 0;
+            }
+        }
+
+        // 떠다니는 이미지 생성
+        function createFloatingImages(count = 12) {
+            floatingImages = [];
+            for (let i = 0; i < count; i++) {
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                const img = new FloatingImage(x, y, currentImageNum);
+                floatingImages.push(img);
+            }
+        }
+
+        // 애니메이션 루프
+        function animate() {
+            // 배경 그리기
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            if (displayMode === 'image') {
+                // 죽은 이미지 제거
+                floatingImages = floatingImages.filter(img => img.isAlive());
+
+                // 모든 이미지 업데이트 및 그리기
+                floatingImages.forEach(img => {
+                    img.update();
+                    img.draw(ctx);
+                });
+
+                // 새 이미지 주기적으로 생성 (계속 추가)
+                if (floatingImages.length < 8) {
+                    const x = Math.random() * canvas.width;
+                    const y = Math.random() * canvas.height;
+                    floatingImages.push(new FloatingImage(x, y, currentImageNum));
+                }
+            } else if (displayMode === 'video') {
+                // 비디오 프레임 그리기
+                if (!videoPlayer.paused && videoPlayer.readyState === videoPlayer.HAVE_ENOUGH_DATA) {
+                    ctx.drawImage(videoPlayer, 0, 0, canvas.width, canvas.height);
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+
         window.addEventListener('message', (event) => {
-            // 보안: 신뢰할 수 있는 출처에서 온 메시지인지 확인합니다.
-            // if (event.origin !== "http://your-controller-domain.com") return;
-
             const { type, payload, position, bpm } = event.data;
 
-            if (type === 'PLAY_VIDEO') {
+            if (type === 'SHOW_IMAGE') {
+                console.log('🖼️ 이미지 표시 명령 받음:', payload.nickname, payload.musicPosition);
+                showFloatingImageSequence(payload, position, bpm);
+            } else if (type === 'PLAY_VIDEO') {
                 console.log('🎬 비디오 재생 명령 받음:', payload.nickname, payload.musicType);
                 playVideo(payload, position, bpm);
             } else if (type === 'STOP_VIDEO' || type === 'RESET_STAGE') {
                 console.log('⏹️ 비디오 정지 명령 받음');
                 videoPlayer.pause();
-                videoPlayer.src = ""; // 비디오 소스 제거
+                videoPlayer.src = "";
+                displayMode = 'none';
             }
         });
 
-        /**
-         * 아바타 데이터로 비디오를 재생합니다.
-         */
         function playVideo(avatar, startTime = 0, masterBpm = 140) {
             const videoSrc = videoSamples[avatar.musicType];
 
@@ -81,21 +223,97 @@
                 return;
             }
 
-            if (videoPlayer.src !== window.location.origin + videoSrc) {
-                videoPlayer.src = videoSrc;
+            console.log(`🎬 비디오 재생 시도: ${videoSrc}`);
+
+            // 안전 설정: muted, playsinline
+            try {
+                videoPlayer.muted = true;
+                videoPlayer.setAttribute('playsinline', '');
+                videoPlayer.loop = true;
+            } catch (e) {
+                // ignore
             }
 
-            // 오디오와 비디오 싱크 맞추기
+            // 이벤트 로깅: 로드 상태와 에러 추적
+            videoPlayer.addEventListener('loadedmetadata', function onMeta() {
+                console.log('video loadedmetadata, duration=', videoPlayer.duration, 'readyState=', videoPlayer.readyState);
+                videoPlayer.removeEventListener('loadedmetadata', onMeta);
+            });
+            videoPlayer.addEventListener('canplay', function onCanPlay() {
+                console.log('video canplay, readyState=', videoPlayer.readyState);
+                videoPlayer.removeEventListener('canplay', onCanPlay);
+            });
+            videoPlayer.addEventListener('error', function onErr(e) {
+                console.error('video element error event:', e, videoPlayer.error);
+                videoPlayer.removeEventListener('error', onErr);
+            });
+
+            // 설정 후 src 할당
+            videoPlayer.src = videoSrc;
             videoPlayer.currentTime = startTime;
 
-            // BPM에 따라 비디오 재생 속도 조절 (선택 사항)
-            // 이 비디오의 원본 BPM이 140이라고 가정
             const originalBpm = 140;
-            const effectiveBpm = bpm || originalBpm;
+            const effectiveBpm = masterBpm || originalBpm;
             videoPlayer.playbackRate = effectiveBpm / originalBpm;
 
-            videoPlayer.play().catch(e => console.error('비디오 재생 실패:', e));
+            // 재생 시도
+            const playPromise = videoPlayer.play();
+            if (playPromise && typeof playPromise.then === 'function') {
+                playPromise.then(() => {
+                    console.log('video.play() 성공');
+                    displayMode = 'video';
+                }).catch(err => {
+                    console.error('video.play() 거부:', err);
+                    // 그래도 displayMode를 video로 설정해 캔버스가 비디오 프레임을 시도하도록 함
+                    displayMode = 'video';
+                });
+            } else {
+                // 즉시 재생 불가능 환경: 그래도 모드 전환
+                displayMode = 'video';
+            }
         }
+
+        // 아바타별로 이미지만 띄우는 함수 - 여러 이미지가 떠다니게 표시
+        function showFloatingImageSequence(avatar, startTime = 0, masterBpm = 140) {
+            let positionNum = currentImageNum;
+            if (avatar.musicPosition) {
+                positionNum = posMap[avatar.musicPosition] || currentImageNum;
+            }
+
+            console.log(`🖼️ 이미지 시퀀스: 포지션=${avatar.musicPosition} -> 숫자=${positionNum}`);
+
+            currentImageNum = positionNum;
+
+            // 처음에는 여러 이미지 생성
+            if (floatingImages.length === 0) {
+                for (let i = 0; i < 5; i++) {
+                    const x = Math.random() * canvas.width;
+                    const y = Math.random() * canvas.height;
+                    floatingImages.push(new FloatingImage(x, y, positionNum));
+                }
+            } else {
+                // 기존 이미지는 유지하고, 필요하면 추가만 함
+                for (let i = 0; i < 3; i++) {
+                    const x = Math.random() * canvas.width;
+                    const y = Math.random() * canvas.height;
+                    floatingImages.push(new FloatingImage(x, y, positionNum));
+                }
+            }
+
+            displayMode = 'image';
+
+            console.log(`✅ 이미지 표시 시작: ${avatar.nickname} (현재 이미지: ${floatingImages.length}개)`);
+        }
+
+        // 아바타가 무대에서 나갔을 때 호출될 함수
+        function stopImageDisplay() {
+            displayMode = 'none';
+            floatingImages = [];
+            console.log('⏹️ 이미지 표시 종료');
+        }
+
+        // 외부에서 호출 가능하도록 전역 함수로 등록
+        window.stopImageDisplay = stopImageDisplay;
     </script>
 </body>
 

@@ -1827,6 +1827,10 @@ function setup() {
   window.scrollTo(0, 0);
   initTonePlayers();
 
+  // video-player.html 자동 오픈
+  videoWindow = window.open('video-player.html', 'videoPlayerWindow', 'width=1280,height=720,left=100,top=100');
+  console.log('📹 비디오 플레이어 창이 열렸습니다.');
+
   // 미디어 아트는 별도 빔 프로젝터에서 처리
   // initMediaArt();
 
@@ -3161,6 +3165,12 @@ function mouseReleased() {
 
           console.log(`✅ ${selectedAvatar.nickname} 무대 배치 성공 (세트: ${selectedAvatar.musicSet})`);
           playAvatarMusic(selectedAvatar);
+
+          // 무대 슬롯이 모두 찼는지 확인 후 비디오 재생
+          if (isStageFullyOccupied()) {
+            console.log('🎬 무대 슬롯이 모두 차있습니다! 비디오를 재생합니다.');
+            try { playAvatarVideo(selectedAvatar); } catch (e) { console.warn('⚠️ playAvatarVideo 호출 실패', e); }
+          }
         } else {
           console.log('⚠️ 무대 슬롯이 모두 차있습니다!');
           selectedAvatar.y = 800; // 새로운 무대 아래 자유 공간으로
@@ -3171,6 +3181,12 @@ function mouseReleased() {
           }
           selectedAvatar.currentAction = 'idle';
           selectedAvatar.idleTimer = random(30, 120);
+
+          // 무대가 가득 차서 배치 실패한 경우에도 비디오 재생
+          if (isStageFullyOccupied()) {
+            console.log('🎬 무대가 가득 찼습니다. 비디오를 재생합니다.');
+            try { playAvatarVideo(selectedAvatar); } catch (e) { console.warn('⚠️ playAvatarVideo 호출 실패', e); }
+          }
         }
       } else {
         if (selectedAvatar.isOnStage && selectedAvatar.stageSlot !== -1) {
@@ -4258,6 +4274,21 @@ function playAvatarMusic(avatar) {
     startMasterClockFromPosition(0);
     startAvatarMusicFromPosition(avatar, sound, 0);
     // addSongShapes(avatar); // 미디어아트는 별도 빔 프로젝터에서 처리
+
+    // 비디오 플레이어에 이미지 표시 (첫 번째 아바타)
+    try {
+      if (videoWindow && !videoWindow.closed) {
+        videoWindow.postMessage({
+          type: 'SHOW_IMAGE',
+          payload: avatar,
+          position: 0,
+          bpm: avatarBpm
+        }, '*');
+        console.log(`📹 비디오 플레이어에 이미지 표시 신호 전송 (첫 번째 아바타): ${avatar.nickname}`);
+      }
+    } catch (e) {
+      console.warn('⚠️ 비디오 플레이어 메시지 전송 실패', e);
+    }
   } else {
     // 두번째 이후 아바타: 현재 재생 위치에 맞춰 즉시 재생
     console.log(`🎵 ${avatar.nickname} - 현재 위치에 맞춰 즉시 재생`);
@@ -4265,6 +4296,21 @@ function playAvatarMusic(avatar) {
     console.log(`현재 재생 위치: ${currentPosition.toFixed(3)}초`);
     startAvatarMusicFromPosition(avatar, sound, currentPosition);
     // addSongShapes(avatar); // 미디어아트는 별도 빔 프로젝터에서 처리
+
+    // 비디오 플레이어에 이미지 표시
+    try {
+      if (videoWindow && !videoWindow.closed) {
+        videoWindow.postMessage({
+          type: 'SHOW_IMAGE',
+          payload: avatar,
+          position: currentPosition,
+          bpm: avatarBpm
+        }, '*');
+        console.log(`📹 비디오 플레이어에 이미지 표시 신호 전송: ${avatar.nickname}`);
+      }
+    } catch (e) {
+      console.warn('⚠️ 비디오 플레이어 메시지 전송 실패', e);
+    }
   }
 }
 
@@ -4600,6 +4646,64 @@ function keyPressed() {
   }
 }
 
+// 비디오 재생 함수 (무대 슬롯이 모두 찼을 때 호출)
+function playAvatarVideo(avatar) {
+  if (!avatar) return;
+
+  // 비디오 윈도우가 팝업으로 열려 있지 않으면 iframe으로 폴백
+  let targetWindow = null;
+
+  if (videoWindow && !videoWindow.closed) {
+    targetWindow = videoWindow;
+  } else {
+    // 이미 iframe이 있으면 사용
+    const existing = document.getElementById('videoPlayerFrame');
+    if (existing && existing.contentWindow) {
+      targetWindow = existing.contentWindow;
+    } else {
+      // iframe 생성 (보이지 않게 또는 필요하면 보이게 할 수 있음)
+      try {
+        const iframe = document.createElement('iframe');
+        iframe.id = 'videoPlayerFrame';
+        iframe.src = 'video-player.html';
+        iframe.style.position = 'fixed';
+        iframe.style.right = '0';
+        iframe.style.bottom = '0';
+        iframe.style.width = '1px';
+        iframe.style.height = '1px';
+        iframe.style.border = '0';
+        iframe.style.opacity = '0';
+        iframe.style.pointerEvents = 'none';
+        document.body.appendChild(iframe);
+        targetWindow = iframe.contentWindow;
+        console.log('ℹ️ 비디오 플레이어 iframe 생성 및 사용');
+      } catch (e) {
+        console.warn('⚠️ iframe 생성 실패, 비디오 재생 불가', e);
+      }
+    }
+  }
+
+  if (!targetWindow) {
+    console.warn('⚠️ 비디오 재생 대상 윈도우가 없음');
+    return;
+  }
+
+  // avatar의 musicType에 기반한 비디오를 targetWindow로 전송
+  targetWindow.postMessage({
+    type: 'PLAY_VIDEO',
+    payload: avatar,
+    position: 0,
+    bpm: 140
+  }, '*');
+
+  console.log(`🎬 비디오 재생 메시지 전송 (대상: ${targetWindow === videoWindow ? 'popup' : 'iframe'}): ${avatar.nickname}`);
+}
+
+// 무대 슬롯 상태 확인 함수 (모두 찼는지 체크)
+function isStageFullyOccupied() {
+  return stageSlots.every(slot => slot !== null);
+}
+
 // 음악 정지 함수
 function stopAvatarMusic(avatar) {
   if (!avatar.musicType) return;
@@ -4629,6 +4733,12 @@ function stopAvatarMusic(avatar) {
       avatar.isPending = false;
       pendingAvatars.delete(avatar.id);
       console.log(`⏰ ${avatar.nickname} 대기 목록에서 제거`);
+    }
+
+    // 비디오 윈도우에 이미지 표시 종료 메시지 전송
+    if (videoWindow && !videoWindow.closed) {
+      videoWindow.postMessage({ type: 'RESET_STAGE' }, '*');
+      console.log('🖼️ 비디오 윈도우에 이미지 표시 종료 메시지 전송');
     }
 
     // 모든 아바타가 무대에서 내려가면 마스터 클럭 정지
