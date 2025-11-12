@@ -797,7 +797,8 @@ let masterClock = {
 let playingAvatars = new Set();   // 현재 재생 중 아바타 id
 let pendingAvatars = new Map();   // 다음 마디 대기 중 아바타
 let currentBpm = 170;             // 현재 BPM (검증용)
-let videoWindow = null;
+let videoWindow = null;           // 첫 번째 비디오 플레이어 창
+let videoWindow2 = null;          // 두 번째 비디오 플레이어 창
 function openVideoWindow() {
   videoWindow = window.open('video-player.html', 'videoPlayerWindow', 'width=800,height=600');
   console.log('비디오 플레이어 창이 열렸습니다.');
@@ -1827,9 +1828,13 @@ function setup() {
   window.scrollTo(0, 0);
   initTonePlayers();
 
-  // video-player.html 자동 오픈
-  videoWindow = window.open('video-player.html', 'videoPlayerWindow', 'width=1280,height=720,left=100,top=100');
-  console.log('📹 비디오 플레이어 창이 열렸습니다.');
+  // video-player.html 자동 오픈 (첫 번째 창 - 왼쪽)
+  videoWindow = window.open('video-player.html', 'videoPlayerWindow1', 'width=1280,height=720,left=100,top=100');
+  console.log('📹 비디오 플레이어 창 1이 열렸습니다.');
+
+  // video-player.html 자동 오픈 (두 번째 창 - 오른쪽)
+  videoWindow2 = window.open('video-player.html', 'videoPlayerWindow2', 'width=1280,height=720,left=1400,top=100');
+  console.log('📹 비디오 플레이어 창 2가 열렸습니다.');
 
   // 미디어 아트는 별도 빔 프로젝터에서 처리
   // initMediaArt();
@@ -3406,9 +3411,8 @@ function resetStage() {
         }
       }
     });
-    if (videoWindow) {
-      videoWindow.postMessage({ type: 'RESET_STAGE' }, '*'); // '*' 대신 event.origin 권장
-    }
+    // 두 개의 비디오 플레이어에 모두 리셋 메시지 전송
+    sendVideoMessage({ type: 'RESET_STAGE' });
     // 3. Tone.js Transport 정지 (마스터 클럭)
     try {
       if (Tone.Transport.state === 'started') {
@@ -4182,6 +4186,25 @@ function getCategoryDisplayName(category) {
   return categoryNames[category] || category;
 }
 
+// 두 개의 비디오 플레이어 창에 메시지를 보내는 헬퍼 함수
+function sendVideoMessage(messageData) {
+  if (videoWindow && !videoWindow.closed) {
+    try {
+      videoWindow.postMessage(messageData, '*');
+    } catch (e) {
+      console.warn('⚠️ 첫 번째 비디오 플레이어에 메시지 전송 실패', e);
+    }
+  }
+
+  if (videoWindow2 && !videoWindow2.closed) {
+    try {
+      videoWindow2.postMessage(messageData, '*');
+    } catch (e) {
+      console.warn('⚠️ 두 번째 비디오 플레이어에 메시지 전송 실패', e);
+    }
+  }
+}
+
 // 음악 재생 함수 (다중 BPM 지원)
 function playAvatarMusic(avatar) {
 
@@ -4275,31 +4298,29 @@ function playAvatarMusic(avatar) {
 
     // 비디오 플레이어에 이미지 표시 (첫 번째 아바타 - 무대 슬롯 확인)
     try {
-      if (videoWindow && !videoWindow.closed) {
-        // 먼저 이미지만 표시
-        videoWindow.postMessage({
-          type: 'SHOW_IMAGE',
-          payload: avatar,
-          position: 0,
-          bpm: avatarBpm
-        }, '*');
-        console.log(`📹 비디오 플레이어에 이미지 표시 신호 전송 (첫 번째 아바타): ${avatar.nickname}`);
+      // 먼저 이미지만 표시
+      sendVideoMessage({
+        type: 'SHOW_IMAGE',
+        payload: avatar,
+        position: 0,
+        bpm: avatarBpm
+      });
+      console.log(`📹 비디오 플레이어에 이미지 표시 신호 전송 (첫 번째 아바타): ${avatar.nickname}`);
 
-        // 무대가 모두 찼을 때만 3초 후 비디오 재생
-        setTimeout(() => {
-          if (isStageFullyOccupied() && videoWindow && !videoWindow.closed) {
-            videoWindow.postMessage({
-              type: 'PLAY_VIDEO',
-              payload: avatar,
-              position: 0,
-              bpm: avatarBpm
-            }, '*');
-            console.log(`🎬 무대 모두 찼음! 비디오 플레이어에 비디오 재생 신호 전송: ${avatar.nickname} (musicType: ${avatar.musicType})`);
-          } else {
-            console.log(`⏳ 무대가 아직 안 찼음. 비디오 재생 대기: ${avatar.nickname}`);
-          }
-        }, 3000);
-      }
+      // 무대가 모두 찼을 때만 3초 후 비디오 재생
+      setTimeout(() => {
+        if (isStageFullyOccupied()) {
+          sendVideoMessage({
+            type: 'PLAY_VIDEO',
+            payload: avatar,
+            position: 0,
+            bpm: avatarBpm
+          });
+          console.log(`🎬 무대 모두 찼음! 비디오 플레이어에 비디오 재생 신호 전송: ${avatar.nickname} (musicType: ${avatar.musicType})`);
+        } else {
+          console.log(`⏳ 무대가 아직 안 찼음. 비디오 재생 대기: ${avatar.nickname}`);
+        }
+      }, 3000);
     } catch (e) {
       console.warn('⚠️ 비디오 플레이어 메시지 전송 실패', e);
     }
@@ -4313,31 +4334,29 @@ function playAvatarMusic(avatar) {
 
     // 비디오 플레이어에 이미지 표시 (무대 슬롯 확인)
     try {
-      if (videoWindow && !videoWindow.closed) {
-        // 먼저 이미지만 표시
-        videoWindow.postMessage({
-          type: 'SHOW_IMAGE',
-          payload: avatar,
-          position: currentPosition,
-          bpm: avatarBpm
-        }, '*');
-        console.log(`📹 비디오 플레이어에 이미지 표시 신호 전송: ${avatar.nickname}`);
+      // 먼저 이미지만 표시
+      sendVideoMessage({
+        type: 'SHOW_IMAGE',
+        payload: avatar,
+        position: currentPosition,
+        bpm: avatarBpm
+      });
+      console.log(`📹 비디오 플레이어에 이미지 표시 신호 전송: ${avatar.nickname}`);
 
-        // 무대가 모두 찼을 때만 3초 후 비디오 재생
-        setTimeout(() => {
-          if (isStageFullyOccupied() && videoWindow && !videoWindow.closed) {
-            videoWindow.postMessage({
-              type: 'PLAY_VIDEO',
-              payload: avatar,
-              position: currentPosition,
-              bpm: avatarBpm
-            }, '*');
-            console.log(`🎬 무대 모두 찼음! 비디오 플레이어에 비디오 재생 신호 전송: ${avatar.nickname} (musicType: ${avatar.musicType})`);
-          } else {
-            console.log(`⏳ 무대가 아직 안 찼음. 비디오 재생 대기: ${avatar.nickname}`);
-          }
-        }, 3000);
-      }
+      // 무대가 모두 찼을 때만 3초 후 비디오 재생
+      setTimeout(() => {
+        if (isStageFullyOccupied()) {
+          sendVideoMessage({
+            type: 'PLAY_VIDEO',
+            payload: avatar,
+            position: currentPosition,
+            bpm: avatarBpm
+          });
+          console.log(`🎬 무대 모두 찼음! 비디오 플레이어에 비디오 재생 신호 전송: ${avatar.nickname} (musicType: ${avatar.musicType})`);
+        } else {
+          console.log(`⏳ 무대가 아직 안 찼음. 비디오 재생 대기: ${avatar.nickname}`);
+        }
+      }, 3000);
     } catch (e) {
       console.warn('⚠️ 비디오 플레이어 메시지 전송 실패', e);
     }
