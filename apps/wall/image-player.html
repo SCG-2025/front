@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Image Player</title>
+    <style>
+        body {
+            background-color: black;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // 캔버스 크기 설정
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // 포지션 매핑
+        const posMap = {
+            'Lead': 1,
+            '리드멜로디': 1,
+            'Sub': 2,
+            '서브멜로디': 2,
+            'Chord': 3,
+            'Chords': 3,
+            '코드': 3,
+            'Bass': 4,
+            '베이스': 4,
+            'Drum': 5,
+            'Drums': 5,
+            'Drum_Bass': 5,
+            'Drum_Chords': 5,
+            'Drum_FX': 5,
+            'Drum_Lead': 5,
+            'Drum_Sub': 5,
+            '드럼/퍼커션': 5,
+            'FX': 6,
+            'Chord_FX': 6,
+            '효과음/FX': 6
+        };
+
+        // 상태 변수
+        let floatingImages = [];
+        let currentImageNum = 0;
+        let displayMode = 'none'; // 'image', 'none'
+
+        // 떠다니는 이미지 생성 클래스 (작은 이미지들)
+        class FloatingImage {
+            constructor(x, y, imageNum) {
+                this.x = x;
+                this.y = y;
+                this.imageNum = imageNum;
+                this.vx = (Math.random() - 0.5) * 4;  // 좌우 속도
+                this.vy = (Math.random() - 0.5) * 4;  // 상하 속도
+                this.size = 200 + Math.random() * 150; // 더 큰 크기
+                this.opacity = 0.6 + Math.random() * 0.4;
+                this.rotation = Math.random() * Math.PI * 2;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.08;
+                this.image = null;
+                this.loaded = false;
+                this.alpha = 1;
+                this.fadeOutSpeed = 0.003; // 매우 천천히 페이드 아웃
+                this.life = 300 + Math.random() * 200; // 생명시간 (프레임)
+                this.lifeCounter = this.life;
+                this.loadImage();
+            }
+
+            loadImage() {
+                this.image = new Image();
+                this.image.src = `Img/${this.imageNum}.png`;
+                this.image.onload = () => {
+                    this.loaded = true;
+                };
+                this.image.onerror = () => {
+                    console.warn(`이미지 로드 실패: Img/${this.imageNum}.png`);
+                };
+            }
+
+            update() {
+                // 화면 내에서 반복되도록 위치 조정 (토로이드 래핑)
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // 화면 경계에서 반대쪽으로 나타남
+                if (this.x < -this.size) this.x = canvas.width + this.size;
+                if (this.x > canvas.width + this.size) this.x = -this.size;
+                if (this.y < -this.size) this.y = canvas.height + this.size;
+                if (this.y > canvas.height + this.size) this.y = -this.size;
+
+                this.rotation += this.rotationSpeed;
+                this.lifeCounter--;
+
+                // 생명 시간이 남았을 때 페이드 아웃
+                if (this.lifeCounter < 30) {
+                    this.alpha = Math.max(0, this.alpha - 0.03);
+                }
+            }
+
+            draw(ctx) {
+                if (!this.loaded || this.alpha <= 0) return;
+
+                ctx.save();
+                ctx.globalAlpha = this.alpha * this.opacity;
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+                ctx.drawImage(this.image, -this.size / 2, -this.size / 2, this.size, this.size);
+                ctx.restore();
+            }
+
+            isAlive() {
+                return this.alpha > 0 && this.lifeCounter > 0;
+            }
+        }
+
+        // 떠다니는 이미지를 기존 배열에 추가 (새로 생성하지 않음)
+        function addFloatingImages(count = 8) {
+            for (let i = 0; i < count; i++) {
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                const img = new FloatingImage(x, y, currentImageNum);
+                floatingImages.push(img);
+            }
+        }
+
+        // 애니메이션 루프
+        function animate() {
+            // 배경 그리기
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            if (displayMode === 'image') {
+                // 떠다니는 이미지들 업데이트 및 렌더링
+                floatingImages = floatingImages.filter(img => img.isAlive());
+
+                floatingImages.forEach(img => {
+                    img.update();
+                    img.draw(ctx);
+                });
+
+                // 이미지 개수가 줄어들면 새로 생성
+                if (floatingImages.length < 8) {
+                    addFloatingImages(2);
+                }
+
+                // 포지션 텍스트 표시
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 64px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.globalAlpha = 0.3;
+                ctx.fillText(`Position: ${currentImageNum}`, canvas.width / 2, canvas.height / 2);
+                ctx.globalAlpha = 1;
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+
+        window.addEventListener('message', (event) => {
+            const { type, payload, position, bpm } = event.data;
+
+            if (type === 'SHOW_IMAGE') {
+                console.log('🖼️ 이미지 표시 명령 받음:', payload.nickname, payload.musicPosition);
+                showFloatingImageSequence(payload, position, bpm);
+            } else if (type === 'RESET_STAGE') {
+                console.log('⏹️ 이미지 표시 정지 명령 받음');
+                displayMode = 'none';
+                floatingImages = [];
+                currentImageNum = 0;
+                console.log('✨ 모든 이미지가 제거되었습니다.');
+            }
+        });
+
+        // 아바타별로 이미지만 띄우는 함수 - 페이지 전체에 표시
+        function showFloatingImageSequence(avatar, startTime = 0, masterBpm = 140) {
+            let positionNum = currentImageNum;
+            if (avatar.musicPosition) {
+                positionNum = posMap[avatar.musicPosition] || currentImageNum;
+            }
+
+            console.log(`🖼️ 이미지 시퀀스: 포지션=${avatar.musicPosition} -> 숫자=${positionNum}`);
+
+            currentImageNum = positionNum;
+
+            // 기존 이미지 유지하면서 새 이미지 추가
+            addFloatingImages(12);
+
+            displayMode = 'image';
+
+            console.log(`✅ 이미지 표시 시작: ${avatar.nickname}`);
+        }
+
+        // 아바타가 무대에서 나갔을 때 호출될 함수
+        function stopImageDisplay() {
+            displayMode = 'none';
+            floatingImages = [];
+            console.log('⏹️ 이미지 표시 종료');
+        }
+
+        // 외부에서 호출 가능하도록 전역 함수로 등록
+        window.stopImageDisplay = stopImageDisplay;
+    </script>
+</body>
+
+</html>

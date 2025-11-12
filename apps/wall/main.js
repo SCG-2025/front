@@ -797,8 +797,10 @@ let masterClock = {
 let playingAvatars = new Set();   // 현재 재생 중 아바타 id
 let pendingAvatars = new Map();   // 다음 마디 대기 중 아바타
 let currentBpm = 170;             // 현재 BPM (검증용)
-let videoWindow = null;           // 첫 번째 비디오 플레이어 창
-let videoWindow2 = null;          // 두 번째 비디오 플레이어 창
+let videoWindow = null;           // 첫 번째 비디오 플레이어 창 (이미지 + 비디오)
+let videoWindow2 = null;          // 두 번째 비디오 플레이어 창 (이미지 + 비디오)
+let imageWindow = null;           // 첫 번째 이미지 플레이어 창 (이미지만)
+let imageWindow2 = null;          // 두 번째 이미지 플레이어 창 (이미지만)
 function openVideoWindow() {
   videoWindow = window.open('video-player.html', 'videoPlayerWindow', 'width=800,height=600');
   console.log('비디오 플레이어 창이 열렸습니다.');
@@ -1828,13 +1830,21 @@ function setup() {
   window.scrollTo(0, 0);
   initTonePlayers();
 
-  // video-player.html 자동 오픈 (첫 번째 창 - 왼쪽)
+  // video-player.html 자동 오픈 (첫 번째 창 - 이미지 + 비디오, 왼쪽)
   videoWindow = window.open('video-player.html', 'videoPlayerWindow1', 'width=1280,height=720,left=100,top=100');
   console.log('📹 비디오 플레이어 창 1이 열렸습니다.');
 
-  // video-player.html 자동 오픈 (두 번째 창 - 오른쪽)
+  // video-player.html 자동 오픈 (두 번째 창 - 이미지 + 비디오, 오른쪽)
   videoWindow2 = window.open('video-player.html', 'videoPlayerWindow2', 'width=1280,height=720,left=1400,top=100');
   console.log('📹 비디오 플레이어 창 2가 열렸습니다.');
+
+  // image-player.html 자동 오픈 (첫 번째 창 - 이미지만, 왼쪽 아래)
+  imageWindow = window.open('image-player.html', 'imagePlayerWindow1', 'width=1280,height=720,left=100,top=850');
+  console.log('🖼️ 이미지 플레이어 창 1이 열렸습니다.');
+
+  // image-player.html 자동 오픈 (두 번째 창 - 이미지만, 오른쪽 아래)
+  imageWindow2 = window.open('image-player.html', 'imagePlayerWindow2', 'width=1280,height=720,left=1400,top=850');
+  console.log('🖼️ 이미지 플레이어 창 2가 열렸습니다.');
 
   // 미디어 아트는 별도 빔 프로젝터에서 처리
   // initMediaArt();
@@ -4188,6 +4198,7 @@ function getCategoryDisplayName(category) {
 
 // 두 개의 비디오 플레이어 창에 메시지를 보내는 헬퍼 함수
 function sendVideoMessage(messageData) {
+  // 비디오 창 1에 메시지 전송 (모든 메시지 타입)
   if (videoWindow && !videoWindow.closed) {
     try {
       videoWindow.postMessage(messageData, '*');
@@ -4196,11 +4207,33 @@ function sendVideoMessage(messageData) {
     }
   }
 
+  // 비디오 창 2에 메시지 전송 (모든 메시지 타입)
   if (videoWindow2 && !videoWindow2.closed) {
     try {
       videoWindow2.postMessage(messageData, '*');
     } catch (e) {
       console.warn('⚠️ 두 번째 비디오 플레이어에 메시지 전송 실패', e);
+    }
+  }
+
+  // 이미지 창들에는 SHOW_IMAGE와 RESET_STAGE만 전송 (PLAY_VIDEO는 제외)
+  const isImageMessage = messageData.type === 'SHOW_IMAGE' || messageData.type === 'RESET_STAGE';
+
+  if (isImageMessage) {
+    if (imageWindow && !imageWindow.closed) {
+      try {
+        imageWindow.postMessage(messageData, '*');
+      } catch (e) {
+        console.warn('⚠️ 첫 번째 이미지 플레이어에 메시지 전송 실패', e);
+      }
+    }
+
+    if (imageWindow2 && !imageWindow2.closed) {
+      try {
+        imageWindow2.postMessage(messageData, '*');
+      } catch (e) {
+        console.warn('⚠️ 두 번째 이미지 플레이어에 메시지 전송 실패', e);
+      }
     }
   }
 }
