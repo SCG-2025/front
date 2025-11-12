@@ -3166,10 +3166,9 @@ function mouseReleased() {
           console.log(`✅ ${selectedAvatar.nickname} 무대 배치 성공 (세트: ${selectedAvatar.musicSet})`);
           playAvatarMusic(selectedAvatar);
 
-          // 무대 슬롯이 모두 찼는지 확인 후 비디오 재생
+          // 무대 슬롯이 모두 찼는지 확인 - 비디오는 playAvatarMusic에서 처리됨
           if (isStageFullyOccupied()) {
-            console.log('🎬 무대 슬롯이 모두 차있습니다! 비디오를 재생합니다.');
-            try { playAvatarVideo(selectedAvatar); } catch (e) { console.warn('⚠️ playAvatarVideo 호출 실패', e); }
+            console.log('🎬 무대 슬롯이 모두 차있습니다! (비디오는 playAvatarMusic에서 처리됨)');
           }
         } else {
           console.log('⚠️ 무대 슬롯이 모두 차있습니다!');
@@ -3182,10 +3181,9 @@ function mouseReleased() {
           selectedAvatar.currentAction = 'idle';
           selectedAvatar.idleTimer = random(30, 120);
 
-          // 무대가 가득 차서 배치 실패한 경우에도 비디오 재생
+          // 무대가 가득 차서 배치 실패한 경우 - 비디오는 playAvatarMusic에서 처리됨
           if (isStageFullyOccupied()) {
-            console.log('🎬 무대가 가득 찼습니다. 비디오를 재생합니다.');
-            try { playAvatarVideo(selectedAvatar); } catch (e) { console.warn('⚠️ playAvatarVideo 호출 실패', e); }
+            console.log('🎬 무대가 가득 찼습니다. (비디오는 playAvatarMusic에서 처리됨)');
           }
         }
       } else {
@@ -4275,9 +4273,10 @@ function playAvatarMusic(avatar) {
     startAvatarMusicFromPosition(avatar, sound, 0);
     // addSongShapes(avatar); // 미디어아트는 별도 빔 프로젝터에서 처리
 
-    // 비디오 플레이어에 이미지 표시 (첫 번째 아바타)
+    // 비디오 플레이어에 이미지 표시 (첫 번째 아바타 - 무대 슬롯 확인)
     try {
       if (videoWindow && !videoWindow.closed) {
+        // 먼저 이미지만 표시
         videoWindow.postMessage({
           type: 'SHOW_IMAGE',
           payload: avatar,
@@ -4285,6 +4284,21 @@ function playAvatarMusic(avatar) {
           bpm: avatarBpm
         }, '*');
         console.log(`📹 비디오 플레이어에 이미지 표시 신호 전송 (첫 번째 아바타): ${avatar.nickname}`);
+
+        // 무대가 모두 찼을 때만 3초 후 비디오 재생
+        setTimeout(() => {
+          if (isStageFullyOccupied() && videoWindow && !videoWindow.closed) {
+            videoWindow.postMessage({
+              type: 'PLAY_VIDEO',
+              payload: avatar,
+              position: 0,
+              bpm: avatarBpm
+            }, '*');
+            console.log(`🎬 무대 모두 찼음! 비디오 플레이어에 비디오 재생 신호 전송: ${avatar.nickname} (musicType: ${avatar.musicType})`);
+          } else {
+            console.log(`⏳ 무대가 아직 안 찼음. 비디오 재생 대기: ${avatar.nickname}`);
+          }
+        }, 3000);
       }
     } catch (e) {
       console.warn('⚠️ 비디오 플레이어 메시지 전송 실패', e);
@@ -4297,9 +4311,10 @@ function playAvatarMusic(avatar) {
     startAvatarMusicFromPosition(avatar, sound, currentPosition);
     // addSongShapes(avatar); // 미디어아트는 별도 빔 프로젝터에서 처리
 
-    // 비디오 플레이어에 이미지 표시
+    // 비디오 플레이어에 이미지 표시 (무대 슬롯 확인)
     try {
       if (videoWindow && !videoWindow.closed) {
+        // 먼저 이미지만 표시
         videoWindow.postMessage({
           type: 'SHOW_IMAGE',
           payload: avatar,
@@ -4307,6 +4322,21 @@ function playAvatarMusic(avatar) {
           bpm: avatarBpm
         }, '*');
         console.log(`📹 비디오 플레이어에 이미지 표시 신호 전송: ${avatar.nickname}`);
+
+        // 무대가 모두 찼을 때만 3초 후 비디오 재생
+        setTimeout(() => {
+          if (isStageFullyOccupied() && videoWindow && !videoWindow.closed) {
+            videoWindow.postMessage({
+              type: 'PLAY_VIDEO',
+              payload: avatar,
+              position: currentPosition,
+              bpm: avatarBpm
+            }, '*');
+            console.log(`🎬 무대 모두 찼음! 비디오 플레이어에 비디오 재생 신호 전송: ${avatar.nickname} (musicType: ${avatar.musicType})`);
+          } else {
+            console.log(`⏳ 무대가 아직 안 찼음. 비디오 재생 대기: ${avatar.nickname}`);
+          }
+        }, 3000);
       }
     } catch (e) {
       console.warn('⚠️ 비디오 플레이어 메시지 전송 실패', e);
@@ -4648,55 +4678,10 @@ function keyPressed() {
 
 // 비디오 재생 함수 (무대 슬롯이 모두 찼을 때 호출)
 function playAvatarVideo(avatar) {
-  if (!avatar) return;
-
-  // 비디오 윈도우가 팝업으로 열려 있지 않으면 iframe으로 폴백
-  let targetWindow = null;
-
-  if (videoWindow && !videoWindow.closed) {
-    targetWindow = videoWindow;
-  } else {
-    // 이미 iframe이 있으면 사용
-    const existing = document.getElementById('videoPlayerFrame');
-    if (existing && existing.contentWindow) {
-      targetWindow = existing.contentWindow;
-    } else {
-      // iframe 생성 (보이지 않게 또는 필요하면 보이게 할 수 있음)
-      try {
-        const iframe = document.createElement('iframe');
-        iframe.id = 'videoPlayerFrame';
-        iframe.src = 'video-player.html';
-        iframe.style.position = 'fixed';
-        iframe.style.right = '0';
-        iframe.style.bottom = '0';
-        iframe.style.width = '1px';
-        iframe.style.height = '1px';
-        iframe.style.border = '0';
-        iframe.style.opacity = '0';
-        iframe.style.pointerEvents = 'none';
-        document.body.appendChild(iframe);
-        targetWindow = iframe.contentWindow;
-        console.log('ℹ️ 비디오 플레이어 iframe 생성 및 사용');
-      } catch (e) {
-        console.warn('⚠️ iframe 생성 실패, 비디오 재생 불가', e);
-      }
-    }
-  }
-
-  if (!targetWindow) {
-    console.warn('⚠️ 비디오 재생 대상 윈도우가 없음');
-    return;
-  }
-
-  // avatar의 musicType에 기반한 비디오를 targetWindow로 전송
-  targetWindow.postMessage({
-    type: 'PLAY_VIDEO',
-    payload: avatar,
-    position: 0,
-    bpm: 140
-  }, '*');
-
-  console.log(`🎬 비디오 재생 메시지 전송 (대상: ${targetWindow === videoWindow ? 'popup' : 'iframe'}): ${avatar.nickname}`);
+  // 비디오 재생은 playAvatarMusic()의 postMessage를 통해 video-player.html에서 처리됨
+  // 이 함수는 더 이상 사용되지 않음 (레거시 팝업 방식 제거됨)
+  console.log('ℹ️ playAvatarVideo는 더 이상 사용되지 않습니다. playAvatarMusic() 참조');
+  return;
 }
 
 // 무대 슬롯 상태 확인 함수 (모두 찼는지 체크)
