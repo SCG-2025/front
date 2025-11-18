@@ -45,18 +45,22 @@
   </script>
   
   <script>
-    // 브라우저 기본 스크롤 완전히 비활성화
+    // 브라우저 좌우 스크롤만 비활성화, 상하 스크롤은 허용
     document.addEventListener('DOMContentLoaded', function() {
-      // 휠 스크롤 방지
+      // 휠 스크롤 - 좌우만 방지, 상하는 허용
       window.addEventListener('wheel', function(e) {
-        e.preventDefault();
-      }, { passive: false });
-      
-      // 키보드 스크롤 방지
-      window.addEventListener('keydown', function(e) {
-        if(['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Home', 'End'].indexOf(e.code) > -1) {
+        // 좌우 스크롤(Shift+휠 또는 트랙패드 좌우 제스처)만 방지
+        if (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
           e.preventDefault();
         }
+      }, { passive: false });
+      
+      // 키보드 스크롤 - 좌우만 방지
+      window.addEventListener('keydown', function(e) {
+        if(['ArrowLeft', 'ArrowRight'].indexOf(e.code) > -1) {
+          e.preventDefault();
+        }
+        // 상하 방향키, Page Up/Down, Home/End는 허용
       }, false);
       
       // 터치 스크롤 방지 (모바일) - 수정: 단일 터치는 허용
@@ -66,9 +70,9 @@
         }
       }, { passive: false });
       
-      // touchmove만 방지하고 touchend는 허용 (클릭을 위해)
+      // touchmove에서 좌우 스크롤만 방지
       document.addEventListener('touchmove', function(e) {
-        // 스크롤만 방지하고 클릭은 허용
+        // 캔버스 영역에서만 터치 방지, 일반 페이지 스크롤은 허용
         if(e.touches.length === 1) {
           const touch = e.touches[0];
           const canvas = document.querySelector('canvas');
@@ -76,6 +80,7 @@
             // 캔버스 내에서만 터치 이동 방지
             e.preventDefault();
           }
+          // 캔버스 외부에서는 세로 스크롤 허용
         } else {
           e.preventDefault();
         }
@@ -87,7 +92,8 @@
       margin: 0;
       padding: 0;
       background: #222;
-      overflow: hidden; /* 브라우저 스크롤 비활성화 */
+      overflow-x: hidden; /* 좌우 스크롤 비활성화 */
+      overflow-y: auto; /* 상하 스크롤 활성화 */
       height: 100vh;
       width: 100vw;
     }
@@ -95,8 +101,8 @@
     canvas {
       display: block;
       margin: 0;
-      width: 2880px; /* 1920 * 1.5 */
-      height: 1620px; /* 1080 * 1.5 */
+      width: 1920px; /* 1920px 고정 - 양옆 스크롤 방지 */
+      height: 1620px; /* 1080 * 1.5 - 세로 스크롤 허용 */
       position: absolute;
       top: 0;
       left: 0;

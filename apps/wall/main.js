@@ -1825,7 +1825,7 @@ async function initTonePlayers() {
 }
 
 function setup() {
-  createCanvas(2880, 1620); // 1920*1.5 x 1080*1.5
+  createCanvas(1920, 1620); // 1920x1080*1.5 - 양옆 스크롤 방지, 세로 1.5배
   cameraX = 0; cameraY = 0;
   window.scrollTo(0, 0);
   initTonePlayers();
