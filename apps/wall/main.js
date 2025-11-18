@@ -1825,7 +1825,7 @@ async function initTonePlayers() {
 }
 
 function setup() {
-  createCanvas(2560, 1760);
+  createCanvas(2880, 1620); // 1920*1.5 x 1080*1.5
   cameraX = 0; cameraY = 0;
   window.scrollTo(0, 0);
   initTonePlayers();

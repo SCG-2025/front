@@ -94,7 +94,12 @@
 
     canvas {
       display: block;
-      margin: 0 auto;
+      margin: 0;
+      width: 2880px; /* 1920 * 1.5 */
+      height: 1620px; /* 1080 * 1.5 */
+      position: absolute;
+      top: 0;
+      left: 0;
     }
     
     /* 팬 모드 커서 스타일 */
@@ -279,12 +284,12 @@
     /* 상단 버튼 컨테이너 */
     .top-buttons-container {
       position: fixed;
-      top: 20px;
-      right: 20px;
+      top: 30px;
+      right: 30px;
       z-index: 100;
       display: flex;
       flex-direction: row-reverse; /* 오른쪽부터 왼쪽으로 배치 */
-      gap: 10px; /* 버튼 간 간격 */
+      gap: 20px; /* 버튼 간 간격 증가 */
       align-items: center;
     }
 
@@ -293,40 +298,40 @@
       background: rgba(255, 100, 100, 0.9);
       color: white;
       border: none;
-      padding: 10px 16px;
-      border-radius: 20px;
-      font-size: 14px;
+      padding: 20px 32px; /* 패딩 2배 증가 */
+      border-radius: 30px; /* 둥글기 증가 */
+      font-size: 24px; /* 글씨 크기 증가 */
       font-weight: bold;
       cursor: pointer;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
       transition: all 0.2s ease;
       white-space: nowrap; /* 텍스트 줄바꿈 방지 */
-      min-width: 120px; /* 최소 너비 보장 */
+      min-width: 200px; /* 최소 너비 증가 */
     }
 
     .reset-stage-btn:hover {
       background: rgba(255, 100, 100, 1);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 25px rgba(0, 0, 0, 0.4);
     }
 
     .reset-stage-btn:active {
       transform: translateY(0);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
     }
 
     .reset-stage-btn:disabled {
       background: rgba(150, 150, 150, 0.6);
       cursor: not-allowed;
       transform: none;
-      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
       opacity: 0.6;
     }
     
     .reset-stage-btn:disabled:hover {
       background: rgba(150, 150, 150, 0.6);
       transform: none;
-      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     }
 
     /* 아바타 정렬 버튼 */
@@ -334,21 +339,21 @@
       background: rgba(100, 150, 255, 0.9);
       color: white;
       border: none;
-      padding: 10px 16px;
-      border-radius: 20px;
-      font-size: 14px;
+      padding: 20px 32px; /* 패딩 2배 증가 */
+      border-radius: 30px; /* 둥글기 증가 */
+      font-size: 24px; /* 글씨 크기 증가 */
       font-weight: bold;
       cursor: pointer;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
       transition: all 0.2s ease;
       white-space: nowrap; /* 텍스트 줄바꿈 방지 */
-      min-width: 120px; /* 최소 너비 보장 */
+      min-width: 200px; /* 최소 너비 증가 */
     }
 
     .sort-avatars-btn:hover {
       background: rgba(100, 150, 255, 1);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 25px rgba(0, 0, 0, 0.4);
     }
 
     /* 개발자용 스테이지 아바타 토글 버튼 */
@@ -356,26 +361,26 @@
       background: rgba(150, 100, 255, 0.9);
       color: white;
       border: none;
-      padding: 10px 16px;
-      border-radius: 20px;
-      font-size: 14px;
+      padding: 20px 32px; /* 패딩 2배 증가 */
+      border-radius: 30px; /* 둥글기 증가 */
+      font-size: 24px; /* 글씨 크기 증가 */
       font-weight: bold;
       cursor: pointer;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
       transition: all 0.2s ease;
       white-space: nowrap;
-      min-width: 160px;
+      min-width: 260px; /* 최소 너비 증가 */
     }
 
     .toggle-stage-avatars-btn:hover {
       background: rgba(150, 100, 255, 1);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 25px rgba(0, 0, 0, 0.4);
     }
 
     .toggle-stage-avatars-btn:active {
       transform: translateY(0);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
     }
 
     /* 스테이지 아바타가 숨겨진 상태일 때 */
@@ -390,14 +395,14 @@
     /* 필터 UI 스타일 */
     .filter-container {
       position: fixed;
-      top: 70px; /* 버튼들 바로 아래로 이동 */
-      right: 20px; /* 오른쪽으로 이동 */
+      top: 110px; /* 버튼들 바로 아래로 이동 (버튼 크기 증가에 맞춤) */
+      right: 30px; /* 오른쪽으로 이동 */
       z-index: 100;
       background: rgba(0, 0, 0, 0.8);
-      border-radius: 20px; /* 다른 버튼들과 같은 둥글기 */
+      border-radius: 30px; /* 다른 버튼들과 같은 둥글기 */
       padding: 0; /* 패딩 제거 - 내부에서 조절 */
-      width: 250px; /* 버튼 2개 + 간격에 맞춤 (120px + 10px + 120px = 250px) */
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      width: 420px; /* 버튼 2개 + 간격에 맞춤 (200px + 20px + 200px = 420px) */
+      box-shadow: 0 6px 30px rgba(0, 0, 0, 0.3);
     }
 
     /* 필터 토글 버튼 */
@@ -406,9 +411,9 @@
       background: rgba(100, 150, 255, 0.9);
       color: white;
       border: none;
-      padding: 10px 16px; /* 다른 버튼들과 동일한 패딩 */
-      border-radius: 20px; /* 다른 버튼들과 동일한 둥글기 */
-      font-size: 14px;
+      padding: 20px 32px; /* 다른 버튼들과 동일한 패딩 */
+      border-radius: 30px; /* 다른 버튼들과 동일한 둥글기 */
+      font-size: 24px; /* 글씨 크기 증가 */
       font-weight: bold;
       cursor: pointer;
       transition: all 0.2s ease;
@@ -417,19 +422,19 @@
       align-items: center;
       margin: 0; /* 마진 제거 */
       white-space: nowrap; /* 텍스트 줄바꿈 방지 */
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3); /* 다른 버튼들과 동일한 그림자 */
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); /* 다른 버튼들과 동일한 그림자 */
     }
 
     /* 필터가 펼쳐져 있을 때 토글 버튼 스타일 */
     .filter-content:not(.collapsed) + .filter-toggle-btn,
     .filter-toggle-btn:not(.collapsed) {
-      border-radius: 20px 20px 0 0; /* 상단만 둥글게 */
+      border-radius: 30px 30px 0 0; /* 상단만 둥글게 */
     }
 
     .filter-toggle-btn:hover {
       background: rgba(100, 150, 255, 1);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4); /* 다른 버튼들과 동일한 호버 효과 */
+      transform: translateY(-2px);
+      box-shadow: 0 6px 25px rgba(0, 0, 0, 0.4); /* 다른 버튼들과 동일한 호버 효과 */
     }
 
     /* 필터 내용 (접힐 수 있는 부분) */
@@ -438,9 +443,9 @@
       transition: max-height 0.3s ease, opacity 0.3s ease;
       max-height: 1000px; /* 충분히 큰 값 */
       opacity: 1;
-      padding: 12px; /* 내부 패딩 */
-      padding-top: 15px; /* 상단 패딩 추가 - 토글 버튼과 간격 */
-      border-radius: 0 0 20px 20px; /* 하단만 둥글게 */
+      padding: 20px; /* 내부 패딩 증가 */
+      padding-top: 25px; /* 상단 패딩 추가 - 토글 버튼과 간격 */
+      border-radius: 0 0 30px 30px; /* 하단만 둥글게 */
     }
 
     .filter-content.collapsed {
@@ -452,35 +457,35 @@
 
     .filter-title {
       color: white;
-      font-size: 14px; /* 폰트 크기 축소 */
+      font-size: 20px; /* 폰트 크기 증가 */
       font-weight: bold;
-      margin-bottom: 12px; /* 여백 축소 */
+      margin-bottom: 20px; /* 여백 증가 */
       text-align: center;
     }
 
     .filter-group {
-      margin-bottom: 18px; /* 여백 증가 */
+      margin-bottom: 24px; /* 여백 증가 */
     }
 
     .filter-group:last-child {
-      margin-bottom: 8px; /* 마지막 그룹도 약간의 여백 */
+      margin-bottom: 12px; /* 마지막 그룹도 약간의 여백 */
     }
 
     .filter-label {
       color: #ccc;
-      font-size: 11px; /* 폰트 크기 축소 */
-      margin-bottom: 8px; /* 여백 증가 */
+      font-size: 16px; /* 폰트 크기 증가 */
+      margin-bottom: 12px; /* 여백 증가 */
       display: block;
       font-weight: bold;
     }
 
     .filter-select {
       width: 100%;
-      padding: 8px 12px;
+      padding: 12px 16px; /* 패딩 증가 */
       border: none;
-      border-radius: 8px;
+      border-radius: 12px; /* 둥글기 증가 */
       background: rgba(255, 255, 255, 0.9);
-      font-size: 14px;
+      font-size: 18px; /* 폰트 크기 증가 */
       cursor: pointer;
       outline: none;
     }
@@ -491,16 +496,16 @@
 
     .filter-buttons {
       display: flex;
-      gap: 8px;
-      margin-top: 12px;
+      gap: 12px; /* 간격 증가 */
+      margin-top: 16px;
     }
 
     .filter-btn {
       flex: 1;
-      padding: 6px 10px; /* 패딩 축소 */
+      padding: 12px 16px; /* 패딩 증가 */
       border: none;
-      border-radius: 6px; /* 둥글기 축소 */
-      font-size: 11px; /* 폰트 크기 축소 */
+      border-radius: 10px; /* 둥글기 증가 */
+      font-size: 16px; /* 폰트 크기 증가 */
       font-weight: bold;
       cursor: pointer;
       transition: all 0.2s ease;
@@ -526,23 +531,23 @@
 
     .filter-stats {
       color: #aaa;
-      font-size: 10px; /* 폰트 크기 더 축소 */
+      font-size: 14px; /* 폰트 크기 증가 */
       text-align: center;
-      margin-top: 6px; /* 여백 축소 */
-      padding-top: 6px; /* 패딩 축소 */
+      margin-top: 10px; /* 여백 증가 */
+      padding-top: 10px; /* 패딩 증가 */
       border-top: 1px solid rgba(255, 255, 255, 0.2);
     }
 
     .sort-avatars-btn:active {
       transform: translateY(0);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
     }
 
     .sort-avatars-btn:disabled {
       background: rgba(120, 120, 120, 0.6);
       cursor: not-allowed;
       transform: none;
-      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
       opacity: 0.6;
     }
     
