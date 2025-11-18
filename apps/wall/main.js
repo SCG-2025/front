@@ -1825,7 +1825,7 @@ async function initTonePlayers() {
 }
 
 function setup() {
-  createCanvas(2880, 1620); // 1920*1.5 x 1080*1.5
+  createCanvas(1920, 1620); // 1920x1080의 1.5배 높이
   cameraX = 0; cameraY = 0;
   window.scrollTo(0, 0);
   initTonePlayers();
@@ -2613,7 +2613,7 @@ function draw() {
 function updateAvatar(avatar) {
   if (avatar.state === 'plane-in') {
     avatar.x += avatar.vx;
-    if (avatar.x > 2880 / 2) {
+    if (avatar.x > 1920 / 2) {
       avatar.state = 'idle';
       avatar.vx = 0; avatar.vy = 0;
       avatar.currentAction = 'idle';
@@ -2649,10 +2649,10 @@ function updateAvatar(avatar) {
       }
     }
 
-    if (avatar.x < 0 || avatar.x > 2880) {
+    if (avatar.x < 0 || avatar.x > 1920) {
       avatar.vx *= -1;
       avatar.direction *= -1;
-      avatar.x = constrain(avatar.x, 0, 2880);
+      avatar.x = constrain(avatar.x, 0, 1920);
     }
 
     // Y축 이동 범위를 무대 양 사이드 포함하도록 확장
@@ -2665,8 +2665,8 @@ function updateAvatar(avatar) {
 
     // 무대 영역 밀어내기(무대아바타 제외) - 무대 자체만 피하고 양 사이드는 자유롭게
     if (!avatar.isOnStage && !avatar.isDragged) {
-      const stageW = 2880 * 0.6; // 60% 너비
-      const stageX = (2880 - stageW) / 2; // 중앙 정렬
+      const stageW = 1920 * 0.6; // 60% 너비
+      const stageX = (1920 - stageW) / 2; // 중앙 정렬
       const stageY = 200; // 새로운 Y 위치
       const stageH = 400; // 새로운 높이
 
@@ -2854,8 +2854,8 @@ function drawCustomAvatar(x, y, avatarData, direction, isHighlighted) {
 // 스테이지/공간
 function getStageSlotPosition(slotIndex) {
   // 새로운 중앙 배치된 무대에 맞는 위치 계산
-  const stageW = 2880 * 0.6; // 60% 너비
-  const stageX = (2880 - stageW) / 2;
+  const stageW = 1920 * 0.6; // 60% 너비
+  const stageX = (1920 - stageW) / 2;
   const stageY = 200; // 새로운 무대 Y 위치
   const stageH = 400; // 새로운 무대 높이
 
@@ -2884,8 +2884,8 @@ function findNearestEmptyStageSlot(x, y) {
 
 function isInStageArea(x, y) {
   // 새로운 중앙 배치된 무대 영역
-  const stageW = 2880 * 0.6; // 60% 너비
-  const stageX = (2880 - stageW) / 2; // 중앙 정렬
+  const stageW = 1920 * 0.6; // 60% 너비
+  const stageX = (1920 - stageW) / 2; // 중앙 정렬
   const stageY = 200; // 새로운 Y 위치
   const stageH = 400; // 새로운 높이
 
@@ -2900,11 +2900,11 @@ function isInStageArea(x, y) {
 function drawSpaces() {
   // 미디어 아트 스크린 영역 제거 - 별도 빔 프로젝터에서 처리
   // fill('#cccccc');
-  // rect(0, 0, 2880, 480);
+  // rect(0, 0, 1920, 480);
 
   // 무대를 화면 중앙으로 확장 배치 (기존 1/3에서 더 넓게)
-  const stageW = 2880 * 0.6; // 60% 너비로 확장
-  const stageX = (2880 - stageW) / 2;
+  const stageW = 1920 * 0.6; // 60% 너비로 확장
+  const stageX = (1920 - stageW) / 2;
   const stageY = 200; // 더 위쪽으로 이동
   const stageH = 400; // 높이 증가
 
@@ -2940,16 +2940,16 @@ function drawSpaces() {
   noStroke();
 
   // 무대를 제외한 모든 영역
-  rect(0, 0, 2880, stageY); // 무대 위쪽
-  rect(0, stageY + stageH, 2880, 1620 - (stageY + stageH)); // 무대 아래쪽
+  rect(0, 0, 1920, stageY); // 무대 위쪽
+  rect(0, stageY + stageH, 1920, 1620 - (stageY + stageH)); // 무대 아래쪽
   rect(0, stageY, stageX, stageH); // 무대 왼쪽
-  rect(stageX + stageW, stageY, 2880 - (stageX + stageW), stageH); // 무대 오른쪽
+  rect(stageX + stageW, stageY, 1920 - (stageX + stageW), stageH); // 무대 오른쪽
 
   // 스크린 분할선 제거 (더 이상 필요 없음)
   // stroke('#888');
   // strokeWeight(2);
   // for (let i = 1; i < 3; i++) {
-  //   line((2880 / 3) * i, 0, (2880 / 3) * i, 480);
+  //   line((1920 / 3) * i, 0, (1920 / 3) * i, 480);
   // }
   // noStroke();
 
@@ -3053,7 +3053,7 @@ function mouseDragged() {
     cameraX -= deltaX;
     cameraY -= deltaY;
 
-    const canvasWidth = 2880;
+    const canvasWidth = 1920;
     const canvasHeight = 1620;
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
@@ -3229,8 +3229,8 @@ function mouseWheel(event) {
 
   cameraY += deltaY;
 
-  const canvasWidth = 2560;
-  const canvasHeight = 1760;
+  const canvasWidth = 1920;
+  const canvasHeight = 1620;
   const viewportWidth = window.innerWidth;
   const viewportHeight = window.innerHeight;
 
