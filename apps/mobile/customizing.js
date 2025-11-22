@@ -143,6 +143,22 @@ import { db } from './firebase-init.js';
     }
   };
   
+  // 소품별 개별 오프셋 (특정 소품만 다른 위치/크기 적용)
+  const SOPUM_INDIVIDUAL_OFFSETS = {
+    8: { // sopum(9).png (인덱스 8) - 병아리
+      female: { x: 40, y: 70, s: 60 }, // 중간 높이로 조정
+      male: { x: 40, y: 70, s: 60 }    // 남성도 동일하게 조정
+    },
+    9: { // sopum(10).PNG (인덱스 9) - 안경
+      female: { x: 5, y: -15, s: 180 }, // 눈 위치, 크기 증가
+      male: { x: 5, y: -25, s: 180 }    // 남성은 조금 더 위로
+    },
+    10: { // sopum(11).png (인덱스 10) - 날개
+      female: { x: 0, y: -20, s: 250 }, // 등 뒤 가운데 위치, y값 살짝 내림
+      male: { x: 0, y: -25, s: 250 }    // 남성도 동일하게 조정
+    }
+  };
+  
   const BODY_VARIANT_OFFSET = {
     female: { 0: { x: 0, y: 0 }, 1: { x: 2, y: -2 }, 2: { x: 1, y: 0 }, 3: { x: -1, y: 0 }, 4: { x: 0, y: 2 } },
     male: { 0: { x: 0, y: 0 }, 1: { x: 1, y: -2 }, 2: { x: 2, y: 0 }, 3: { x: 0, y: 0 } }
@@ -373,7 +389,16 @@ import { db } from './firebase-init.js';
     translate(px, py);
     scale(scaleFactor);
 
-    // BODY (먼저 그리기)
+    // 먼저 날개 렌더링 (아바타 뒤쪽)
+    if (avatar.sopumOn && IMG.sopum && typeof avatar.sopumIdx === 'number' && avatar.sopumIdx === 10) {
+      const sopumImg = IMG.sopum[avatar.sopumIdx];
+      if (sopumImg) {
+        const w = SOPUM_INDIVIDUAL_OFFSETS[10][avatar.gender];
+        image(sopumImg, w.x + vOff.x, w.y + vOff.y, w.s, w.s);
+      }
+    }
+
+    // BODY (날개 위에 그리기)
     if (bodyImg) {
       image(bodyImg, vOff.x, vOff.y, baseS, baseS);
     }
@@ -397,19 +422,30 @@ import { db } from './firebase-init.js';
       }
     }
 
-    // SOPUM (바디 위에 그리기 - 손에 잡고 있는 효과)
-    if (avatar.sopumOn && IMG.sopum && typeof avatar.sopumIdx === 'number') {
-      const w = OFFSETS.sopum[avatar.gender];
+    // 날개가 아닌 다른 SOPUM들 (바디 위에 그리기)
+    if (avatar.sopumOn && IMG.sopum && typeof avatar.sopumIdx === 'number' && avatar.sopumIdx !== 10) {
       const sopumImg = IMG.sopum[avatar.sopumIdx];
       
-      // sopum~sopum(8)까지는 오른쪽으로 이동 (손에 잡고 있는 효과)
-      let extraOffsetX = 0;
-      if (avatar.sopumIdx <= 7) { // sopum.png는 인덱스 0, sopum(2).PNG는 인덱스 1, ..., sopum(8).PNG는 인덱스 7
-        extraOffsetX = 15; // 오른쪽으로 15px 이동
-      }
-      
       if (sopumImg) {
-        image(sopumImg, w.x + vOff.x + extraOffsetX, w.y + vOff.y, w.s, w.s);
+        // 개별 소품 오프셋이 있는지 확인
+        const individualOffset = SOPUM_INDIVIDUAL_OFFSETS[avatar.sopumIdx];
+        
+        if (individualOffset && individualOffset[avatar.gender]) {
+          // 개별 오프셋 사용 (sopum(9), sopum(10) 등)
+          const w = individualOffset[avatar.gender];
+          image(sopumImg, w.x + vOff.x, w.y + vOff.y, w.s, w.s);
+        } else {
+          // 기본 오프셋 사용
+          const w = OFFSETS.sopum[avatar.gender];
+          
+          // sopum~sopum(8)까지는 오른쪽으로 이동 (손에 잡고 있는 효과)
+          let extraOffsetX = 0;
+          if (avatar.sopumIdx <= 7) { // sopum.png는 인덱스 0, sopum(2).PNG는 인덱스 1, ..., sopum(8).PNG는 인덱스 7
+            extraOffsetX = 15; // 오른쪽으로 15px 이동
+          }
+          
+          image(sopumImg, w.x + vOff.x + extraOffsetX, w.y + vOff.y, w.s, w.s);
+        }
       }
     }
 
