@@ -17,12 +17,31 @@
             padding: 0;
         }
 
+        /* 배경 고정을 위한 가상 요소 사용 (모바일 호환성) */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('bg_sample2.jpg') no-repeat center center;
+            background-size: cover;
+            z-index: -1;
+        }
+
+        html {
+            height: 100%;
+            width: 100%;
+        }
+
         body {
             font-family: sans-serif;
             color: #222;
-            background: url('bg_sample2.jpg') no-repeat center center;
-            background-size: cover;
-
+            min-height: 100vh;
+            width: 100%;
+            overflow-x: hidden;
+            position: relative;
         }
 
         /* p5 캔버스가 화면 너비에 맞게 줄어들도록 */
@@ -31,6 +50,15 @@
             height: auto;
             display: block;
             margin: 0 auto;
+            position: relative;
+            z-index: 1;
+            background: transparent;
+        }
+
+        /* 모든 UI 요소들이 배경 위에 오도록 */
+        #cat-bar, #inventory, .button {
+            position: relative;
+            z-index: 2;
         }
     </style>
 </head>

@@ -118,6 +118,26 @@
         .checkbox-container input[type="checkbox"] {
             margin-right: 5px;
         }
+        .avatar-preview {
+            width: 120px;
+            height: 120px;
+            float: left;
+            margin-right: 15px;
+            margin-bottom: 10px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 10px;
+            background: rgba(255,255,255,0.1);
+        }
+        .avatar-info {
+            margin-left: 140px;
+        }
+        .customize-info {
+            background: rgba(255,255,255,0.15);
+            border-radius: 8px;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 0.9em;
+        }
         button {
             background: linear-gradient(45deg, #ff6b6b, #ee5a24);
             color: white;
@@ -329,28 +349,60 @@
                         const timestamp = avatar.timestamp ? new Date(avatar.timestamp.seconds * 1000).toLocaleString('ko-KR') : '시간 정보 없음';
                         const keywords = avatar.keywords ? avatar.keywords.join(', ') : '키워드 없음';
                         
+                        // 아바타 커스터마이징 정보 추출
+                        const avatarData = avatar.avatar || {};
+                        const gender = avatarData.gender || 'female';
+                        const bodyIdx = avatarData.bodyIdx || 0;
+                        const headIdx = avatarData.headIdx;
+                        const sopumOn = avatarData.sopumOn || false;
+                        const sopumIdx = avatarData.sopumIdx;
+                        const musicPosition = avatar.musicPosition || '알 수 없음';
+                        
+                        // 커스터마이징 정보 텍스트
+                        const customizeInfo = `
+                            <div class="customize-info">
+                                <strong>🎨 아바타 커스터마이징:</strong><br>
+                                성별: ${gender === 'female' ? '여성' : '남성'}<br>
+                                바디: ${gender}-${bodyIdx + 1}<br>
+                                헤드: ${headIdx !== null ? `head-${headIdx + 1}` : '없음'}<br>
+                                소품: ${sopumOn ? `sopum-${sopumIdx + 1}` : '없음'}<br>
+                                음악 포지션: ${musicPosition}
+                            </div>
+                        `;
+                        
                         avatarHTML += `
                             <div class="avatar-item" id="avatar-${avatar.id}">
-                                <div class="checkbox-container">
-                                    <input type="checkbox" id="check-${avatar.id}" onchange="updateSelectedCount()">
-                                    <label for="check-${avatar.id}">선택</label>
+                                <canvas class="avatar-preview" id="canvas-${avatar.id}" width="120" height="120"></canvas>
+                                <div class="avatar-info">
+                                    <div class="checkbox-container">
+                                        <input type="checkbox" id="check-${avatar.id}" onchange="updateSelectedCount()">
+                                        <label for="check-${avatar.id}">선택</label>
+                                    </div>
+                                    <button class="delete-btn" onclick="deleteSingleAvatar('${avatar.id}', '${nickname.replace(/'/g, "\\'")}')">🗑️ 삭제</button>
+                                    <h4>🎭 ${nickname} (${index + 1}번)</h4>
+                                    <p><strong>📁 카테고리:</strong> ${category}</p>
+                                    <p><strong>🏷️ 키워드:</strong> ${keywords}</p>
+                                    <p><strong>⏰ 작성 시간:</strong> ${timestamp}</p>
+                                    <p><strong>📄 문서 ID:</strong> ${avatar.id}</p>
+                                    ${customizeInfo}
+                                    <div class="memory-text">
+                                        <strong>💭 추억 내용:</strong><br>
+                                        ${memory.replace(/\n/g, '<br>')}
+                                    </div>
+                                    <div style="clear: both;"></div>
                                 </div>
-                                <button class="delete-btn" onclick="deleteSingleAvatar('${avatar.id}', '${nickname.replace(/'/g, "\\'")}')">🗑️ 삭제</button>
-                                <h4>🎭 ${nickname} (${index + 1}번)</h4>
-                                <p><strong>📁 카테고리:</strong> ${category}</p>
-                                <p><strong>🏷️ 키워드:</strong> ${keywords}</p>
-                                <p><strong>⏰ 작성 시간:</strong> ${timestamp}</p>
-                                <p><strong>📄 문서 ID:</strong> ${avatar.id}</p>
-                                <div class="memory-text">
-                                    <strong>💭 추억 내용:</strong><br>
-                                    ${memory.replace(/\n/g, '<br>')}
-                                </div>
-                                <div style="clear: both;"></div>
                             </div>
                         `;
                     });
                     
                     avatarContainer.innerHTML = avatarHTML;
+                    
+                    // 아바타 이미지 렌더링
+                    setTimeout(() => {
+                        avatarsData.forEach((avatar, index) => {
+                            renderAvatarOnCanvas(avatar.avatar || {}, `canvas-${avatar.id}`);
+                        });
+                    }, 100);
                     
                     // 대량 삭제 컨트롤 표시
                     document.getElementById('bulkDeleteControls').style.display = 'block';
@@ -596,6 +648,58 @@
                 deleteBtn.disabled = false;
                 deleteBtn.innerHTML = '🗑️ 모든 데이터 삭제';
             }
+        }
+
+        // 아바타 렌더링 함수
+        window.renderAvatarOnCanvas = function(avatarData, canvasId) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, 120, 120);
+            
+            // 기본 배경
+            ctx.fillStyle = '#f0f0f0';
+            ctx.fillRect(0, 0, 120, 120);
+            
+            // 아바타 정보 텍스트로 표시
+            ctx.fillStyle = '#333';
+            ctx.font = '12px sans-serif';
+            ctx.textAlign = 'center';
+            
+            const gender = avatarData.gender || 'female';
+            const bodyIdx = avatarData.bodyIdx || 0;
+            const headIdx = avatarData.headIdx;
+            const sopumOn = avatarData.sopumOn || false;
+            
+            // 성별 표시
+            ctx.fillText(gender === 'female' ? '👩' : '👨', 60, 25);
+            
+            // 바디 정보
+            ctx.font = '10px sans-serif';
+            ctx.fillText(`바디: ${gender}-${bodyIdx + 1}`, 60, 45);
+            
+            // 헤드 정보
+            if (headIdx !== null && headIdx !== undefined) {
+                ctx.fillText(`헤드: head-${headIdx + 1}`, 60, 60);
+            } else {
+                ctx.fillText('헤드: 없음', 60, 60);
+            }
+            
+            // 소품 정보
+            if (sopumOn && avatarData.sopumIdx !== undefined) {
+                ctx.fillText(`소품: sopum-${avatarData.sopumIdx + 1}`, 60, 75);
+            } else {
+                ctx.fillText('소품: 없음', 60, 75);
+            }
+            
+            // 음악 포지션 (부모 데이터에서)
+            ctx.fillText('🎵 ' + (avatarData.musicPosition || '알수없음'), 60, 95);
+            
+            // 테두리
+            ctx.strokeStyle = '#ccc';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(0, 0, 120, 120);
         }
 
         // 페이지 로드시 자동으로 문서 개수 확인

@@ -70,7 +70,7 @@ import { db } from './firebase-init.js';
   }
 
   const Catalog = {
-    female: makeVariants('fe', 9),   // fe.png ~ fe(9).png
+    female: makeVariants('fe', 7),   // fe.png ~ fe(7).png (fe(8), fe(9) 삭제됨)
     male: makeVariants('ma', 9),     // ma.png ~ ma(9).png  
     heads: [
       'assets/head.png',
@@ -106,7 +106,7 @@ import { db } from './firebase-init.js';
   // write에서 넘어온 avatarData가 있으면 그대로 사용, 없으면 최소 기본값
   const avatar = savedAvatar && typeof savedAvatar === 'object'
     ? { ...savedAvatar }
-    : { gender: 'female', bodyIdx: 0, headIdx: null, sopumOnOn: false, eyes: 0 };
+    : { gender: 'female', bodyIdx: 0, headIdx: null, sopumOn: false, eyes: 0 };
 
   // 이미지 캐시
   const IMG = { female: [], male: [], heads: [], sopum: [], eye: [] };
@@ -134,6 +134,15 @@ import { db } from './firebase-init.js';
       male: { x: 0, y: -16, s: 200 }
     }
   };
+  
+  // 헤드별 개별 오프셋 (특정 헤드만 다른 위치/크기 적용)
+  const HEAD_INDIVIDUAL_OFFSETS = {
+    8: { // head(9).PNG (인덱스 8)
+      female: { x: 8, y: -20, s: 220 }, // 오른쪽 +8, 위쪽 -5, 크기 +20
+      male: { x: 8, y: -21, s: 220 }    // 남성도 동일하게 조정
+    }
+  };
+  
   const BODY_VARIANT_OFFSET = {
     female: { 0: { x: 0, y: 0 }, 1: { x: 2, y: -2 }, 2: { x: 1, y: 0 }, 3: { x: -1, y: 0 }, 4: { x: 0, y: 2 } },
     male: { 0: { x: 0, y: 0 }, 1: { x: 1, y: -2 }, 2: { x: 2, y: 0 }, 3: { x: 0, y: 0 } }
@@ -212,6 +221,7 @@ import { db } from './firebase-init.js';
       .style('border-radius', '8px')
       .style('background', '#757575').style('color', '#fff')
       .style('font-size', '1rem').style('cursor', 'pointer')
+      .style('z-index', '1000')
       .mousePressed(() => { window.location.href = 'write.html'; });
 
     /* 완료 버튼 */
@@ -222,6 +232,7 @@ import { db } from './firebase-init.js';
       .style('border-radius', '8px')
       .style('background', '#4CAF50').style('color', '#fff')
       .style('font-size', '1rem').style('cursor', 'pointer')
+      .style('z-index', '1000')
       .mousePressed(showConfirmationModal);
 
     /* 음악 포지션 선택 바 (상단) - 현재는 숨김 */
@@ -369,9 +380,21 @@ import { db } from './firebase-init.js';
 
     // HEAD 
     if (avatar.headIdx != null) {
-      const h = OFFSETS.head[avatar.gender];
       const headImg = IMG.heads[avatar.headIdx];
-      if (headImg) image(headImg, h.x + vOff.x, h.y + vOff.y, h.s, h.s);
+      if (headImg) {
+        // 개별 헤드 오프셋이 있는지 확인
+        const individualOffset = HEAD_INDIVIDUAL_OFFSETS[avatar.headIdx];
+        
+        if (individualOffset && individualOffset[avatar.gender]) {
+          // 개별 오프셋 사용 (head(9) 등)
+          const h = individualOffset[avatar.gender];
+          image(headImg, h.x + vOff.x, h.y + vOff.y, h.s, h.s);
+        } else {
+          // 기본 오프셋 사용
+          const h = OFFSETS.head[avatar.gender];
+          image(headImg, h.x + vOff.x, h.y + vOff.y, h.s, h.s);
+        }
+      }
     }
 
     // SOPUM (바디 위에 그리기 - 손에 잡고 있는 효과)
@@ -423,11 +446,36 @@ import { db } from './firebase-init.js';
       return positionMap[koreanPosition] || 'bass';
     };
 
+    // wall 웹에서 읽을 수 있는 아바타 데이터 형태로 변환
+    const avatarForWall = {
+      gender: avatar.gender,
+      bodyIdx: avatar.bodyIdx || 0,
+      headIdx: avatar.headIdx,
+      sopumOn: avatar.sopumOn || false,
+      sopumIdx: avatar.sopumIdx,
+      eyes: avatar.eyes || 0,
+      // 추가 wall 호환 필드들
+      wingOn: false,
+      skin: avatar.skin || '#ffdbac',
+      isDragged: false,
+      dragElevation: 0,
+      dropBounce: 0,
+      dropBounceVel: 0,
+      baseY: 0,
+      clickTimer: 0,
+      isClicked: false,
+      isOnStage: false,
+      stageSlot: -1,
+      isSpecial: false,
+      isPending: false,
+      pendingStartTime: 0
+    };
+
     const data = stripUndefined({
       nickname: memoryData.nickname ?? '',
       memory: memoryData.memory ?? '',
       category: memoryData.selectedRecipe?.name ?? '가족과의 따뜻한 시간', // 조합법 이름을 그대로 저장
-      avatar: avatar, // 순수 JSON
+      avatar: avatarForWall, // wall 호환 형태로 변환된 아바타 데이터
       sound: null,
       musicSet: memoryData.musicSet ?? null, // 음악 세트 정보 추가
       musicPosition: convertPositionToEnglish(selPosition), // 한국어 포지션을 영어로 변환
@@ -441,7 +489,7 @@ import { db } from './firebase-init.js';
     // 저장할 데이터 디버깅 로그
     console.log('💾 Firebase에 저장할 데이터:');
     console.log('nickname:', data.nickname);
-    console.log('avatar 데이터:', JSON.stringify(data.avatar, null, 2));
+    console.log('wall 호환 avatar 데이터:', JSON.stringify(avatarForWall, null, 2));
     console.log('musicPosition:', data.musicPosition);
     console.log('selectedRecipe:', data.selectedRecipe);
     console.log('extractedKeywords:', data.extractedKeywords);
