@@ -10,6 +10,11 @@ let filterState = {
 let performanceMode = false;
 let lastFrameTime = 0;
 
+// 디바운싱/쓰로틀링 시스템 추가
+let musicPlayDebounce = new Map(); // 아바타별 음악 재생 디바운스
+let stageUpdateThrottle = 0; // 무대 업데이트 쓰로틀
+let mediaArtUpdateThrottle = 0; // 미디어아트 업데이트 쓰로틀
+
 let stageAvatars = []; // 무대 전용 아바타들
 // 실험용: PC방 세트의 모든 포지션별 아바타를 무대에 추가
 const pcroomPositions = ['Bass', 'Chord', 'Drum', 'FX', 'Lead', 'Sub'];
@@ -778,6 +783,16 @@ let currentVideo = null;
 // 무대 슬롯 관리 (6개 슬롯)
 let stageSlots = [null, null, null, null, null, null];
 
+// 포지션별 색깔과 정보 정의 (악기 선택 패드와 동일한 색깔 사용)
+const POSITION_INFO = [
+  { name: '리드멜로디', shortName: '리드', color: '#ffe66d', emoji: '🎤', position: 'lead' },      // 노란색 (패드 스타일과 일치)
+  { name: '서브멜로디', shortName: '서브', color: '#b8b5ff', emoji: '🎷', position: 'sub' },       // 연보라색 (패드 스타일과 일치)
+  { name: '코드', shortName: '코드', color: '#a8e6cf', emoji: '🎹', position: 'chord' },         // 연두색 (패드 스타일과 일치)
+  { name: '베이스', shortName: '베이스', color: '#ff6b6b', emoji: '🎸', position: 'bass' },       // 빨간색 (패드 스타일과 일치)
+  { name: '드럼/퍼커션', shortName: '드럼', color: '#4ecdc4', emoji: '🥁', position: 'drum' },     // 청록색 (패드 스타일과 일치)
+  { name: '효과음/FX', shortName: 'FX', color: '#ffb3ba', emoji: '🎚️', position: 'fx' }         // 연분홍색 (패드 스타일과 일치)
+];
+
 // 음악 동기화 시스템 (단일 마스터 클럭 임시)
 let masterClock = {
   isRunning: false,
@@ -1192,10 +1207,10 @@ function invalidateFilterCache() {
 }
 
 
-// 필터 통계 업데이트 (극도 최적화)
+// 필터 통계 업데이트 (극도 최적화 + 강화된 쓰로틀링)
 let statsUpdateTimer = null;
 function updateFilterStats() {
-  // 더 긴 디바운싱으로 호출 빈도 줄이기
+  // 200ms 디바운싱으로 연속 호출 방지 (기존보다 강화)
   if (statsUpdateTimer) {
     clearTimeout(statsUpdateTimer);
   }
@@ -2491,13 +2506,15 @@ function draw() {
   const deltaTime = currentTime - (lastFrameTime || currentTime);
   lastFrameTime = currentTime;
 
-  // 성능 모드 감지 (렌더링 품질 조정용)
-  if (deltaTime > 25) { // 40 FPS 이하로 떨어지면
+  // 성능 모드 감지 (렌더링 품질 조정용) - 임계값 강화
+  if (deltaTime > 33) { // 30 FPS 이하로 떨어지면 (더 엄격)
     if (!performanceMode) {
       performanceMode = true;
+      console.log('⚡ 성능 모드 활성화 - 최적화 진행');
     }
-  } else if (performanceMode && deltaTime < 16) { // 60 FPS 이상 복구되면
+  } else if (performanceMode && deltaTime < 20) { // 50 FPS 이상 복구되면
     performanceMode = false;
+    console.log('✅ 성능 모드 해제 - 정상 렌더링 복구');
   }
 
   // 카메라 변환
@@ -2728,12 +2745,49 @@ function drawPadAvatar(avatar) {
     pop();
   }
   
-  // 닉네임 표시 (아래쪽)
-  fill(50);
-  noStroke();
+  // 닉네임 표시 (아래쪽) - 포지션별 배경색 추가
+  const nickname = avatar.nickname || 'Pad Avatar';
+  const bgColor = getPositionBackgroundColor(avatar);
+  
+  push();
   textAlign(CENTER, CENTER);
   textSize(12);
-  text(avatar.nickname || 'Pad Avatar', avatar.x, currentY + 60);
+  
+  // 텍스트 크기 측정
+  const textW = textWidth(nickname);
+  const textH = 16;
+  
+  // 배경 사각형 (이름과 함께 위로 조정)
+  fill(bgColor);
+  stroke(255);
+  strokeWeight(1);
+  rect(avatar.x - textW/2 - 4, currentY + 57 - textH/2 - 2, textW + 8, textH, 4);
+  
+  // 텍스트
+  fill(50);
+  noStroke();
+  text(nickname, avatar.x, currentY + 57); // 이름을 3px 위로
+  
+  pop();
+  
+  // 조합법 정보 표시 (아바타 바지 아래로 이동)
+  if (avatar.musicSet || avatar.selectedRecipe) {
+    const recipeText = avatar.selectedRecipe?.name || avatar.musicSet || '미지정';
+    push();
+    textAlign(CENTER, CENTER);
+    textSize(11);
+    
+    // 배경 사각형으로 가독성 향상
+    const recipeTextW = textWidth(recipeText);
+    fill(0, 0, 0, 120); // 반투명 검은색 배경
+    noStroke();
+    rect(avatar.x - recipeTextW/2 - 6, currentY + 45 - 8, recipeTextW + 12, 16, 3); // 13px 아래로
+    
+    // 텍스트 (명확한 흰색)
+    fill(255);
+    text(recipeText, avatar.x, currentY + 45); // 13px 아래로
+    pop();
+  }
   
   pop();
 }
@@ -2754,7 +2808,8 @@ function drawAvatar(avatar) {
     return;
   }
 
-  const currentY = avatar.y - avatar.dragElevation + avatar.dropBounce;
+  const currentY = avatar.isOnStage ? avatar.y : (avatar.y - avatar.dragElevation + avatar.dropBounce);
+  const currentX = avatar.isOnStage ? avatar.x : avatar.x;
 
   // 필터링 체크 - 무대 위 아바타는 항상 표시, 매칭되지 않으면 렌더링하지 않음
   if (!avatar.isOnStage && (filterState.category !== 'all' ||
@@ -2781,7 +2836,7 @@ function drawAvatar(avatar) {
     drawCustomAvatar(avatar.x, currentY, avatar.customData, avatar.direction, isHighlighted);
   } else if (avatar.musicType) {
     // Stage 아바타(샘플 이미지) - 3D 깊이감 적용
-    draw3DAvatar(avatar, currentY, isHighlighted);
+    draw3DAvatar(avatar.x, currentY, avatar, isHighlighted);
   } else {
     // 커스텀 데이터가 없으면 ID 기반 기본 스킨 생성 후 렌더
     if (!avatar.defaultCustomData) {
@@ -2808,18 +2863,52 @@ function drawAvatar(avatar) {
     drawCustomAvatar(avatar.x, currentY, avatar.defaultCustomData, avatar.direction, isHighlighted);
   }
 
-  // 닉네임 렌더링
+  // 닉네임 렌더링 - 포지션별 배경색 추가
+  const nickname = avatar.nickname || '사용자';
+  const bgColor = getPositionBackgroundColor(avatar);
+  
   push();
   textAlign(CENTER, BOTTOM);
   textSize(12);
+  
+  // 텍스트 크기 측정
+  const textW = textWidth(nickname);
+  const textH = 16;
+  
+  // 배경 사각형 (더 위로 조정)
+  fill(bgColor);
+  stroke(255);
+  strokeWeight(1);
+  rect(avatar.x - textW/2 - 4, currentY - 40 - textH + 1, textW + 8, textH, 4);
+  
+  // 텍스트 (외곽선 + 내용) - 원래 색깔 유지, 위로 이동
   fill(255);
   stroke(0);
   strokeWeight(3);
-  text(avatar.nickname || '사용자', avatar.x, currentY - 37);
+  text(nickname, avatar.x, currentY - 40);
   noStroke();
   fill(255);
-  text(avatar.nickname || '사용자', avatar.x, currentY - 37);
+  text(nickname, avatar.x, currentY - 40);
   pop();
+  
+  // 조합법 정보 표시 (아바타 바지 아래로 이동)
+  if (avatar.musicSet || avatar.selectedRecipe) {
+    const recipeText = avatar.selectedRecipe?.name || avatar.musicSet || '미지정';
+    push();
+    textAlign(CENTER, CENTER);
+    textSize(10);
+    
+    // 배경 사각형으로 가독성 향상
+    const recipeTextW = textWidth(recipeText);
+    fill(0, 0, 0, 140); // 반투명 검은색 배경
+    noStroke();
+    rect(avatar.x - recipeTextW/2 - 5, currentY + 40 - 7, recipeTextW + 10, 14, 3);
+    
+    // 텍스트 (명확한 흰색)
+    fill(255);
+    text(recipeText, avatar.x, currentY + 40);
+    pop();
+  }
 }
 
 function drawCustomAvatar(x, y, avatarData, direction, isHighlighted) {
@@ -2865,10 +2954,10 @@ function drawCustomAvatar(x, y, avatarData, direction, isHighlighted) {
 }
 
 // 3D 깊이감이 있는 아바타 렌더링 (무대용)
-function draw3DAvatar(avatar, currentY, isHighlighted) {
+function draw3DAvatar(x, y, avatar, isHighlighted) {
   push();
   
-  translate(avatar.x, currentY);
+  translate(x, y);
   
   if (avatar.direction === -1) scale(-1, 1);
   imageMode(CENTER);
@@ -2901,20 +2990,105 @@ function getStageSlotPosition(slotIndex) {
   };
 }
 
-function findNearestEmptyStageSlot(x, y) {
-  let nearestSlot = -1;
-  let minDistance = Infinity;
-  for (let i = 0; i < 6; i++) {
-    if (stageSlots[i] === null) {
-      const slotPos = getStageSlotPosition(i);
-      const distance = dist(x, y, slotPos.x, slotPos.y);
-      if (distance < minDistance) {
-        minDistance = distance;
-        nearestSlot = i;
-      }
+// 아바타의 포지션이 해당 슬롯에 맞는지 검사
+function isCorrectPositionForSlot(avatar, slotIndex) {
+  if (slotIndex < 0 || slotIndex >= 6 || !avatar) return false;
+  
+  const slotPositionInfo = POSITION_INFO[slotIndex];
+  const avatarPosition = avatar.musicPosition;
+  
+  // 영어 포지션을 한글로 변환하는 매핑
+  const positionMap = {
+    'lead': '리드멜로디',
+    'sub': '서브멜로디',
+    'chord': '코드',
+    'bass': '베이스',
+    'drum': '드럼/퍼커션',
+    'fx': '효과음/FX',
+    // 공백 포함된 버전들
+    '리드 멜로디': '리드멜로디',
+    '서브 멜로디': '서브멜로디',
+    '드럼 퍼커션': '드럼/퍼커션',
+    '효과음 FX': '효과음/FX'
+  };
+  
+  let normalizedAvatarPosition = avatarPosition;
+  if (positionMap[avatarPosition?.toLowerCase()]) {
+    normalizedAvatarPosition = positionMap[avatarPosition.toLowerCase()];
+  }
+  
+  // 추가 정규화: 공백, 특수문자 처리
+  const cleanPosition = (pos) => {
+    if (!pos) return '';
+    return pos.replace(/\s+/g, '').toLowerCase();
+  };
+  
+  // 더 포괄적인 매칭
+  const avatarClean = cleanPosition(avatarPosition);
+  const slotClean = cleanPosition(slotPositionInfo.name);
+  
+  let isMatch = normalizedAvatarPosition === slotPositionInfo.name;
+  
+  // 추가 매칭 시도
+  if (!isMatch) {
+    if (avatarClean === '서브멜로디' || avatarClean === '서브' || avatarClean === 'sub') {
+      isMatch = slotPositionInfo.name === '서브멜로디';
+    } else if (avatarClean === '리드멜로디' || avatarClean === '리드' || avatarClean === 'lead') {
+      isMatch = slotPositionInfo.name === '리드멜로디';
+    } else if (avatarClean === '코드' || avatarClean === 'chord') {
+      isMatch = slotPositionInfo.name === '코드';
+    } else if (avatarClean === '베이스' || avatarClean === 'bass') {
+      isMatch = slotPositionInfo.name === '베이스';
+    } else if (avatarClean.includes('드럼') || avatarClean.includes('퍼커션') || avatarClean === 'drum') {
+      isMatch = slotPositionInfo.name === '드럼/퍼커션';
+    } else if (avatarClean.includes('fx') || avatarClean.includes('효과음')) {
+      isMatch = slotPositionInfo.name === '효과음/FX';
     }
   }
-  return nearestSlot;
+  
+  if (!isMatch) {
+    console.log(`❌ 포지션 불일치: 아바타 "${avatar.nickname}" (${avatarPosition} → ${normalizedAvatarPosition})는 ${slotIndex+1}번 슬롯 (${slotPositionInfo.name})에 올 수 없습니다`);
+  } else {
+    console.log(`✅ 포지션 일치: 아바타 "${avatar.nickname}" (${normalizedAvatarPosition})는 ${slotIndex+1}번 슬롯에 올바르게 배치됩니다`);
+  }
+  
+  return isMatch;
+}
+
+// 아바타의 포지션에 맞는 배경색을 반환하는 함수
+function getPositionBackgroundColor(avatar) {
+  if (!avatar || !avatar.musicPosition) {
+    return '#888888'; // 기본 회색
+  }
+  
+  const position = avatar.musicPosition.toLowerCase().replace(/\s+/g, '');
+  
+  // 포지션별 색깔 매핑 (POSITION_INFO와 동일)
+  if (position.includes('리드') || position === 'lead') {
+    return '#ffe66d'; // 리드 - 노란색
+  } else if (position.includes('서브') || position === 'sub') {
+    return '#b8b5ff'; // 서브 - 연보라색
+  } else if (position.includes('코드') || position === 'chord') {
+    return '#a8e6cf'; // 코드 - 연두색
+  } else if (position.includes('베이스') || position === 'bass') {
+    return '#ff6b6b'; // 베이스 - 빨간색
+  } else if (position.includes('드럼') || position.includes('퍼커션') || position === 'drum') {
+    return '#4ecdc4'; // 드럼 - 청록색
+  } else if (position.includes('fx') || position.includes('효과음')) {
+    return '#ffb3ba'; // FX - 연분홍색
+  }
+  
+  return '#888888'; // 알 수 없는 포지션은 회색
+}
+
+function findCorrectPositionSlot(avatar) {
+  // 아바타의 포지션에 맞는 비어있는 슬롯을 찾음
+  for (let i = 0; i < 6; i++) {
+    if (stageSlots[i] === null && isCorrectPositionForSlot(avatar, i)) {
+      return i;
+    }
+  }
+  return -1; // 올바른 포지션 슬롯이 없거나 이미 차있음
 }
 
 function isInStageArea(x, y) {
@@ -3033,7 +3207,59 @@ function drawIsometricStage(x, y, w, h) {
   // 무대 계단 효과 (선택적)
   drawStageSteps(x, y, w, h, depth);
   
+  // 포지션별 색깔 슬롯 그리기
+  drawPositionSlots(x, y, w, h);
+  
   pop();
+}
+
+// 무대 위에 포지션별 색깔 슬롯 그리기
+function drawPositionSlots(stageX, stageY, stageW, stageH) {
+  const slotSize = 100; // 슬롯 크기
+  const spacing = stageW / 7; // 7등분해서 6개 슬롯 배치
+  
+  for (let i = 0; i < 6; i++) {
+    const posInfo = POSITION_INFO[i];
+    const slotX = stageX + spacing * (i + 1) - slotSize/2;
+    const slotY = stageY + stageH/2 - slotSize/2;
+    
+    push();
+    
+    // 슬롯 배경 (포지션별 색깔)
+    fill(posInfo.color);
+    stroke('#FFFFFF');
+    strokeWeight(3);
+    
+    // 슬롯이 비어있으면 반투명, 채워져있으면 불투명
+    if (stageSlots[i] === null) {
+      fill(red(color(posInfo.color)), green(color(posInfo.color)), blue(color(posInfo.color)), 100); // 30% 투명도
+    } else {
+      fill(posInfo.color); // 완전 불투명
+    }
+    
+    // 둥근 사각형 슬롯
+    rect(slotX, slotY, slotSize, slotSize, 15);
+    
+    // 포지션 이름 (위쪽)
+    fill('#FFFFFF');
+    noStroke();
+    textAlign(CENTER, CENTER);
+    textSize(14);
+    textStyle(BOLD);
+    text(posInfo.shortName, slotX + slotSize/2, slotY + 20);
+    
+    // 악기 이모지 (가운데)
+    textSize(24);
+    text(posInfo.emoji, slotX + slotSize/2, slotY + slotSize/2);
+    
+    // 슬롯 번호 (아래쪽)
+    textSize(12);
+    textStyle(NORMAL);
+    fill('#FFFFFF');
+    text(i + 1, slotX + slotSize/2, slotY + slotSize - 15);
+    
+    pop();
+  }
 }
 
 // 무대 계단 그리기
@@ -3146,6 +3372,9 @@ function mousePressed() {
 }
 
 function mouseDragged() {
+  // 성능 최적화: 드래그 이벤트 쓰로틀링
+  if (Date.now() - lastFrameTime < 16) return; // 60fps 제한
+  
   if (isPanning) {
     const deltaX = mouseX - panStart.x;
     const deltaY = mouseY - panStart.y;
@@ -3273,9 +3502,19 @@ function mouseReleased() {
           isDragging = false;
           return;
         }
-        const nearestSlot = findNearestEmptyStageSlot(selectedAvatar.x, selectedAvatar.y);
-        if (nearestSlot !== -1) {
-          const slotPos = getStageSlotPosition(nearestSlot);
+        // 무대 영역에 드롭하면 아바타의 포지션에 맞는 슬롯을 찾아서 자동 배치
+        let targetSlot = -1;
+        
+        // 아바타의 포지션에 맞는 슬롯 찾기
+        for (let i = 0; i < 6; i++) {
+          if (stageSlots[i] === null && isCorrectPositionForSlot(selectedAvatar, i)) {
+            targetSlot = i;
+            break;
+          }
+        }
+        
+        if (targetSlot !== -1) {
+          const slotPos = getStageSlotPosition(targetSlot);
           
           // 패드 아바타와의 충돌 검사 (로그 제거)
           
@@ -3310,19 +3549,26 @@ function mouseReleased() {
           selectedAvatar.x = slotPos.x;
           selectedAvatar.y = slotPos.y;
           selectedAvatar.isOnStage = true;
-          selectedAvatar.stageSlot = nearestSlot;
-          stageSlots[nearestSlot] = selectedAvatar.id;
+          selectedAvatar.stageSlot = targetSlot;
+          stageSlots[targetSlot] = selectedAvatar.id;
           selectedAvatar.currentAction = 'stopped';
 
-          console.log(`✅ ${selectedAvatar.nickname} 무대 배치 성공 (세트: ${selectedAvatar.musicSet})`);
-          playAvatarMusic(selectedAvatar);
+          console.log(`✅ ${selectedAvatar.nickname} 무대 자동 배치 성공 (포지션: ${selectedAvatar.musicPosition} → ${targetSlot + 1}번 슬롯)`);
+          
+          // 쓰로틀링: 음악 재생과 무대 업데이트를 지연 처리
+          setTimeout(() => {
+            playAvatarMusic(selectedAvatar);
+          }, 50); // 50ms 지연으로 부드러운 처리
 
           // 무대 슬롯이 모두 찼는지 확인 - 비디오는 playAvatarMusic에서 처리됨
-          if (isStageFullyOccupied()) {
-            console.log('🎬 무대 슬롯이 모두 차있습니다! (비디오는 playAvatarMusic에서 처리됨)');
-          }
+          setTimeout(() => {
+            if (isStageFullyOccupied()) {
+              console.log('🎬 무대 슬롯이 모두 차있습니다! (비디오는 playAvatarMusic에서 처리됨)');
+            }
+          }, 100); // 100ms 후 상태 확인
         } else {
-          console.log('⚠️ 무대 슬롯이 모두 차있습니다!');
+          // 포지션 불일치로 인해 배치할 수 있는 슬롯이 없는 경우
+          console.log(`❌ ${selectedAvatar.nickname}을 무대에 배치할 수 없습니다. 올바른 포지션 슬롯이 없거나 모든 슬롯이 차있습니다.`);
           selectedAvatar.y = 800; // 새로운 무대 아래 자유 공간으로
           selectedAvatar.isOnStage = false;
           if (selectedAvatar.stageSlot !== -1) {
@@ -4472,8 +4718,17 @@ function sendVideoMessage(messageData) {
   }
 }
 
-// 음악 재생 함수 (다중 BPM 지원)
+// 음악 재생 함수 (다중 BPM 지원 + 디바운싱 최적화)
 function playAvatarMusic(avatar) {
+  // 디바운싱: 같은 아바타의 음악이 150ms 내에 다시 재생되지 않도록
+  const now = Date.now();
+  const avatarKey = avatar.id || avatar.nickname;
+  const lastPlayTime = musicPlayDebounce.get(avatarKey) || 0;
+  if (now - lastPlayTime < 150) {
+    console.log(`🔄 음악 재생 디바운싱: ${avatar.nickname} 스킵 (${now - lastPlayTime}ms 전 재생)`);
+    return;
+  }
+  musicPlayDebounce.set(avatarKey, now);
 
   // 패드 아바타 디버깅
   if (avatar.isPadAvatar) {
@@ -5027,6 +5282,33 @@ let activePositions = new Set();
 // 비디오 재생 상태 추적
 let isVideoPlaying = false;
 
+// setName과 musicType으로부터 정확한 musicSet 추출하는 헬퍼 함수
+function getExpectedMusicSetFromSetName(setName, musicType) {
+  // musicType에서 구체적인 조합법 추출 시도
+  if (musicType) {
+    const parts = musicType.split('_');
+    if (parts.length >= 3) {
+      // set3_family_warmth_bass.wav → family_warmth
+      return parts[1] + '_' + parts[2];
+    }
+  }
+  
+  // musicType이 없거나 추출 실패시 setName 기반 추론
+  if (setName === 'set3' || setName.includes('SET3')) {
+    return 'family_warmth'; // SET3의 가장 일반적인 조합법
+  } else if (setName === 'set1' || setName.includes('SET1')) {
+    return 'pcroom_gaming'; // SET1의 가장 일반적인 조합법
+  } else if (setName === 'set2' || setName.includes('SET2')) {
+    return 'festivals_events'; // SET2의 가장 일반적인 조합법
+  } else if (setName === 'set4' || setName.includes('SET4')) {
+    return 'nostalgia_longing'; // SET4의 가장 일반적인 조합법
+  } else if (setName === 'set5' || setName.includes('SET5')) {
+    return 'art_creative'; // SET5의 가장 일반적인 조합법
+  }
+  
+  return null; // 추출 실패
+}
+
 // 6개 포지션이 모두 완성되고 모든 아바타가 같은 조합법인지 확인
 function isFullRecipeComplete() {
   // 영어와 한글 포지션을 모두 지원하는 표준화 함수
@@ -5045,7 +5327,20 @@ function isFullRecipeComplete() {
       '코드': '코드', 
       '베이스': '베이스',
       '드럼/퍼커션': '드럼/퍼커션',
-      '효과음/FX': '효과음/FX'
+      '효과음/FX': '효과음/FX',
+      // 공백 포함 버전들도 매핑 (중요!)
+      '서브 멜로디': '서브멜로디',
+      '리드 멜로디': '리드멜로디',
+      '서브멜로디': '서브멜로디',
+      '리드멜로디': '리드멜로디',
+      // 추가 변형들
+      '서브': '서브멜로디',
+      '리드': '리드멜로디',
+      '멜로디': '리드멜로디',
+      '드럼': '드럼/퍼커션',
+      '퍼커션': '드럼/퍼커션',
+      'fx': '효과음/FX',
+      '효과음': '효과음/FX'
     };
     return posMap[pos.toLowerCase()] || pos;
   }
@@ -5111,13 +5406,23 @@ function isFullRecipeComplete() {
     // 조합법 식별 시도 - 사용자 아바타 특별 처리
     let recipeId = null;
     
-    // 1순위: musicSet 직접 사용
+    // 1순위: musicSet 직접 사용 (단, setName과의 일치성 검증)
     if (avatar.musicSet && avatar.musicSet !== 'null' && avatar.musicSet !== 'unknown') {
       recipeId = avatar.musicSet;
+      
+      // setName이 있는 경우 musicSet과 일치하는지 검증하고 보정
+      if (avatar.setName) {
+        const expectedMusicSetFromSetName = getExpectedMusicSetFromSetName(avatar.setName, avatar.musicType);
+        if (expectedMusicSetFromSetName && expectedMusicSetFromSetName !== recipeId) {
+          console.log(`🔧 조합법 보정: ${avatar.nickname} musicSet="${recipeId}" → "${expectedMusicSetFromSetName}" (setName="${avatar.setName}" 기준)`);
+          recipeId = expectedMusicSetFromSetName;
+        }
+      }
     }
     // 2순위: 사용자 아바타라면 selectedRecipe.name에서 직접 추론
     else if (avatar.selectedRecipe?.name) {
       const recipeNameToMusicSet = {
+        // 정확한 이름들 (원본)
         '가족과의 따뜻한 시간': 'family_warmth',
         '학창시절 추억': 'school_memories', 
         '봄의 따뜻한 추억': 'spring_memories',
@@ -5133,14 +5438,58 @@ function isFullRecipeComplete() {
         '미술과 창작활동': 'art_creative',
         '감성적인 가을의 추억': 'autumn_memories',
         '포근한 겨울의 추억': 'winter_memories',
-        // 축약형들
+        
+        // 축약형들 (UI에서 표시되는 형태)
         '가족': 'family_warmth',
+        '가족 따뜻함': 'family_warmth',
         '게임': 'pcroom_gaming',
+        'PC게임': 'pcroom_gaming',
+        '콘솔게임': 'home_console_gaming',
+        '집게임': 'home_console_gaming',
+        'SNS': 'social_media_memories',
+        '소셜미디어': 'social_media_memories',
+        '운동': 'sports_activities',
+        '스포츠': 'sports_activities',
         '축제': 'festivals_events',
-        '여행': 'travel_places'
+        '이벤트': 'festivals_events',
+        '여행': 'travel_places',
+        '여행지': 'travel_places',
+        '옛날생각': 'nostalgia_longing',
+        '그리움': 'nostalgia_longing',
+        '밤': 'night_dawn',
+        '새벽': 'night_dawn',
+        '드라마': 'entertainment_culture',
+        '영화': 'entertainment_culture',
+        '웹툰': 'entertainment_culture',
+        '미술': 'art_creative',
+        '창작': 'art_creative',
+        '예술': 'art_creative',
+        '가을': 'autumn_memories',
+        '가을추억': 'autumn_memories',
+        '겨울': 'winter_memories',
+        '겨울추억': 'winter_memories',
+        '봄': 'spring_memories',
+        '봄추억': 'spring_memories',
+        '학창시절': 'school_memories',
+        '학교': 'school_memories'
       };
       
-      recipeId = recipeNameToMusicSet[avatar.selectedRecipe.name] || avatar.selectedRecipe.name.toLowerCase().replace(/\s+/g, '_');
+      // 정확한 매칭 우선, 부분 매칭 시도
+      let foundRecipeId = recipeNameToMusicSet[avatar.selectedRecipe.name];
+      
+      if (!foundRecipeId) {
+        // 부분 매칭 시도
+        const recipeName = avatar.selectedRecipe.name.toLowerCase();
+        for (const [key, value] of Object.entries(recipeNameToMusicSet)) {
+          if (key.toLowerCase().includes(recipeName) || recipeName.includes(key.toLowerCase())) {
+            foundRecipeId = value;
+            console.log(`🔍 부분 매칭 성공: "${avatar.selectedRecipe.name}" → "${key}" → "${value}"`);
+            break;
+          }
+        }
+      }
+      
+      recipeId = foundRecipeId || avatar.selectedRecipe.name.toLowerCase().replace(/\s+/g, '_');
       console.log(`🔍 사용자 아바타 ${avatar.nickname}: selectedRecipe="${avatar.selectedRecipe.name}" -> recipeId="${recipeId}"`);
     }
     // 3순위: musicType에서 조합법 추출
@@ -5181,22 +5530,36 @@ function isFullRecipeComplete() {
   
   // 현실적인 조건: unknown을 제외한 명확한 조합법들만 확인
   const knownRecipes = Array.from(recipeSets).filter(recipe => recipe !== 'unknown');
+  const unknownCount = Array.from(recipeSets).filter(recipe => recipe === 'unknown').length;
   
+  console.log(`   - 명확한 조합법: [${knownRecipes.join(', ')}] (${knownRecipes.length}개)`);
+  console.log(`   - unknown 조합법: ${unknownCount}개`);
+  
+  // 새로운 관대한 조건들:
+  // 1) 모든 아바타가 unknown이면 실패
   if (knownRecipes.length === 0) {
     console.log(`   - 완성 여부: ❌ 미완성 (모든 아바타의 조합법을 식별할 수 없음)`);
     return false;
   }
   
-  // 서로 다른 명확한 조합법이 섞여있으면 실패
+  // 2) 명확한 조합법이 2개 이상 섞여있으면 실패  
   if (knownRecipes.length > 1) {
-    console.log(`   - 완성 여부: ❌ 미완성 (서로 다른 조합법 혼재: [${knownRecipes.join(', ')}])`);
-    console.log(`     예시: winter_memories + art_creative 조합은 허용되지 않음`);
-    return false;
+    // 단, 동일한 조합법이 중복된 경우는 허용
+    const uniqueKnownRecipes = [...new Set(knownRecipes)];
+    if (uniqueKnownRecipes.length > 1) {
+      console.log(`   - 완성 여부: ❌ 미완성 (서로 다른 조합법 혼재: [${uniqueKnownRecipes.join(', ')}])`);
+      console.log(`     예시: winter_memories + art_creative 조합은 허용되지 않음`);
+      return false;
+    }
   }
   
-  // 하나의 명확한 조합법으로 통일되어 있으면 성공 (unknown 일부 포함 허용)
-  const dominantRecipe = knownRecipes[0];
-  const unknownCount = Array.from(recipeSets).filter(r => r === 'unknown').length;
+  // 3) 하나의 명확한 조합법으로 통일되어 있으면 성공 (unknown 포함 허용)
+  const dominantRecipe = knownRecipes[0]; // 첫 번째 명확한 조합법 사용
+  
+  // 4) unknown이 과반수 이상이면 경고하지만 허용 (관대한 정책)
+  if (unknownCount > knownRecipes.length) {
+    console.log(`   - 경고: unknown(${unknownCount}개)이 명확한 조합법(${knownRecipes.length}개)보다 많음`);
+  }
   
   console.log(`   - 완성 여부: ✅ 완성! (주요 조합법: ${dominantRecipe}, unknown: ${unknownCount}개)`);
   return true;
@@ -5251,8 +5614,13 @@ function getCurrentStageMusicSet() {
   return dominantMusicSet;
 }
 
-// 미디어아트 상태 업데이트
+// 미디어아트 상태 업데이트 (쓰로틀링 적용)
 function updateMediaArt() {
+  // 성능 최적화: 100ms 쓰로틀링
+  const now = Date.now();
+  if (now - mediaArtUpdateThrottle < 100) return;
+  mediaArtUpdateThrottle = now;
+  
   console.log(`🎵 현재 활성 포지션들:`, Array.from(activePositions));
   
   // 엄격한 조건: 6개 포지션 + 모든 아바타 동일 조합법
@@ -5915,8 +6283,8 @@ function activatePadButton(buttonKey, btnElement, instrument, recipeIndex) {
     }
     
     if (targetAvatar) {
-      // 무대 슬롯에 배치
-      const stagePosition = findAvailableStagePosition();
+      // 무대 슬롯에 배치 (포지션 검증 포함)
+      const stagePosition = findAvailableStagePosition(targetAvatar);
       if (stagePosition !== -1) {
         const slotPos = getStageSlotPosition(stagePosition);
         
@@ -5943,8 +6311,10 @@ function activatePadButton(buttonKey, btnElement, instrument, recipeIndex) {
         // 무대 슬롯에 배치
         stageSlots[stagePosition] = targetAvatar;
         
-        // 음악 시작 (기존 시스템 사용)
-        playAvatarMusic(targetAvatar);
+        // 음악 시작 (기존 시스템 사용 + 디바운싱)
+        setTimeout(() => {
+          playAvatarMusic(targetAvatar);
+        }, 50); // 50ms 지연으로 부드러운 처리
         
         // 패드 상태 업데이트  
         activePadButtons.add(buttonKey);
@@ -5953,7 +6323,9 @@ function activatePadButton(buttonKey, btnElement, instrument, recipeIndex) {
         
         console.log(`✅ 스테이지 아바타를 버튼으로 무대에 배치: ${targetAvatar.nickname} (슬롯 ${stagePosition})`);
       } else {
-        console.warn('⚠️ 무대 슬롯이 모두 찼습니다');
+        console.warn(`❌ ${targetAvatar.nickname}을 무대에 배치할 수 없습니다. 포지션이 맞지 않거나 모든 슬롯이 차있습니다.`);
+        console.warn(`   - 아바타 포지션: ${targetAvatar.musicPosition}`);
+        console.warn(`   - 요청된 악기: ${instrument}`);
       }
     } else {
       console.warn(`⚠️ 해당 조합법의 아바타를 찾을 수 없습니다: ${recipeData.name} ${instrument}`);
@@ -6008,13 +6380,17 @@ function getPadAvatarPosition(instrument) {
 }
 
 // 사용 가능한 무대 슬롯 찾기
-function findAvailableStagePosition() {
+function findAvailableStagePosition(avatar = null) {
   for (let i = 0; i < stageSlots.length; i++) {
     if (stageSlots[i] === null) {
+      // 아바타가 주어진 경우 포지션 검증
+      if (avatar && !isCorrectPositionForSlot(avatar, i)) {
+        continue; // 포지션이 맞지 않으면 이 슬롯은 건너뛰기
+      }
       return i;
     }
   }
-  return -1; // 모든 슬롯이 차있음
+  return -1; // 모든 슬롯이 차있거나 올바른 포지션 슬롯이 없음
 }
 
 // 세트 공간 변경 시 패드 시스템 업데이트
