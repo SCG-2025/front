@@ -2275,7 +2275,29 @@ try {
             // musicType 조합
             avatar.musicType = `set3_${avatar.musicSet}_${position}.wav`;
           } else {
-            avatar.musicType = null;
+            // musicType이 설정되지 않은 경우 기본값 생성
+            if (avatar.musicSet && avatar.musicPosition) {
+              // 포지션 정규화 
+              const positionMap = {
+                '리드 멜로디': 'lead', '리드멜로디': 'lead',
+                '서브 멜로디': 'sub', '서브멜로디': 'sub', 
+                '코드': 'chord', '베이스': 'bass',
+                '드럼/퍼커션': 'drum', '효과음/FX': 'fx',
+                'lead': 'lead', 'sub': 'sub', 'chord': 'chord',
+                'bass': 'bass', 'drum': 'drum', 'fx': 'fx'
+              };
+              const normalizedPos = positionMap[avatar.musicPosition] || 'lead';
+              
+              // SET 번호 추출
+              const setMatch = avatar.setName?.match(/set(\d)/i) || avatar.musicSet?.match(/set(\d)/i);
+              const setNum = setMatch?.[1] || '3'; // 기본값 set3
+              
+              avatar.musicType = `set${setNum}_${avatar.musicSet}_${normalizedPos}.wav`;
+              console.log(`🔧 기본 musicType 생성: ${avatar.nickname} -> ${avatar.musicType}`);
+            } else {
+              avatar.musicType = null;
+              console.log(`⚠️ ${avatar.nickname}: musicType 생성 실패 (musicSet: ${avatar.musicSet}, position: ${avatar.musicPosition})`);
+            }
           }
         }
         avatars.push(avatar);
@@ -3555,17 +3577,13 @@ function mouseReleased() {
 
           console.log(`✅ ${selectedAvatar.nickname} 무대 자동 배치 성공 (포지션: ${selectedAvatar.musicPosition} → ${targetSlot + 1}번 슬롯)`);
           
-          // 쓰로틀링: 음악 재생과 무대 업데이트를 지연 처리
-          setTimeout(() => {
-            playAvatarMusic(selectedAvatar);
-          }, 50); // 50ms 지연으로 부드러운 처리
+          // 즉시 음악 재생 (최적화 이전 방식으로 복구)
+          playAvatarMusic(selectedAvatar);
 
           // 무대 슬롯이 모두 찼는지 확인 - 비디오는 playAvatarMusic에서 처리됨
-          setTimeout(() => {
-            if (isStageFullyOccupied()) {
-              console.log('🎬 무대 슬롯이 모두 차있습니다! (비디오는 playAvatarMusic에서 처리됨)');
-            }
-          }, 100); // 100ms 후 상태 확인
+          if (isStageFullyOccupied()) {
+            console.log('🎬 무대 슬롯이 모두 차있습니다! (비디오는 playAvatarMusic에서 처리됨)');
+          }
         } else {
           // 포지션 불일치로 인해 배치할 수 있는 슬롯이 없는 경우
           console.log(`❌ ${selectedAvatar.nickname}을 무대에 배치할 수 없습니다. 올바른 포지션 슬롯이 없거나 모든 슬롯이 차있습니다.`);
@@ -4718,17 +4736,27 @@ function sendVideoMessage(messageData) {
   }
 }
 
-// 음악 재생 함수 (다중 BPM 지원 + 디바운싱 최적화)
+// 음악 재생 함수 (다중 BPM 지원 + 임시 디바운싱 비활성화)
 function playAvatarMusic(avatar) {
-  // 디바운싱: 같은 아바타의 음악이 150ms 내에 다시 재생되지 않도록
+  // 아바타 유효성 검사를 가장 먼저 수행
+  if (!avatar || typeof avatar !== 'object') {
+    console.warn('⚠️ playAvatarMusic: 유효하지 않은 아바타 객체', avatar);
+    return;
+  }
+
+  console.log(`🎵 ${avatar.nickname || '알수없음'} 음악 재생 시작`);
+
+  // 디바운싱 임시 비활성화 (문제 해결 후 재활성화)
+  /*
   const now = Date.now();
-  const avatarKey = avatar.id || avatar.nickname;
+  const avatarKey = avatar.id || avatar.nickname || 'unknown';
   const lastPlayTime = musicPlayDebounce.get(avatarKey) || 0;
   if (now - lastPlayTime < 150) {
-    console.log(`🔄 음악 재생 디바운싱: ${avatar.nickname} 스킵 (${now - lastPlayTime}ms 전 재생)`);
+    console.log(`🔄 음악 재생 디바운싱: ${avatar.nickname || '알수없음'} 스킵 (${now - lastPlayTime}ms 전 재생)`);
     return;
   }
   musicPlayDebounce.set(avatarKey, now);
+  */
 
   // 패드 아바타 디버깅
   if (avatar.isPadAvatar) {
@@ -4749,8 +4777,32 @@ function playAvatarMusic(avatar) {
   }
 
   if (!avatar.musicType) {
-    console.warn('⚠️ 음악 타입이 설정되지 않음:', avatar.nickname, '- 음악 없이 무대에 올라갑니다');
-    return; // 음악 없이도 무대에 올릴 수 있음
+    // 사용자 아바타의 경우 musicType을 동적으로 생성
+    if (avatar.musicSet && avatar.musicPosition) {
+      // 포지션 정규화 (한글 → 영어)
+      const positionMap = {
+        '리드 멜로디': 'lead',
+        '리드멜로디': 'lead',
+        '서브 멜로디': 'sub', 
+        '서브멜로디': 'sub',
+        '코드': 'chord',
+        '베이스': 'bass',
+        '드럼/퍼커션': 'drum',
+        '효과음/FX': 'fx'
+      };
+      
+      const normalizedPosition = positionMap[avatar.musicPosition] || avatar.musicPosition.toLowerCase();
+      
+      // SET 번호 결정
+      const setNumber = avatar.setName?.match(/set(\d)/)?.[1] || '3'; // 기본값 3
+      
+      // musicType 생성: set3_family_warmth_lead.wav 형태
+      avatar.musicType = `set${setNumber}_${avatar.musicSet}_${normalizedPosition}.wav`;
+      console.log(`🔧 사용자 아바타 musicType 생성: ${avatar.nickname} -> ${avatar.musicType}`);
+    } else {
+      console.warn('⚠️ 음악 타입이 설정되지 않음:', avatar.nickname, '- 음악 없이 무대에 올라갑니다');
+      return; // 음악 없이도 무대에 올릴 수 있음
+    }
   }
   // 음원 파일명 정규화: 이전 이름이 사용 중인 경우 새 파일명으로 매핑
   const musicTypeFilenameMap = {
@@ -5614,11 +5666,11 @@ function getCurrentStageMusicSet() {
   return dominantMusicSet;
 }
 
-// 미디어아트 상태 업데이트 (쓰로틀링 적용)
+// 미디어아트 상태 업데이트 (쓰로틀링 완화)
 function updateMediaArt() {
-  // 성능 최적화: 100ms 쓰로틀링
+  // 성능 최적화: 50ms 쓰로틀링 (100ms에서 완화)
   const now = Date.now();
-  if (now - mediaArtUpdateThrottle < 100) return;
+  if (now - mediaArtUpdateThrottle < 50) return;
   mediaArtUpdateThrottle = now;
   
   console.log(`🎵 현재 활성 포지션들:`, Array.from(activePositions));
@@ -6311,10 +6363,8 @@ function activatePadButton(buttonKey, btnElement, instrument, recipeIndex) {
         // 무대 슬롯에 배치
         stageSlots[stagePosition] = targetAvatar;
         
-        // 음악 시작 (기존 시스템 사용 + 디바운싱)
-        setTimeout(() => {
-          playAvatarMusic(targetAvatar);
-        }, 50); // 50ms 지연으로 부드러운 처리
+        // 음악 시작 (기존 시스템 사용)
+        playAvatarMusic(targetAvatar);
         
         // 패드 상태 업데이트  
         activePadButtons.add(buttonKey);
