@@ -4975,12 +4975,12 @@ let activePositions = new Set();
 // 비디오 재생 상태 추적
 let isVideoPlaying = false;
 
-// 6개 포지션이 모두 완성되었는지 확인
+// 6개 포지션이 모두 완성되고 모든 아바타가 같은 조합법인지 확인
 function isFullRecipeComplete() {
   const requiredPositions = ['리드멜로디', '서브멜로디', '코드', '베이스', '드럼/퍼커션', '효과음/FX'];
   const hasAllPositions = requiredPositions.every(pos => activePositions.has(pos));
   
-  console.log(`🔍 6개 포지션 완성 체크:`);
+  console.log(`🔍 6개 포지션 + 조합법 일치 체크:`);
   console.log(`   - 필요한 포지션: [${requiredPositions.join(', ')}]`);
   console.log(`   - 현재 활성: [${Array.from(activePositions).join(', ')}]`);
   
@@ -4991,67 +4991,136 @@ function isFullRecipeComplete() {
   
   // 6개 포지션이 모두 차있으면 조합법 일치 여부 확인
   const onStageAvatars = [];
+  const seenAvatarIds = new Set(); // 중복 방지용
   
-  // 무대 위 모든 아바타 수집
+  // 무대 위 모든 아바타 수집 (중복 제거하며)
   stageAvatars.forEach(avatar => {
-    if (avatar.isOnStage) {
+    if (avatar.isOnStage && !seenAvatarIds.has(avatar.id)) {
       onStageAvatars.push(avatar);
+      seenAvatarIds.add(avatar.id);
     }
   });
   
   avatars.forEach(avatar => {
-    if (avatar.isOnStage) {
+    if (avatar.isOnStage && !seenAvatarIds.has(avatar.id)) {
       onStageAvatars.push(avatar);
+      seenAvatarIds.add(avatar.id);
     }
   });
   
   padAvatars.forEach(avatar => {
-    if (avatar.isOnStage) {
+    if (avatar.isOnStage && !seenAvatarIds.has(avatar.id)) {
       onStageAvatars.push(avatar);
+      seenAvatarIds.add(avatar.id);
     }
   });
   
-  // 모든 아바타의 조합법(setName 또는 musicSet) 확인
-  const recipeSets = new Set();
-  onStageAvatars.forEach(avatar => {
-    const recipeId = avatar.setName || avatar.musicSet || avatar.selectedRecipe?.name || 'unknown';
-    recipeSets.add(recipeId);
-  });
-  
-  console.log(`   - 무대 아바타 수: ${onStageAvatars.length}`);
-  console.log(`   - 발견된 조합법들: [${Array.from(recipeSets).join(', ')}]`);
-  
-  if (recipeSets.size > 1) {
-    console.log(`   - 완성 여부: ❌ 미완성 (조합법 불일치: ${recipeSets.size}개 조합법 혼재)`);
+  // 무대에 정확히 6개의 아바타가 있는지 확인
+  if (onStageAvatars.length !== 6) {
+    console.log(`   - 완성 여부: ❌ 미완성 (무대 아바타 수: ${onStageAvatars.length}개, 필요: 정확히 6개)`);
     return false;
   }
   
-  console.log(`   - 완성 여부: ✅ 완성 (6개 포지션 + 동일 조합법: ${Array.from(recipeSets)[0]})`);
+  // 모든 아바타의 조합법(musicSet) 확인 - 개별 조합법로 엄격하게
+  const recipeSets = new Set();
+  console.log(`   - 무대 아바타 상세 정보:`);
+  
+  onStageAvatars.forEach((avatar, index) => {
+    // 조합법 식별 시도 - 더 유연하게
+    let recipeId = null;
+    
+    // 1순위: musicSet 직접 사용
+    if (avatar.musicSet && avatar.musicSet !== 'null' && avatar.musicSet !== 'unknown') {
+      recipeId = avatar.musicSet;
+    }
+    // 2순위: musicType에서 조합법 추출
+    else if (avatar.musicType) {
+      const parts = avatar.musicType.split('_');
+      if (parts.length >= 3) {
+        // set1_home_console_gaming_bass.wav -> home_console_gaming
+        // set5_winter_memories_bass.wav -> winter_memories
+        recipeId = parts[1] + '_' + parts[2];
+      }
+    }
+    // 3순위: setName에서 추론
+    else if (avatar.setName && avatar.setName !== 'null') {
+      // setName이 'set1', 'set2' 등인 경우 musicType에서 더 구체적으로 추출
+      if (avatar.setName.startsWith('set') && avatar.musicType) {
+        const parts = avatar.musicType.split('_');
+        if (parts.length >= 3) {
+          recipeId = parts[1] + '_' + parts[2];
+        }
+      } else {
+        recipeId = avatar.setName;
+      }
+    }
+    // 4순위: category나 selectedRecipe에서 추론
+    else if (avatar.category) {
+      recipeId = avatar.category.toLowerCase().replace(/\s+/g, '_');
+    }
+    else if (avatar.selectedRecipe?.name) {
+      recipeId = avatar.selectedRecipe.name.toLowerCase().replace(/\s+/g, '_');
+    }
+    
+    // 최종적으로도 없으면 'unknown'으로 처리
+    if (!recipeId || recipeId === 'null') recipeId = 'unknown';
+    
+    console.log(`     [${index+1}] ${avatar.nickname}: musicSet="${avatar.musicSet}" setName="${avatar.setName}" musicType="${avatar.musicType}" -> 개별조합법="${recipeId}"`);
+    recipeSets.add(recipeId);
+  });
+  
+  console.log(`   - 무대 아바타 수: ${onStageAvatars.length}개 (필요: 정확히 6개)`);
+  console.log(`   - 발견된 개별 조합법들: [${Array.from(recipeSets).join(', ')}]`);
+  
+  // 현실적인 조건: unknown을 제외한 명확한 조합법들만 확인
+  const knownRecipes = Array.from(recipeSets).filter(recipe => recipe !== 'unknown');
+  
+  if (knownRecipes.length === 0) {
+    console.log(`   - 완성 여부: ❌ 미완성 (모든 아바타의 조합법을 식별할 수 없음)`);
+    return false;
+  }
+  
+  // 서로 다른 명확한 조합법이 섞여있으면 실패
+  if (knownRecipes.length > 1) {
+    console.log(`   - 완성 여부: ❌ 미완성 (서로 다른 조합법 혼재: [${knownRecipes.join(', ')}])`);
+    console.log(`     예시: winter_memories + art_creative 조합은 허용되지 않음`);
+    return false;
+  }
+  
+  // 하나의 명확한 조합법으로 통일되어 있으면 성공 (unknown 일부 포함 허용)
+  const dominantRecipe = knownRecipes[0];
+  const unknownCount = Array.from(recipeSets).filter(r => r === 'unknown').length;
+  
+  console.log(`   - 완성 여부: ✅ 완성! (주요 조합법: ${dominantRecipe}, unknown: ${unknownCount}개)`);
   return true;
 }
 
 // 현재 무대에 있는 아바타들의 musicSet 확인
 function getCurrentStageMusicSet() {
   const onStageAvatars = [];
+  const seenAvatarIds = new Set(); // 중복 방지용
   
-  // 스테이지 아바타들 추가
+  // 스테이지 아바타들 추가 (중복 제거하며)
   stageAvatars.forEach(avatar => {
-    if (avatar.isOnStage) {
+    if (avatar.isOnStage && !seenAvatarIds.has(avatar.id)) {
       onStageAvatars.push(avatar);
+      seenAvatarIds.add(avatar.id);
     }
   });
   
-  // 일반 아바타들 추가
+  // 일반 아바타들 추가 (중복 제거하며)
   avatars.forEach(avatar => {
-    if (avatar.isOnStage) {
+    if (avatar.isOnStage && !seenAvatarIds.has(avatar.id)) {
       onStageAvatars.push(avatar);
+      seenAvatarIds.add(avatar.id);
     }
   });
   
-  // 패드 아바타들 추가
+  // 패드 아바타들 추가 (중복 제거하며)
   padAvatars.forEach(avatar => {
-    if (avatar.isOnStage) {
+    if (avatar.isOnStage && !seenAvatarIds.has(avatar.id)) {
       onStageAvatars.push(avatar);
+      seenAvatarIds.add(avatar.id);
     }
   });
   
@@ -5079,35 +5148,39 @@ function getCurrentStageMusicSet() {
 function updateMediaArt() {
   console.log(`🎵 현재 활성 포지션들:`, Array.from(activePositions));
   
+  // 엄격한 조건: 6개 포지션 + 모든 아바타 동일 조합법
   if (isFullRecipeComplete()) {
-    // 6개 포지션 완성 - 카운트다운 후 비디오 재생
-    console.log('🎯 6개 포지션 완성! 카운트다운 시작...');
+    // 6개 포지션 완성 + 동일 조합법 확인됨 - 카운트다운 후 비디오 재생
+    console.log('🎯 6개 포지션 완성 + 모든 아바타 동일 조합법! 카운트다운 시작...');
     sendVideoMessage({
       type: 'START_COUNTDOWN',
       countdown: 3
     });
     
     setTimeout(() => {
-      if (isFullRecipeComplete()) { // 카운트다운 중에도 여전히 완성 상태인지 확인
+      // 카운트다운 중에도 여전히 완성 상태인지 재확인 (엄격)
+      if (isFullRecipeComplete()) { 
         isVideoPlaying = true; // 비디오 재생 상태로 설정
         
         // 현재 무대에 있는 아바타들의 musicSet 확인
         const currentMusicSet = getCurrentStageMusicSet();
-        console.log(`🎬 현재 조합법: ${currentMusicSet}`);
+        console.log(`🎬 영상 재생 조건 만족! 현재 조합법: ${currentMusicSet}`);
         
         sendVideoMessage({
           type: 'PLAY_VIDEO',
           positions: Array.from(activePositions),
           musicSet: currentMusicSet
         });
-        console.log(`🎬 6개 포지션 완성! 동영상 재생 시작 (${currentMusicSet})`);
+        console.log(`🎬 조건 만족! 동영상 재생 시작 (6개 포지션 + 동일 조합법: ${currentMusicSet})`);
+      } else {
+        console.log('⚠️ 카운트다운 중 조건이 변경됨 - 동영상 재생 취소');
       }
     }, 3000);
   } else {
-    // 6개 포지션이 깨졌으면 비디오 재생 상태 해제
+    // 6개 포지션이 안 채워지거나 조합법이 다르면 비디오 재생 상태 해제
     if (isVideoPlaying) {
       isVideoPlaying = false;
-      console.log('🛑 6개 포지션 조건 미충족 - 비디오 재생 상태 해제');
+      console.log('🛑 조건 미충족 - 비디오 재생 상태 해제 (6개 포지션 미완성 또는 조합법 불일치)');
     }
     
     if (activePositions.size > 0) {
@@ -5324,27 +5397,39 @@ function updatePanningUI() {
   updateResetButton();
 }
 
-// 리셋 버튼 상태 업데이트 함수
+// 리셋 버튼 상태 업데이트 함수 (중복 제거)
 function updateResetButton() {
   const resetBtn = document.getElementById('resetStageBtn');
   if (!resetBtn) return;
 
-  // 모든 세트의 무대에 있는 아바타 확인 (통합 리셋 방식)
+  // 모든 세트의 무대에 있는 아바타 확인 (중복 제거하며 카운팅)
+  const seenAvatarIds = new Set();
   let stageAvatarCount = 0;
 
   // 패드로 생성된 아바타들 확인
   if (padAvatars && padAvatars.size > 0) {
-    stageAvatarCount += padAvatars.size;
+    padAvatars.forEach(avatar => {
+      if (avatar.isOnStage && !seenAvatarIds.has(avatar.id)) {
+        stageAvatarCount++;
+        seenAvatarIds.add(avatar.id);
+      }
+    });
   }
 
-  // 일반 아바타들 중 무대에 있는 것 확인 (모든 세트)
+  // 일반 아바타들 중 무대에 있는 것 확인 (중복 제거)
   avatars.forEach(avatar => {
-    if (avatar.isOnStage) stageAvatarCount++;
+    if (avatar.isOnStage && !seenAvatarIds.has(avatar.id)) {
+      stageAvatarCount++;
+      seenAvatarIds.add(avatar.id);
+    }
   });
 
-  // 스테이지 아바타들 중 무대에 있는 것 확인 (모든 세트)
+  // 스테이지 아바타들 중 무대에 있는 것 확인 (중복 제거)
   stageAvatars.forEach(avatar => {
-    if (avatar.isOnStage) stageAvatarCount++;
+    if (avatar.isOnStage && !seenAvatarIds.has(avatar.id)) {
+      stageAvatarCount++;
+      seenAvatarIds.add(avatar.id);
+    }
   });
 
   if (stageAvatarCount > 0) {
