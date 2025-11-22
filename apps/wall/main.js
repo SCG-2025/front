@@ -4460,6 +4460,14 @@ function playAvatarMusic(avatar) {
     console.warn('⚠️ 음악 타입이 설정되지 않음:', avatar.nickname, '- 음악 없이 무대에 올라갑니다');
     return; // 음악 없이도 무대에 올릴 수 있음
   }
+  // 음원 파일명 정규화: 이전 이름이 사용 중인 경우 새 파일명으로 매핑
+  const musicTypeFilenameMap = {
+    'set2_travel_places_drum.wav': 'set2_travel_places_drum_drum.wav'
+  };
+  if (musicTypeFilenameMap[avatar.musicType]) {
+    console.log(`🔧 musicType 정규화: ${avatar.musicType} -> ${musicTypeFilenameMap[avatar.musicType]}`);
+    avatar.musicType = musicTypeFilenameMap[avatar.musicType];
+  }
 
   const sound = musicSamples[avatar.musicType];
   if (!sound) {
@@ -5666,15 +5674,29 @@ function activatePadButton(buttonKey, btnElement, instrument, recipeIndex) {
       // 디버깅 로그 추가
       if (recipeMatch || instrumentMatch) {
         console.log(`🔍 아바타 매칭 체크: ${avatar.nickname}`, {
-          recipeMatch, 
+          recipeMatch,
           instrumentMatch,
+          musicType: avatar.musicType,
+          musicTypeWithoutExt,
+          lastPart,
           searchKeywords,
           avatarCategory: avatar.category,
           avatarName: avatar.nickname
         });
       }
-      
+
+      // 상세 실패 로그: 어떤 조건 때문에 매칭되지 않았는지 개발자에게 보여줌
+      if (!recipeMatch || !instrumentMatch) {
+        console.log(`   ❗ 매칭 실패 상세: ${avatar.nickname}`, {
+          reason: !recipeMatch ? 'recipe_mismatch' : undefined,
+          reason2: !instrumentMatch ? 'instrument_mismatch' : undefined,
+          musicTypeWithoutExt,
+          lastPart
+        });
+      }
+
       if (recipeMatch && instrumentMatch) {
+        console.log(`   ✅ 패드용 타겟 아바타 결정: ${avatar.nickname} (musicType=${avatar.musicType})`);
         targetAvatar = avatar;
         break;
       }

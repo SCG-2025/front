@@ -314,7 +314,7 @@ const musicFileMapping = {
     '서브 멜로디': '../wall/Music/set2_travel_places_drum_sub.wav',
     '코드': '../wall/Music/set2_travel_places_drum_chords.wav',
     '베이스': '../wall/Music/set2_travel_places_drum_bass.wav',
-    '드럼/퍼커션': '../wall/Music/set2_travel_places_drum.wav',
+    '드럼/퍼커션': '../wall/Music/set2_travel_places_drum_drum.wav',
     '효과음/FX': '../wall/Music/set2_travel_places_drum_fx.wav'
   },
   'family_warmth': {
