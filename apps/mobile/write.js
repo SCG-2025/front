@@ -1883,29 +1883,41 @@ function buildForm() {
   const musicPositions = ['리드 멜로디', '서브 멜로디', '코드', '베이스', '드럼/퍼커션', '효과음/FX'];
   let selectedPosition = savedMusicPosition;
 
+  // 포지션별 색상 매핑 (wall 웹과 동일)
+  const positionColors = {
+    '리드 멜로디': '#ffe66d',    // 노란색
+    '서브 멜로디': '#b8b5ff',    // 연보라색
+    '코드': '#a8e6cf',          // 연두색
+    '베이스': '#ff6b6b',        // 빨간색
+    '드럼/퍼커션': '#4ecdc4',    // 청록색
+    '효과음/FX': '#ffb3ba'      // 연분홍색
+  };
+
   musicPositions.forEach(position => {
     const button = document.createElement('button');
     button.textContent = position;
     button.type = 'button';
+    const positionColor = positionColors[position] || '#e0e0e0';
+    
     button.style.cssText = `
       flex:1; min-width:70px; padding:8px 12px;
-      border:2px solid #e0e0e0; border-radius:6px; background:#fff; color:#666;
-      font-size:14px; cursor:pointer; transition:all 0.2s;
+      border:2px solid ${positionColor}; border-radius:6px; 
+      background:${position === selectedPosition ? positionColor : '#fff'}; 
+      color:${position === selectedPosition ? '#fff' : positionColor};
+      font-size:14px; font-weight:bold; cursor:pointer; transition:all 0.2s;
     `;
-    if (position === selectedPosition) {
-      button.style.background = '#2196F3';
-      button.style.color = '#fff';
-      button.style.borderColor = '#2196F3';
-    }
+    
     button.addEventListener('click', () => {
-      positionBar.querySelectorAll('button').forEach(btn => {
+      positionBar.querySelectorAll('button').forEach((btn, idx) => {
+        const pos = musicPositions[idx];
+        const color = positionColors[pos] || '#e0e0e0';
         btn.style.background = '#fff';
-        btn.style.color = '#666';
-        btn.style.borderColor = '#e0e0e0';
+        btn.style.color = color;
+        btn.style.borderColor = color;
       });
-      button.style.background = '#2196F3';
+      button.style.background = positionColor;
       button.style.color = '#fff';
-      button.style.borderColor = '#2196F3';
+      button.style.borderColor = positionColor;
       selectedPosition = position;
       window.selectedPosition = position;
       localStorage.setItem('musicPosition', position);
