@@ -760,11 +760,8 @@ let isSorting = false;
 let sortingAnimations = []; // 정렬 애니메이션 정보 저장
 
 // 배포 환경 디버깅용 - 전역 변수 상태 확인
-console.log('🔧 아바타 정렬 시스템 초기화:', {
-  isSorting: isSorting,
-  sortingAnimations: sortingAnimations.length,
-  timestamp: new Date().toISOString()
-});
+// 아바타 정렬 시스템 초기화 로그 제거 (성능 최적화)
+
 // 전역: 곡별로 화면에 찍을 도형들(스크린별 보관)
 
 // 음원 관련 변수들
@@ -958,25 +955,9 @@ function checkMusicSetCompatibility(newAvatar) {
   const stageSetGroup = getMusicSetGroup(stageSetName);
   const newSetGroup = getMusicSetGroup(newSetName);
 
-  console.log(`🔍 세트 호환성 체크: 무대(${stageSetName}/${stageSetGroup}) vs 새로운(${newSetName}/${newSetGroup})`);
-  console.log(`무대 아바타 정보:`, {
-    nickname: allOnStageAvatars[0].nickname,
-    musicSet: allOnStageAvatars[0].musicSet,
-    setName: allOnStageAvatars[0].setName,
-    musicType: allOnStageAvatars[0].musicType,
-    category: allOnStageAvatars[0].category,
-    inferred: stageSetName,
-    setGroup: stageSetGroup
-  });
-  console.log(`새 아바타 정보:`, {
-    nickname: newAvatar.nickname,
-    musicSet: newAvatar.musicSet,
-    setName: newAvatar.setName,
-    musicType: newAvatar.musicType,
-    category: newAvatar.category,
-    inferred: newSetName,
-    setGroup: newSetGroup
-  });
+  // 세트 호환성 체크 (로그 제거)
+  // 무대 아바타 정보 (로그 제거)
+  // 새 아바타 정보 (로그 제거)
 
   // UNKNOWN 세트는 호환되지 않음을 더 명확히 처리
   if (stageSetGroup === 'SET_UNKNOWN' || newSetGroup === 'SET_UNKNOWN') {
@@ -998,26 +979,26 @@ function checkMusicSetCompatibility(newAvatar) {
 
   // 1. SET 그룹이 다르면 무조건 호환 불가 (조합법이 달라도 같은 SET이면 호환)
   if (newSetGroup !== stageSetGroup) {
-    console.log(`❌ SET 그룹 불일치: ${newSetGroup} !== ${stageSetGroup}`);
+    // SET 그룹 로그 제거 불일치: ${newSetGroup} !== ${stageSetGroup}`);
     console.log(`   조합법: ${newSetName} vs ${stageSetName}`);
     return { compatible: false, currentSet: stageSetGroup, reason: 'set_mismatch' };
   }
 
-  console.log(`✅ SET 그룹 일치: ${newSetGroup} (조합법: ${newSetName} vs ${stageSetName})`);
+  // SET 그룹 로그 제거 일치: ${newSetGroup} (조합법: ${newSetName} vs ${stageSetName})`);
 
   // 2. SET이 같으면 포지션 중복 검사
   const newPosition = extractPositionName(newAvatar.musicPosition);
   const existingPositions = allOnStageAvatars.map(a => extractPositionName(a.musicPosition));
   const hasPosition = existingPositions.includes(newPosition);
 
-  console.log(`🔍 포지션 체크: 새로운(${newPosition}) vs 기존([${existingPositions.join(', ')}])`);
+  // 포지션 체크 (로그 제거)
 
   if (hasPosition) {
-    console.log(`❌ 포지션 중복: ${newPosition}`);
+    // 포지션 중복 로그 제거: ${newPosition}`);
     return { compatible: false, currentSet: stageSetGroup, reason: 'duplicate_position' };
   }
 
-  console.log(`✅ 호환 가능: ${newSetName} / ${newPosition}`);
+  // 호환 가능 (로그 제거)
   return { compatible: true, currentSet: stageSetGroup };
 }
 
@@ -1069,12 +1050,7 @@ function isAvatarMatchingFilter(avatar) {
   if (Math.random() < 0.2) { // 20% 확률로 로그 (조합법 디버깅)
     const avatarSetName = getAvatarSetName(avatar);
     const avatarPosition = getAvatarPosition(avatar);
-    console.log(`🔍 필터링 체크: ${avatar.nickname || avatar.id} | 
-      타입: ${avatar.isSpecial ? 'DB' : 'Stage'} |
-      Category: "${avatar.category}" vs 필터: "${filterState.category}" (일치: ${avatar.category === filterState.category}) |
-      Set: ${avatarSetName} vs 필터: ${filterState.musicSet} (일치: ${avatarSetName === filterState.musicSet}) |
-      Position: ${avatarPosition} vs 필터: ${filterState.position} (일치: ${avatarPosition === filterState.position}) |
-      결과: ${result ? '매칭' : '필터링됨'}`);
+    // 필터링 체크 로그 제거 (성능 최적화)
   }
 
   // 결과를 캐시에 저장
@@ -1201,7 +1177,7 @@ function invalidateFilterCache() {
   // 메모리 최적화: 캐시 크기가 너무 커지면 초기화
   if (filterCache.size > 500) {
     filterCache.clear();
-    console.log('🧹 필터 캐시 정리 완료');
+    // 필터 캐시 로그 제거 완료');
   }
 }
 
@@ -1380,13 +1356,7 @@ function showMusicSetWarning(avatar, currentSetGroup) {
 
   // SCG2025 특별 디버깅
   if (avatar.nickname === 'SCG2025' || avatar.id.includes('SCG2025') || avatar.nickname === 'scg2025') {
-    console.log('🚨 SCG2025 경고 메시지 디버깅:');
-    console.log('avatar.musicSet:', avatar.musicSet);
-    console.log('avatar.setName:', avatar.setName);
-    console.log('avatar.musicType:', avatar.musicType);
-    console.log('최종 avatarMusicSet:', avatarMusicSet);
-    console.log('avatarSetGroup:', avatarSetGroup);
-    console.log('currentSetGroup:', currentSetGroup);
+    // SCG2025 디버깅 로그 제거:');
   }
 
   // SET 그룹별 한글 이름 매핑
@@ -1577,97 +1547,97 @@ function preload() {
 
   // === 검증용 음원들 직접 로드 ===
   musicSamples['Music Sample_Bass.mp3'] = loadSound('Music%20Sample_Bass.mp3',
-    () => console.log('✅ 검증용 Bass 음원 로드 완료'),
+    () => {}, // 로드 완료 (로그 제거)
     () => console.error('❌ 검증용 Bass 음원 로드 실패')
   );
   musicSamples['Music Sample_Drum.mp3'] = loadSound('Music%20Sample_Drum.mp3',
-    () => console.log('✅ 검증용 Drum 음원 로드 완료'),
+    () => {}, // 로드 완료 (로그 제거)
     () => console.error('❌ 검증용 Drum 음원 로드 실패')
   );
   musicSamples['Music Sample_Lead.mp3'] = loadSound('Music%20Sample_Lead.mp3',
-    () => console.log('✅ 검증용 Lead 음원 로드 완료'),
+    () => {}, // 로드 완료 (로그 제거)
     () => console.error('❌ 검증용 Lead 음원 로드 실패')
   );
   musicSamples['Music Sample_Others.mp3'] = loadSound('Music%20Sample_Others.mp3',
-    () => console.log('✅ 검증용 Others 음원 로드 완료'),
+    () => {}, // 로드 완료 (로그 제거)
     () => console.error('❌ 검증용 Others 음원 로드 실패')
   );
 
   // === PC룸 게임용 음원들 로드 (6트랙) ===
   musicSamples['set1_pcroom_gaming_bass.wav'] = loadSound('Music/set1_pcroom_gaming_bass.wav',
-    () => console.log('✅ PC룸 Bass 음원 로드 완료'),
+    () => {}, // 로드 완료 (로그 제거)
     () => console.error('❌ PC룸 Bass 음원 로드 실패')
   );
   musicSamples['set1_pcroom_gaming_chord.wav'] = loadSound('Music/set1_pcroom_gaming_chord.wav',
-    () => console.log('✅ PC룸 Chord 음원 로드 완료'),
+    () => {}, // 로드 완료 (로그 제거)
     () => console.error('❌ PC룸 Chord 음원 로드 실패')
   );
   musicSamples['set1_pcroom_gaming_drum.wav'] = loadSound('Music/set1_pcroom_gaming_drum.wav',
-    () => console.log('✅ PC룸 Drum 음원 로드 완료'),
+    () => // 로드 완료 (로그 제거),
     () => console.error('❌ PC룸 Drum 음원 로드 실패')
   );
   musicSamples['set1_pcroom_gaming_fx.wav'] = loadSound('Music/set1_pcroom_gaming_fx.wav',
-    () => console.log('✅ PC룸 FX 음원 로드 완료'),
+    () => // 로드 완료 (로그 제거),
     () => console.error('❌ PC룸 FX 음원 로드 실패')
   );
   musicSamples['set1_pcroom_gaming_lead.wav'] = loadSound('Music/set1_pcroom_gaming_lead.wav',
-    () => console.log('✅ PC룸 Lead 음원 로드 완료'),
+    () => // 로드 완료 (로그 제거),
     () => console.error('❌ PC룸 Lead 음원 로드 실패')
   );
   musicSamples['set1_pcroom_gaming_sub.wav'] = loadSound('Music/set1_pcroom_gaming_sub.wav',
-    () => console.log('✅ PC룸 Sub 음원 로드 완료'),
+    () => // 로드 완료 (로그 제거),
     () => console.error('❌ PC룸 Sub 음원 로드 실패')
   );
 
   // === 콘솔 게임 음원들 로드 (6트랙) ===
   musicSamples['set1_home_console_gaming_bass.wav'] = loadSound('Music/set1_home_console_gaming_bass.wav',
-    () => console.log('✅ 콘솔 Bass 음원 로드 완료'),
+    () => // 로드 완료 (로그 제거),
     () => console.error('❌ 콘솔 Bass 음원 로드 실패')
   );
   musicSamples['set1_home_console_gaming_chord.wav'] = loadSound('Music/set1_home_console_gaming_chord.wav',
-    () => console.log('✅ 콘솔 Chord 음원 로드 완료'),
+    () => // 로드 완료 (로그 제거),
     () => console.error('❌ 콘솔 Chord 음원 로드 실패')
   );
   musicSamples['set1_home_console_gaming_drum.wav'] = loadSound('Music/set1_home_console_gaming_drum.wav',
-    () => console.log('✅ 콘솔 Drum 음원 로드 완료'),
+    () => // 로드 완료 (로그 제거),
     () => console.error('❌ 콘솔 Drum 음원 로드 실패')
   );
   musicSamples['set1_home_console_gaming_fx.wav'] = loadSound('Music/set1_home_console_gaming_fx.wav',
-    () => console.log('✅ 콘솔 FX 음원 로드 완료'),
+    () => // 로드 완료 (로그 제거),
     () => console.error('❌ 콘솔 FX 음원 로드 실패')
   );
   musicSamples['set1_home_console_gaming_lead.wav'] = loadSound('Music/set1_home_console_gaming_lead.wav',
-    () => console.log('✅ 콘솔 Lead 음원 로드 완료'),
+    () => // 로드 완료 (로그 제거),
     () => console.error('❌ 콘솔 Lead 음원 로드 실패')
   );
   musicSamples['set1_home_console_gaming_sub.wav'] = loadSound('Music/set1_home_console_gaming_sub.wav',
-    () => console.log('✅ 콘솔 Sub 음원 로드 완료'),
+    () => // 로드 완료 (로그 제거),
     () => console.error('❌ 콘솔 Sub 음원 로드 실패')
   );
 
   // === 소셜 미디어 음원들 로드 (6트랙) ===
   musicSamples['set1_social_media_memories_bass.wav'] = loadSound('Music/set1_social_media_memories_bass.wav',
-    () => console.log('✅ 소셜 Bass 음원 로드 완료'),
+    () => // 로드 완료 (로그 제거),
     () => console.error('❌ 소셜 Bass 음원 로드 실패')
   );
   musicSamples['set1_social_media_memories_chord.wav'] = loadSound('Music/set1_social_media_memories_chord.wav',
-    () => console.log('✅ 소셜 Chord 음원 로드 완료'),
+    () => // 로드 완료 (로그 제거),
     () => console.error('❌ 소셜 Chord 음원 로드 실패')
   );
   musicSamples['set1_social_media_memories_drum.wav'] = loadSound('Music/set1_social_media_memories_drum.wav',
-    () => console.log('✅ 소셜 Drum 음원 로드 완료'),
+    () => // 로드 완료 (로그 제거),
     () => console.error('❌ 소셜 Drum 음원 로드 실패')
   );
   musicSamples['set1_social_media_memories_fx.wav'] = loadSound('Music/set1_social_media_memories_fx.wav',
-    () => console.log('✅ 소셜 FX 음원 로드 완료'),
+    () => // 로드 완료 (로그 제거),
     () => console.error('❌ 소셜 FX 음원 로드 실패')
   );
   musicSamples['set1_social_media_memories_lead.wav'] = loadSound('Music/set1_social_media_memories_lead.wav',
-    () => console.log('✅ 소셜 Lead 음원 로드 완료'),
+    () => // 로드 완료 (로그 제거),
     () => console.error('❌ 소셜 Lead 음원 로드 실패')
   );
   musicSamples['set1_social_media_memories_sub.wav'] = loadSound('Music/set1_social_media_memories_sub.wav',
-    () => console.log('✅ 소셜 Sub 음원 로드 완료'),
+    () => // 로드 완료 (로그 제거),
     () => console.error('❌ 소셜 Sub 음원 로드 실패')
   );
 
@@ -1953,26 +1923,13 @@ function setup() {
 
 try {
   onSnapshot(collection(db, 'memories'), (snapshot) => {
-    console.log(`🔥 Firebase 연결 성공! 총 ${snapshot.size}개 문서 발견`);
-    console.log('[main.js] onSnapshot fired, docs:', snapshot.size);
+    // Firebase 연결 성공 (${snapshot.size}개 문서)
 
-    // 모든 문서 상세 정보 출력
-    console.log('📋 Firebase 문서들:');
-    snapshot.docs.forEach((doc, index) => {
-      const data = doc.data();
-      console.log(`  ${index + 1}. ID: ${doc.id}`, {
-        nickname: data.nickname,
-        memory: data.memory?.substring(0, 50) + '...',
-        category: data.category,
-        selectedRecipe: data.selectedRecipe,
-        setName: data.setName,
-        musicSet: data.musicSet
-      });
-    });
+    // 문서 로딩 (로그 제거)
 
     // 기존 Firebase 아바타 전체 제거 (새로 로딩)
     avatars.length = 0;
-    console.log('🗑️ 기존 Firebase 아바타 배열 초기화됨');
+    // 기존 아바타 배열 초기화
 
     snapshot.docChanges().forEach(change => {
       if (change.type === 'added') {
@@ -1981,22 +1938,10 @@ try {
         // SCG2025 아바타 특별 디버깅
         if (change.doc.id.includes('SCG2025') || change.doc.id.includes('scg2025') || docData.nickname === 'SCG2025') {
           console.log('🚨 SCG2025 아바타 발견! 상세 정보:');
-          console.log('ID:', change.doc.id);
-          console.log('전체 docData:', JSON.stringify(docData, null, 2));
+          // ID와 docData 디버깅 (로그 제거)
         }
 
-        console.log('🔍 새 아바타 데이터:', {
-          id: change.doc.id,
-          nickname: docData.nickname,
-          category: docData.category,
-          selectedRecipe: docData.selectedRecipe,
-          selectedRecipeName: docData.selectedRecipe && docData.selectedRecipe.name,
-          finalCategory: docData.category || (docData.selectedRecipe && docData.selectedRecipe.name) || '기타',
-          setName: docData.setName || 'set1 (기본값)',
-          musicSet: docData.musicSet,
-          musicPosition: docData.musicPosition,
-          musicFilePath: docData.musicFilePath
-        });
+        // 새 아바타 데이터 (로그 제거)
 
         // 아바타 객체 생성: 외형 정보와 커스텀 정보 분리
         const avatar = {
@@ -2061,8 +2006,9 @@ try {
           }
         }
 
-        // 📊 모든 아바타 세트 정보 점검 (디버깅용)
-        console.log(`📊 아바타 세트 정보: ${avatar.nickname}`, {
+        // 📊 모든 아바타 세트 정보 점검 (디버깅용) - 성능 최적화로 제거
+        /*
+        console.log('📊 아바타 세트 정보:', {
           id: avatar.id,
           musicSet: avatar.musicSet,
           setName: avatar.setName,
@@ -2071,6 +2017,7 @@ try {
           selectedRecipe: avatar.selectedRecipe?.name,
           setGroup: avatar.musicSet ? getMusicSetGroup(avatar.musicSet) : 'UNKNOWN'
         });
+        */
 
         // SCG2025 특별 처리 - 강제 보정
         if (avatar.nickname === 'SCG2025' || avatar.nickname === 'scg2025' || avatar.id.includes('SCG2025') || avatar.id.includes('scg2025')) {
@@ -2280,51 +2227,27 @@ try {
           }
         }
         avatars.push(avatar);
-        console.log(`✅ 새 Firebase 아바타 추가됨: ${avatar.nickname} (${avatar.setName}) - 총 ${avatars.length}개`);
 
         // 모든 아바타 데이터 검증 및 수정
         validateAndFixAllAvatars();
 
-        // 📊 전체 아바타 세트 현황 점검
-        console.log('📊=== 전체 아바타 세트 현황 점검 ===');
-        const setStats = {};
-        const problemAvatars = [];
-
+        // 아바타 세트 현황 점검 - 성능 최적화로 간소화
+        let problemAvatars = [];
         avatars.forEach(a => {
-          const setGroup = a.musicSet ? getMusicSetGroup(a.musicSet) : 'UNKNOWN';
-          const setName = a.setName || '미설정';
-
-          if (!setStats[setGroup]) {
-            setStats[setGroup] = [];
-          }
-          setStats[setGroup].push({
-            nickname: a.nickname,
-            musicSet: a.musicSet,
-            setName: setName,
-            musicType: a.musicType
-          });
-
-          if (!a.musicSet || a.musicSet === 'null' || setGroup === 'UNKNOWN' || setName === '알 수 없는 세트') {
+          if (!a.musicSet || a.musicSet === 'null' || !a.setName || a.setName === '알 수 없는 세트') {
             problemAvatars.push({
               nickname: a.nickname,
-              id: a.id,
-              musicSet: a.musicSet,
-              setName: setName,
-              musicType: a.musicType,
-              category: a.category
+              issue: '세트 정보 누락'
             });
           }
         });
-
-        console.log('📊 세트별 아바타 수:', Object.keys(setStats).map(key => `${key}: ${setStats[key].length}개`).join(', '));
-
+        
         if (problemAvatars.length > 0) {
-          console.warn('⚠️ 문제가 있는 아바타들:', problemAvatars);
-        } else {
-          console.log('✅ 모든 아바타가 올바른 세트 정보를 가지고 있습니다');
+          console.warn(`⚠️ 문제 아바타 ${problemAvatars.length}개 발견:`, problemAvatars.slice(0, 3)); // 최대 3개만 표시
         }
 
-        // 최종 아바타 정보 로그
+        // 최종 아바타 정보 로그 - 성능 최적화로 제거
+        /*
         console.log('✅ 아바타 추가 완료:', {
           id: avatar.id,
           nickname: avatar.nickname,
@@ -2335,13 +2258,14 @@ try {
           setName: getAvatarSetName(avatar),
           position: getAvatarPosition(avatar)
         });
+        */
       }
     });
 
     // 🔥 Firebase 데이터 로딩 완료 요약
-    console.log('🔥=== Firebase 데이터 로딩 완료 ===');
+    // Firebase 로딩 로그 제거 (성능 최적화) ===');
     console.log(`📊 총 ${avatars.length}개 아바타 로딩됨`);
-    console.log('🎭 아바타 목록:');
+    // 아바타 목록 로그 제거 (성능 최적화):');
     avatars.forEach((avatar, index) => {
       console.log(`  ${index + 1}. ${avatar.nickname} (${avatar.setName})`);
     });
@@ -2359,22 +2283,8 @@ try {
 
 // 아바타 현황 확인을 위한 디버깅 함수
 function logAvatarStatus() {
-
-  if (avatars.length > 0) {
-
-    avatars.forEach((avatar, index) => {
-      console.log(`  ${index + 1}. ${avatar.nickname} (${avatar.setName || '세트없음'})`);
-    });
-  }
-
-  if (stageAvatars.length > 0) {
-    stageAvatars.slice(0, 5).forEach((avatar, index) => {
-      console.log(`  ${index + 1}. ${avatar.nickname} (${avatar.setName || '세트없음'})`);
-    });
-    if (stageAvatars.length > 5) {
-      console.log(`  ... 외 ${stageAvatars.length - 5}개 더`);
-    }
-  }
+  // 개별 아바타 목록 출력 제거 (성능 최적화)
+  // avatars와 stageAvatars의 개수는 필요시 다른 곳에서 확인 가능
 }
 
 // 테스트용 Firebase 아바타 추가 (Firebase 연결 없을 때 대비)
@@ -2589,7 +2499,7 @@ function draw() {
   // 렌더링 통계 (30초마다만 - 로그 대폭 줄임)
   if (frameCount % 1800 === 0) {
     const totalActiveAvatars = renderedCount + (padAvatars ? padAvatars.size : 0);
-    console.log(`🔍 렌더링: Firebase ${renderedCount}개, 패드 ${padAvatars ? padAvatars.size : 0}개 활성`);
+    // 렌더링 상태 로그 제거 (성능 최적화)
   }
 
   pop();
@@ -3016,7 +2926,7 @@ function drawSpaces() {
 }
 // 마우스 이벤트 처리
 function mousePressed() {
-  console.log('🖱️ mousePressed 호출됨', mouseX, mouseY);
+  // 마우스 이벤트 로그 제거', mouseX, mouseY);
 
   if (showPopup) {
     console.log('🚫 팝업이 열려있어서 클릭 무시');
@@ -3024,15 +2934,14 @@ function mousePressed() {
   }
 
   const elementUnderMouse = document.elementFromPoint(mouseX, mouseY);
-  console.log('🎯 클릭한 요소:', elementUnderMouse?.tagName, elementUnderMouse?.id);
+  // 클릭 이벤트 로그 제거:', elementUnderMouse?.tagName, elementUnderMouse?.id);
 
   // 캔버스가 아닌 UI 요소 클릭 시: 패닝 방지 & 버튼 직접 처리
   if (elementUnderMouse && elementUnderMouse.tagName !== 'CANVAS') {
-    console.log('🚫 UI 요소 클릭 감지, 패닝 방지:', elementUnderMouse.tagName);
+    // UI 클릭 로그 제거, 패닝 방지:', elementUnderMouse.tagName);
 
     // 리셋 버튼
     if (elementUnderMouse.id === 'resetStageBtn' && !elementUnderMouse.disabled) {
-      console.log('🎯 리셋 버튼 직접 실행');
       resetStage();
     }
 
@@ -3221,23 +3130,21 @@ function mouseReleased() {
         if (nearestSlot !== -1) {
           const slotPos = getStageSlotPosition(nearestSlot);
           
-          // 패드 아바타와의 충돌 검사 (사용자 아바타 배치 시)
-          console.log(`🔍 사용자 아바타 배치 검사: ${selectedAvatar.nickname} → 슬롯 ${nearestSlot} (${slotPos.x.toFixed(0)}, ${slotPos.y.toFixed(0)})`);
-          console.log(`🔍 패드 아바타 수: ${padAvatars.size}개`);
+          // 패드 아바타와의 충돌 검사 (로그 제거)
           
           const nearbyPadAvatars = [];
           padAvatars.forEach((padAvatar, key) => {
             const distance = dist(padAvatar.x, padAvatar.y, slotPos.x, slotPos.y);
             const isNearby = distance < 150;
             
-            console.log(`  🎵 패드 ${key}: ${padAvatar.nickname} (${padAvatar.x.toFixed(0)}, ${padAvatar.y.toFixed(0)}) distance=${distance.toFixed(1)}px, nearby=${isNearby}`);
+            // 개별 패드 아바타 거리 체크 (로그 제거)
             
             if (isNearby) {
               nearbyPadAvatars.push(padAvatar);
             }
           });
           
-          console.log(`🔍 근처 패드 아바타: ${nearbyPadAvatars.length}개`);
+          // 근처 패드 아바타 검사 결과 (로그 제거)
           
           if (nearbyPadAvatars.length > 0) {
             console.warn(`⚠️ 무대 위치 충돌 감지! 사용자 아바타 ${selectedAvatar.nickname}이 패드 아바타와 근처에 배치됩니다:`);
@@ -3464,7 +3371,6 @@ function closePopup() {
 
 // 무대 리셋
 function resetStage() {
-  console.log('🎭 === 무대 리셋 시작 ===');
 
   try {
     const resetBtn = document.getElementById('resetStageBtn');
@@ -3516,7 +3422,6 @@ function resetStage() {
       console.warn('Tone.Transport 정지 오류:', e);
     }
 
-    console.log(`🔇 음악 정지 완료: Tone(${tonePlayerCount}), p5.sound(${p5SoundCount})`);
 
     masterClock.isRunning = false;
     masterClock.startTime = 0;
@@ -3567,7 +3472,6 @@ function resetStage() {
 
     for (let i = 0; i < stageSlots.length; i++) stageSlots[i] = null;
 
-    console.log(`✅ 무대 리셋 완료! 모든 세트에서 ${removedCount}개 아바타 제거됨`);
 
     setTimeout(() => { updateResetButton(); }, 100);
   } catch (error) {
@@ -3579,7 +3483,6 @@ function resetStage() {
     }
   }
 
-  console.log('🎭 === 무대 리셋 종료 ===');
 }
 
 // 아바타 정렬 (개수 적응형)
@@ -4025,10 +3928,8 @@ function setupEventListeners() {
   // 리셋 버튼 이벤트 리스너 - 단순하게 처리
   const resetBtn = document.getElementById('resetStageBtn');
   if (resetBtn) {
-    console.log('✅ 리셋 버튼 찾음, 이벤트 리스너 등록');
 
     resetBtn.addEventListener('click', function (e) {
-      console.log('🎯 리셋 버튼 클릭됨, disabled:', this.disabled);
 
       if (!this.disabled) {
         console.log('🚀 resetStage() 실행 시작');
@@ -4105,7 +4006,8 @@ function setupEventListeners() {
         console.log('❌ 스테이지 아바타 표시 비활성화');
       }
 
-      console.log('🎮 현재 스테이지 아바타 표시 상태:', window.showStageAvatars);
+      // 스테이지 아바타 표시 상태 로그 제거 (성능 최적화)
+      // console.log('🎮 현재 스테이지 아바타 표시 상태:', window.showStageAvatars);
     });
   } else {
     console.error('❌ 스테이지 아바타 토글 버튼을 찾을 수 없음!');
@@ -4192,7 +4094,6 @@ function setupEventListeners() {
 
   if (resetFilterBtn) {
     resetFilterBtn.addEventListener('click', function () {
-      console.log('🎯 필터 리셋 버튼 클릭됨');
       resetFilter();
       console.log('🎯 필터 리셋 완료');
     });
@@ -4358,11 +4259,14 @@ function playAvatarMusic(avatar) {
 
   // 패드 아바타 디버깅
   if (avatar.isPadAvatar) {
+    // 패드 아바타 음악 재생 시도 로그 제거 (성능 최적화)
+    /*
     console.log(`🎯 패드 아바타 음악 재생 시도:`, {
       nickname: avatar.nickname,
       musicType: avatar.musicType,
       musicSamples키: Object.keys(musicSamples).filter(key => key.includes(avatar.musicType.split('_')[1] || ''))
     });
+    */
   }
 
   // 이미 재생 중인지 확인하여 중복 재생 방지
@@ -4383,7 +4287,8 @@ function playAvatarMusic(avatar) {
     return; // 음악 없이도 무대에 올릴 수 있음
   }
 
-  console.log(`🎵 ${avatar.nickname} 음악 재생 시작:`, avatar.musicType);
+  // 음악 재생 로그 제거 (성능 최적화)
+  // console.log(`🎵 ${avatar.nickname} 음악 재생 시작:`, avatar.musicType);
 
   // 아바타의 BPM 확인 (musicSet이 null인 경우 추론)
   let effectiveMusicSet = avatar.musicSet;
@@ -4425,7 +4330,7 @@ function playAvatarMusic(avatar) {
   }
 
   const avatarBpm = musicSetBpms[effectiveMusicSet] || 140;
-  console.log(`🎵 ${avatar.nickname} BPM: ${avatarBpm} (musicSet: ${effectiveMusicSet}), 마스터 BPM: ${masterClock.bpm}`);
+  // BPM 로그 제거 (성능 최적화): ${masterClock.bpm}`);
 
   // 축제와 이벤트 디버깅용 추가 로그
   if (avatar.category === '축제와 이벤트' || effectiveMusicSet === 'festivals_events') {
@@ -4453,7 +4358,7 @@ function playAvatarMusic(avatar) {
   // 마스터 클럭이 이미 실행 중이면 재시작하지 않음
   if (!masterClock.isRunning && playingAvatars.size === 0) {
     // 정말 아무것도 재생 중이 아닐 때만 즉시 시작
-    console.log(`🎯 ${avatar.nickname} - 첫 번째 아바타, BPM ${avatarBpm}으로 즉시 시작`);
+    // 첫 번째 아바타 로그 제거 (성능 최적화), BPM ${avatarBpm}으로 즉시 시작`);
     masterClock.bpm = avatarBpm; // BPM 설정
     startMasterClockFromPosition(0);
     startAvatarMusicFromPosition(avatar, sound, 0);
@@ -4468,7 +4373,8 @@ function playAvatarMusic(avatar) {
         position: 0,
         bpm: avatarBpm
       });
-      console.log(`📹 비디오 플레이어에 이미지 표시 신호 전송 (첫 번째 아바타): ${avatar.nickname}`);
+      // 비디오 플레이어 이미지 표시 로그 제거 (성능 최적화)
+      // // 이미지 표시 로그 제거 (성능 최적화) 신호 전송 (첫 번째 아바타): ${avatar.nickname}`);
 
       // 무대가 모두 찼을 때만 3초 후 비디오 재생
       setTimeout(() => {
@@ -4481,7 +4387,7 @@ function playAvatarMusic(avatar) {
           });
           console.log(`🎬 무대 모두 찼음! 비디오 플레이어에 비디오 재생 신호 전송: ${avatar.nickname} (musicType: ${avatar.musicType})`);
         } else {
-          console.log(`⏳ 무대가 아직 안 찼음. 비디오 재생 대기: ${avatar.nickname}`);
+          // 무대 대기 로그 제거 (성능 최적화). 비디오 재생 대기: ${avatar.nickname}`);
         }
       }, 3000);
     } catch (e) {
@@ -4504,7 +4410,7 @@ function playAvatarMusic(avatar) {
         position: currentPosition,
         bpm: avatarBpm
       });
-      console.log(`📹 비디오 플레이어에 이미지 표시 신호 전송: ${avatar.nickname}`);
+      // 이미지 표시 로그 제거 (성능 최적화) 신호 전송: ${avatar.nickname}`);
 
       // 무대가 모두 찼을 때만 3초 후 비디오 재생
       setTimeout(() => {
@@ -4517,7 +4423,7 @@ function playAvatarMusic(avatar) {
           });
           console.log(`🎬 무대 모두 찼음! 비디오 플레이어에 비디오 재생 신호 전송: ${avatar.nickname} (musicType: ${avatar.musicType})`);
         } else {
-          console.log(`⏳ 무대가 아직 안 찼음. 비디오 재생 대기: ${avatar.nickname}`);
+          // 무대 대기 로그 제거 (성능 최적화). 비디오 재생 대기: ${avatar.nickname}`);
         }
       }, 3000);
     } catch (e) {
@@ -4533,7 +4439,7 @@ function startMasterClockFromPosition(startPosition) {
   masterClock.currentBeat = 0;
   masterClock.currentMeasure = 0;
   updateNextMeasureStart();
-  console.log(`🎯 마스터 클럭 시작 (${startPosition.toFixed(2)}초 위치부터)`);
+  // 마스터 클럭 로그 제거 (성능 최적화) (${startPosition.toFixed(2)}초 위치부터)`);
 }
 
 // 현재 재생 위치에 맞춰 다음 마디에 동기화 (개선된 버전)
@@ -4584,7 +4490,8 @@ function scheduleAvatarForCurrentPosition(avatar, sound) {
   avatar.originalPlaybackPosition = targetPlaybackPosition;
   pendingAvatars.set(avatar.id, { avatar, sound });
 
-  console.log(`[음악 예약 완료] 아바타 ${avatar.id}는 ${timeToTargetMeasure.toFixed(3)}초 후 ${targetPlaybackPosition.toFixed(3)}초 위치에서 재생`);
+  // 음악 예약 로그 제거 (성능 최적화)
+  // console.log(`[음악 예약 완료] 아바타 ${avatar.id}는 ${timeToTargetMeasure.toFixed(3)}초 후 ${targetPlaybackPosition.toFixed(3)}초 위치에서 재생`);
 }
 
 
@@ -4747,7 +4654,7 @@ async function playFromPosition(avatar, sound, startPosition) {
 
       if (startPosition === 0) {
         sound.loop();
-        console.log(`🎵 ${avatar.nickname} p5.sound 재생 시작 (처음부터)`);
+        // p5.sound 로그 제거 (성능 최적화) (처음부터)`);
       } else {
         // 음원 길이 확인 및 위치 조정
         const soundDuration = sound.duration();
@@ -4760,19 +4667,19 @@ async function playFromPosition(avatar, sound, startPosition) {
           // cueStart 매개변수를 사용하여 특정 위치에서 시작
           sound.play(0, 1, 1, adjustedPosition);
           sound.setLoop(true);
-          console.log(`🎵 ${avatar.nickname} p5.sound 재생 시작 (${adjustedPosition.toFixed(2)}초 지점부터)`);
+          // p5.sound 로그 제거 (성능 최적화) (${adjustedPosition.toFixed(2)}초 지점부터)`);
         } else {
           // 음원 길이를 가져올 수 없는 경우 처음부터 재생
           console.warn(`⚠️ ${avatar.nickname} 음원 길이를 확인할 수 없음, 처음부터 재생`);
           sound.loop();
-          console.log(`🎵 ${avatar.nickname} p5.sound 재생 시작 (처음부터 - 길이 확인 실패)`);
+          // p5.sound 로그 제거 (성능 최적화) (처음부터 - 길이 확인 실패)`);
         }
       }
     } catch (error) {
       console.warn('⚠️ p5.sound 위치 재생 실패, 처음부터 재생:', error);
       try {
         sound.loop();
-        console.log(`🎵 ${avatar.nickname} p5.sound 재생 시작 (처음부터 - 폴백)`);
+        // p5.sound 로그 제거 (성능 최적화) (처음부터 - 폴백)`);
       } catch (fallbackError) {
         console.error('❌ p5.sound 폴백 재생도 실패:', fallbackError);
         return; // 아예 재생할 수 없음
@@ -4837,7 +4744,8 @@ function keyPressed() {
   }
 
   if (key === ' ') { // spacebar 입력
-    console.log('🎵 스페이스바 입력 - 음악 재생 시작');
+    // 스페이스바 음악 재생 로그 제거 (성능 최적화)
+    // console.log('🎵 스페이스바 입력 - 음악 재생 시작');
 
     // 무대에 있는 모든 아바타의 음원을 재생
     const onStageAvatars = stageAvatars.filter(avatar => avatar.isOnStage);
@@ -4871,6 +4779,58 @@ function isStageFullyOccupied() {
   return stageSlots.every(slot => slot !== null);
 }
 
+// 특정 레시피 조합법 완성 확인 함수 (패드 아바타용)
+function checkRecipeCompletion(recipeName) {
+  // 필요한 6개 포지션 정의
+  const requiredPositions = ['bass', 'drum', 'chord', 'lead', 'melody', 'harmony'];
+  
+  // 현재 무대에 있는 모든 아바타들 (Firebase + 패드 아바타)
+  const allStageAvatars = [];
+  
+  // Firebase 아바타들 추가
+  avatars.forEach(avatar => {
+    if (avatar.isOnStage) {
+      allStageAvatars.push({
+        recipeName: avatar.selectedRecipe?.name || avatar.category,
+        position: avatar.musicPosition || extractPositionName(avatar.musicType)
+      });
+    }
+  });
+  
+  // 패드 아바타들 추가
+  padAvatars.forEach(padAvatar => {
+    if (padAvatar.isOnStage) {
+      allStageAvatars.push({
+        recipeName: padAvatar.selectedRecipe?.name || padAvatar.musicSet,
+        position: padAvatar.musicPosition || extractPositionName(padAvatar.musicType)
+      });
+    }
+  });
+  
+  // 해당 레시피의 아바타들만 필터링
+  const recipeAvatars = allStageAvatars.filter(avatar => 
+    avatar.recipeName === recipeName
+  );
+  
+  // 해당 레시피의 포지션들 수집
+  const presentPositions = recipeAvatars.map(avatar => avatar.position).filter(pos => pos);
+  const uniquePositions = [...new Set(presentPositions)];
+  
+  // 6개 포지션이 모두 완성되어야 조합법 완성
+  const isComplete = requiredPositions.every(pos => uniquePositions.includes(pos));
+  
+  if (isComplete) {
+    // 조합법 완성 로그 제거 (성능 최적화)
+    // console.log(`✅ ${recipeName} 조합법 완성! 모든 포지션 완료: [${uniquePositions.join(', ')}]`);
+    return true;
+  }
+  
+  const missingPositions = requiredPositions.filter(pos => !uniquePositions.includes(pos));
+  // 조합법 미완성 로그 제거 (성능 최적화)
+  // // 조합법 로그 제거 (성능 최적화) (${uniquePositions.length}/6개 포지션) - 부족: [${missingPositions.join(', ')}]`);
+  return false;
+}
+
 // 음악 정지 함수
 function stopAvatarMusic(avatar) {
   if (!avatar || !avatar.id || !avatar.musicType) {
@@ -4892,14 +4852,12 @@ function stopAvatarMusic(avatar) {
     if (tonePlayer && tonePlayer.loaded) {
       if (tonePlayer.state === 'started') {
         tonePlayer.stop();
-        console.log(`🛑 ${avatar.nickname} Tone.js 음악 정지`);
       }
     }
 
     // p5.sound 플레이어 정지
     if (sound && sound.isPlaying()) {
       sound.stop();
-      console.log(`🛑 ${avatar.nickname} p5.sound 음악 정지`);
     }
 
     playingAvatars.delete(avatar.id);
@@ -5250,7 +5208,8 @@ function activatePadButton(buttonKey, btnElement, instrument, recipeIndex) {
         const slotPos = getStageSlotPosition(stagePosition);
         
         // 무대 위치 충돌 검사 (사용자 아바타와의 충돌 방지)
-        console.log(`🔍 패드 아바타 배치 검사: 슬롯 ${stagePosition} (${slotPos.x.toFixed(0)}, ${slotPos.y.toFixed(0)})`);
+        // 패드 아바타 배치 검사 로그 제거 (성능 최적화)
+        // console.log(`🔍 패드 아바타 배치 검사: 슬롯 ${stagePosition} (${slotPos.x.toFixed(0)}, ${slotPos.y.toFixed(0)})`);
         
         // 기존 무대 호환성 검사 (포지션 중복 포함)
         const compatibility = checkMusicSetCompatibility(padAvatar);
@@ -5269,8 +5228,8 @@ function activatePadButton(buttonKey, btnElement, instrument, recipeIndex) {
           return; // 배치 중단
         }
         
-        console.log(`✅ 포지션 호환성 확인: ${padAvatar.nickname} (${padAvatar.musicPosition})`);
-        console.log(`🔍 전체 아바타 수: ${avatars.length}개, 무대 위 아바타 검사 중...`);
+        // 포지션 호환성 확인 (로그 제거)
+        // 전체 아바타 검사 (로그 제거)
         
         const nearbyUserAvatars = avatars.filter(userAvatar => {
           const isUserAvatar = !userAvatar.isPadAvatar;
@@ -5278,21 +5237,18 @@ function activatePadButton(buttonKey, btnElement, instrument, recipeIndex) {
           const distance = dist(userAvatar.x, userAvatar.y, slotPos.x, slotPos.y);
           const isNearby = distance < 150; // 거리 늘림
           
-          console.log(`  👤 ${userAvatar.nickname}: isPad=${userAvatar.isPadAvatar}, onStage=${isOnStage}, distance=${distance.toFixed(1)}px`);
+          // 개별 아바타 거리 체크 (로그 제거)
           
           return isUserAvatar && isOnStage && isNearby;
         });
         
-        console.log(`🔍 근처 사용자 아바타: ${nearbyUserAvatars.length}개`);
+        // 근처 사용자 아바타 검사 (로그 제거)
         
         if (nearbyUserAvatars.length > 0) {
-          console.warn(`⚠️ 무대 위치 충돌 감지! 패드 아바타 ${instrument}가 사용자 아바타와 근처에 배치됩니다:`);
-          nearbyUserAvatars.forEach(userAvatar => {
-            const distance = dist(userAvatar.x, userAvatar.y, slotPos.x, slotPos.y);
-            console.warn(`  ⚡ 충돌 아바타: ${userAvatar.nickname} (위치: ${userAvatar.x.toFixed(0)}, ${userAvatar.y.toFixed(0)}, 거리: ${distance.toFixed(1)}px)`);
-          });
+          console.warn(`⚠️ 패드 아바타 ${instrument} 충돌 감지!`);
+          // 개별 충돌 아바타 정보 (로그 제거)
         } else {
-          console.log(`✅ 충돌 없음: 패드 아바타 ${instrument} 안전하게 배치`);
+          // 충돌 없음 (로그 제거)
         }
         
         padAvatar.x = slotPos.x;
@@ -5308,31 +5264,64 @@ function activatePadButton(buttonKey, btnElement, instrument, recipeIndex) {
         // 음악 시작
         playAvatarMusic(padAvatar);
         
-        // 미디어 아트 연결 (패드 아바타용)
+        // 미디어 아트 연결 (패드 아바타용 - 기존 시스템과 동일한 로직)
         try {
-          // 비디오 플레이어에 이미지 표시
-          const messageData = {
-            type: 'SHOW_IMAGE',
-            payload: padAvatar,
-            position: getCurrentPlaybackPosition() || 0,
-            bpm: masterClock.bpm
-          };
+          // 비디오 창이 없으면 자동으로 열기
+          if (!videoWindow || videoWindow.closed) {
+            console.log('📹 비디오 창1이 없어 자동으로 엽니다...');
+            videoWindow = window.open('video-player.html', 'videoPlayerWindow1', 'width=1280,height=720,left=100,top=100');
+          }
+          if (!videoWindow2 || videoWindow2.closed) {
+            console.log('📹 비디오 창2가 없어 자동으로 엽니다...');
+            videoWindow2 = window.open('video-player.html', 'videoPlayerWindow2', 'width=1280,height=720,left=1400,top=100');
+          }
           
-          sendVideoMessage(messageData);
-          console.log(`📹 패드 아바타 미디어 아트 연결: ${padAvatar.nickname}`);
-          
-          // 무대가 모두 찼을 때 비디오 재생
+          // 잠시 대기 후 창 상태 재확인
           setTimeout(() => {
-            if (isStageFullyOccupied()) {
+            console.log(`📹 패드 아바타 미디어 아트 연결 시도: ${padAvatar.nickname}`);
+            console.log(`비디오 창1 상태: ${videoWindow ? (!videoWindow.closed ? '열림' : '닫힘') : '없음'}`);
+            console.log(`비디오 창2 상태: ${videoWindow2 ? (!videoWindow2.closed ? '열림' : '닫힘') : '없음'}`);
+            
+            // 패드 아바타용 payload 데이터 구성
+            const payload = {
+              id: padAvatar.id,
+              nickname: padAvatar.nickname,
+              musicType: padAvatar.musicType,
+              musicSet: padAvatar.musicSet,
+              category: padAvatar.category || padAvatar.musicSet,
+              selectedRecipe: padAvatar.selectedRecipe,
+              isPadAvatar: true,
+              position: padAvatar.musicPosition
+            };
+            
+            // 먼저 이미지만 표시
+            const messageData = {
+              type: 'SHOW_IMAGE',
+              payload: payload,
+              position: getCurrentPlaybackPosition() || 0,
+              bpm: masterClock.bpm
+            };
+            
+            console.log(`전송 데이터:`, messageData);
+            sendVideoMessage(messageData);
+            // 패드 이미지 로그 제거: ${padAvatar.nickname}`);
+          }, 1000); // 1초 대기
+          
+          // 조합법이 완성되었을 때만 3초 후 비디오 재생
+          setTimeout(() => {
+            if (checkRecipeCompletion(recipeData.name)) {
               const videoMessageData = {
                 type: 'PLAY_VIDEO',
-                payload: padAvatar,
+                payload: payload, // 동일한 payload 사용
                 position: getCurrentPlaybackPosition() || 0,
                 bpm: masterClock.bpm
               };
               
+              console.log(`🎬 조합법 완성! 패드 아바타 비디오 재생 데이터:`, videoMessageData);
               sendVideoMessage(videoMessageData);
-              console.log(`🎬 패드 아바타 비디오 재생: ${padAvatar.nickname}`);
+              console.log(`🎬 조합법 완성! 패드 아바타 비디오 재생: ${padAvatar.nickname}`);
+            } else {
+              // 조합법 로그 제거 (성능 최적화). 비디오 재생 대기: ${padAvatar.nickname}`);
             }
           }, 3000);
           
@@ -5345,7 +5334,7 @@ function activatePadButton(buttonKey, btnElement, instrument, recipeIndex) {
         padAvatars.set(buttonKey, padAvatar);
         btnElement.classList.add('active', 'playing');
         
-        console.log(`✅ 패드 아바타 무대 배치: ${instrument} - ${recipeData.name} (슬롯 ${stagePosition})`);
+        // 패드 아바타 무대 배치 로그 제거 (성능 최적화)
       } else {
         console.warn('⚠️ 무대 슬롯이 모두 찼습니다');
       }
@@ -5468,6 +5457,8 @@ function createPadAvatar(instrument, recipeData) {
     clickTimer: 0
   };
   
+  // 패드 아바타 생성 로그 제거 (성능 최적화)
+  /*
   console.log(`🎵 패드 아바타 생성:`, {
     nickname: newAvatar.nickname,
     musicType: newAvatar.musicType,
@@ -5475,6 +5466,7 @@ function createPadAvatar(instrument, recipeData) {
     currentSetSpace: currentSetSpace,
     position: config.position
   });
+  */
   
   return newAvatar;
 }
