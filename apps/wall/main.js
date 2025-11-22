@@ -4344,6 +4344,7 @@ function sendVideoMessage(messageData) {
   let successCount = 0;
   let totalWindows = 0;
   
+   /* 자동 재생성 로직 주석처리 - 아바타 추가 시 창이 자동으로 열리지 않도록 수정
   // 비디오 창 1 확인 및 재생성
   if (!videoWindow || videoWindow.closed) {
     console.log('🔧 비디오 창 1 재생성');
@@ -4377,6 +4378,7 @@ function sendVideoMessage(messageData) {
       }
     }, 500);
   }
+  */
 
   // 기존 창들에 메시지 전송
   if (videoWindow && !videoWindow.closed) {
