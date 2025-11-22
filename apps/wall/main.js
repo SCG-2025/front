@@ -1160,7 +1160,7 @@ function getAvatarPosition(avatar) {
     else if (avatar.musicType.includes('drum_fx')) position = 'fx';
     else if (avatar.musicType.includes('drum_lead')) position = 'lead';
     else if (avatar.musicType.includes('drum_sub')) position = 'sub';
-    else if (avatar.musicType.includes('drum.wav')) position = 'drum'; // 순수한 드럼
+    else if (avatar.musicType === 'set2_travel_places_drum_drum.wav') position = 'drum'; // 순수한 드럼 (수정됨)
     console.log(`🎯 여행/장소 포지션 매핑: ${avatar.musicType} -> ${position}`);
   } else {
     // 일반적인 musicType 처리
@@ -1670,7 +1670,7 @@ function preload() {
     'set2_sports_activities_lead.wav',
     'set2_sports_activities_sub.wav',
     // 여행/장소
-    'set2_travel_places_drum.wav',
+    'set2_travel_places_drum_drum.wav',
     'set2_travel_places_drum_bass.wav',
     'set2_travel_places_drum_chords.wav',
     'set2_travel_places_drum_fx.wav',
@@ -2390,9 +2390,14 @@ function validateAndFixAllAvatars() {
         let musicTypeMatch = avatar.musicType.match(/set\d+_(.+?)_(?:bass|drum|lead|chord|chords|drums|fx|sub)\.wav$/);
         if (!musicTypeMatch) {
           // 여행 세트 특수 패턴: set2_travel_places_drum_* -> travel_places
+          // 이제 set2_travel_places_drum_drum.wav도 포함
           musicTypeMatch = avatar.musicType.match(/set2_travel_places_drum(?:_(.+?))?\.wav$/);
           if (musicTypeMatch) {
             avatar.musicSet = 'travel_places';
+            // set2_travel_places_drum_drum.wav (드럼 단독) 특별 처리
+            if (avatar.musicType === 'set2_travel_places_drum_drum.wav') {
+              console.log(`🎯 여행/장소 드럼 단독 파일 처리: ${avatar.musicType}`);
+            }
           }
         }
 
@@ -4970,9 +4975,51 @@ function isFullRecipeComplete() {
   console.log(`🔍 6개 포지션 완성 체크:`);
   console.log(`   - 필요한 포지션: [${requiredPositions.join(', ')}]`);
   console.log(`   - 현재 활성: [${Array.from(activePositions).join(', ')}]`);
-  console.log(`   - 완성 여부: ${hasAllPositions ? '✅ 완성' : '❌ 미완성'}`);
   
-  return hasAllPositions;
+  if (!hasAllPositions) {
+    console.log(`   - 완성 여부: ❌ 미완성 (포지션 부족)`);
+    return false;
+  }
+  
+  // 6개 포지션이 모두 차있으면 조합법 일치 여부 확인
+  const onStageAvatars = [];
+  
+  // 무대 위 모든 아바타 수집
+  stageAvatars.forEach(avatar => {
+    if (avatar.isOnStage) {
+      onStageAvatars.push(avatar);
+    }
+  });
+  
+  avatars.forEach(avatar => {
+    if (avatar.isOnStage) {
+      onStageAvatars.push(avatar);
+    }
+  });
+  
+  padAvatars.forEach(avatar => {
+    if (avatar.isOnStage) {
+      onStageAvatars.push(avatar);
+    }
+  });
+  
+  // 모든 아바타의 조합법(setName 또는 musicSet) 확인
+  const recipeSets = new Set();
+  onStageAvatars.forEach(avatar => {
+    const recipeId = avatar.setName || avatar.musicSet || avatar.selectedRecipe?.name || 'unknown';
+    recipeSets.add(recipeId);
+  });
+  
+  console.log(`   - 무대 아바타 수: ${onStageAvatars.length}`);
+  console.log(`   - 발견된 조합법들: [${Array.from(recipeSets).join(', ')}]`);
+  
+  if (recipeSets.size > 1) {
+    console.log(`   - 완성 여부: ❌ 미완성 (조합법 불일치: ${recipeSets.size}개 조합법 혼재)`);
+    return false;
+  }
+  
+  console.log(`   - 완성 여부: ✅ 완성 (6개 포지션 + 동일 조합법: ${Array.from(recipeSets)[0]})`);
+  return true;
 }
 
 // 현재 무대에 있는 아바타들의 musicSet 확인
@@ -5066,23 +5113,11 @@ function updateMediaArt() {
         forceCumulative: true // 강제 누적 모드
       });
     } else {
-      // 포지션이 하나도 없으면 모든 화면 비우기 (강제 동기화)
-      console.log('🌃 모든 포지션 제거됨 - 모든 화면을 빈 화면으로 강제 동기화');
+      // 포지션이 하나도 없으면 모든 화면 비우기
+      console.log('🌃 모든 포지션 제거됨 - 화면을 빈 화면으로 전환');
       
-      // 여러 메시지로 확실히 동기화
-      sendVideoMessage({ type: 'CLEAR_ALL_IMAGES', force: true });
-      sendVideoMessage({ type: 'RESET_STAGE', force: true });
-      
-      // 추가 동기화 메시지들
-      setTimeout(() => {
-        sendVideoMessage({ type: 'CLEAR_ALL_IMAGES', force: true });
-        console.log('🔄 1차 강제 리셋 완료');
-        
-        setTimeout(() => {
-          sendVideoMessage({ type: 'RESET_STAGE', force: true });
-          console.log('🔄 2차 강제 리셋 완료');
-        }, 50);
-      }, 100);
+      // 단순하게 한 번만 클리어 메시지 전송
+      sendVideoMessage({ type: 'CLEAR_ALL_IMAGES' });
     }
   }
 }
@@ -5196,16 +5231,6 @@ function stopAvatarMusic(avatar) {
       });
     }
     
-    // 동영상 재생 중이면 즉시 중단
-    if (isVideoPlaying) {
-      console.log('🚫 동영상 재생 중 아바타 변경 감지 - 동영상 중단!');
-      isVideoPlaying = false;
-      sendVideoMessage({
-        type: 'STOP_VIDEO',
-        reason: 'avatar_changed'
-      });
-    }
-    
     // 해당 포지션의 이미지 제거 메시지 전송
     const removedImageNumber = getImageNumberFromPosition(avatar.musicPosition);
     sendVideoMessage({
@@ -5224,12 +5249,6 @@ function stopAvatarMusic(avatar) {
       console.log(`⏰ ${avatar.nickname} 대기 목록에서 제거`);
     }
 
-    // 비디오 윈도우에 이미지 표시 종료 메시지 전송
-    if (videoWindow && !videoWindow.closed) {
-      videoWindow.postMessage({ type: 'RESET_STAGE' }, '*');
-      console.log('🖼️ 비디오 윈도우에 이미지 표시 종료 메시지 전송');
-    }
-
     // 모든 아바타가 무대에서 내려가면 마스터 클럭 정지
     if (playingAvatars.size === 0 && pendingAvatars.size === 0) {
       masterClock.isRunning = false;
@@ -5237,6 +5256,9 @@ function stopAvatarMusic(avatar) {
       masterClock.currentBeat = 0;
       masterClock.currentMeasure = 0;
       console.log('🎯 모든 아바타가 무대에서 내려감 - 마스터 클럭 정지');
+      
+      // 모든 아바타가 제거되었을 때만 전체 리셋
+      sendVideoMessage({ type: 'CLEAR_ALL_IMAGES' });
     } else {
       console.log(`🎯 마스터 클럭 유지 중 (재생: ${playingAvatars.size}개, 대기: ${pendingAvatars.size}개)`);
     }

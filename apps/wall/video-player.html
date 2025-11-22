@@ -196,12 +196,14 @@
 
         // 애니메이션 루프
         function animate() {
-            // 배경 그리기
-            ctx.fillStyle = '#000000';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            // 기본적으로 캔버스는 투명하게 클리어
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             if (displayMode === 'image') {
-                // 떠다니는 이미지들 업데이트 및 렌더링
+                // 이미지 모드: 약간의 배경과 떠다니는 이미지들 렌더링
+                ctx.fillStyle = 'rgba(0,0,0,0.08)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
                 floatingImages = floatingImages.filter(img => img.isAlive());
 
                 floatingImages.forEach(img => {
@@ -214,18 +216,14 @@
                     addFloatingImages(2);
                 }
 
-                // 포지션 텍스트 표시
-                ctx.fillStyle = '#ffffff';
-                ctx.font = 'bold 64px Arial';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.globalAlpha = 0.3;
-                ctx.fillText(`Position: ${currentImageNum}`, canvas.width / 2, canvas.height / 2);
-                ctx.globalAlpha = 1;
             } else if (displayMode === 'video') {
-                // 비디오 프레임 그리기
+                // 비디오 프레임을 그리되, 비디오가 준비되지 않았으면 투명 배경 유지
                 if (!videoPlayer.paused && videoPlayer.readyState === videoPlayer.HAVE_ENOUGH_DATA) {
                     ctx.drawImage(videoPlayer, 0, 0, canvas.width, canvas.height);
+                } else {
+                    // 비디오 로드 중에는 약한 배경을 유지
+                    ctx.fillStyle = 'rgba(0,0,0,0.04)';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
                 }
             } else if (displayMode === 'countdown') {
                 // 카운트다운 표시
@@ -234,15 +232,18 @@
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillText(countdownValue, canvas.width / 2, canvas.height / 2);
-                
+
                 // 배경 효과
-                ctx.fillStyle = 'rgba(255, 107, 107, 0.1)';
+                ctx.fillStyle = 'rgba(255, 107, 107, 0.08)';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
-                
+
                 // 하단 메시지
                 ctx.fillStyle = '#ffffff';
                 ctx.font = 'bold 32px Arial';
                 ctx.fillText('6개 포지션 완성! 비디오 재생 준비 중...', canvas.width / 2, canvas.height / 2 + 100);
+            } else {
+                // 'none' 모드: 완전 클리어 (검은 화면이 되지 않음)
+                // 캔버스를 비워두어 뒤의 페이지 스타일이 보이도록 함
             }
 
             requestAnimationFrame(animate);
