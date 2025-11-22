@@ -2543,6 +2543,8 @@ function draw() {
   drawSampleAvatars();
 
   // 스테이지 아바타들 (개발자용 토글로 제어) - 현재 세트 공간의 아바타만 표시
+  // 패드 시스템으로 대체하므로 임시 비활성화
+  /*
   if (window.showStageAvatars !== false) { // 기본값은 true
     for (let i = 0; i < stageAvatars.length; i++) {
       const avatar = stageAvatars[i];
@@ -2556,6 +2558,7 @@ function draw() {
       }
     }
   }
+  */
 
   // 일반 아바타들 (데이터베이스에서 온 실제 아바타들) - 현재 세트 공간의 아바타만 표시  
   let renderedCount = 0;
@@ -3442,11 +3445,9 @@ function resetStage() {
     masterClock.currentMeasure = 0;
 
     let removedCount = 0;
-    // 현재 세트의 스테이지 아바타만 리셋
+    // 모든 세트의 스테이지 아바타 리셋 (세트 구분 없이 전체 무대 초기화)
     stageAvatars.forEach(avatar => {
-      const avatarSetName = avatar.setName || 'set1';
-      const shouldReset = avatarSetName === currentSetSpace || (avatarSetName === '알 수 없는 세트' && currentSetSpace === 'set1');
-      if (avatar.isOnStage && shouldReset) {
+      if (avatar.isOnStage) {
         avatar.isOnStage = false;
         avatar.stageSlot = -1;
         avatar.y = 800; // 새로운 무대 아래 자유 공간으로
@@ -3455,11 +3456,9 @@ function resetStage() {
         removedCount++;
       }
     });
-    // 현재 세트의 일반 아바타만 리셋
+    // 모든 세트의 일반 아바타 리셋 (세트 구분 없이 전체 무대 초기화)
     avatars.forEach(avatar => {
-      const avatarSetName = avatar.setName || 'set1';
-      const shouldReset = avatarSetName === currentSetSpace || (avatarSetName === '알 수 없는 세트' && currentSetSpace === 'set1');
-      if (avatar.isOnStage && shouldReset) {
+      if (avatar.isOnStage) {
         avatar.isOnStage = false;
         avatar.stageSlot = -1;
         // 새로운 레이아웃에 맞는 자유 공간으로 이동
@@ -3472,7 +3471,7 @@ function resetStage() {
 
     for (let i = 0; i < stageSlots.length; i++) stageSlots[i] = null;
 
-    console.log(`✅ 무대 리셋 완료! ${currentSetSpace} 세트에서 ${removedCount}개 아바타 제거됨`);
+    console.log(`✅ 무대 리셋 완료! 모든 세트에서 ${removedCount}개 아바타 제거됨`);
 
     setTimeout(() => { updateResetButton(); }, 100);
   } catch (error) {
@@ -4109,6 +4108,12 @@ function setupEventListeners() {
   setTimeout(() => {
     updateCombinationFilterForSet(currentSetSpace);
   }, 1000); // Firebase 데이터 로딩을 기다림
+
+  // 패드 시스템 초기화
+  setTimeout(() => {
+    initializePadSystem();
+    console.log('✅ 패드 시스템 초기화 완료');
+  }, 1500); // 다른 초기화가 완료된 후 실행
 }
 
 // DOM이 준비되면 이벤트 리스너 설정
@@ -4141,6 +4146,9 @@ function switchToSetSpace(setName) {
 
   // 리셋 버튼 상태 업데이트 (현재 세트의 무대 상태 반영)
   updateResetButton();
+
+  // 패드 시스템 업데이트 (세트 변경 시)
+  updatePadSystemForSetChange();
 
   console.log(`✅ ${setName} 공간으로 이동 완료`);
 }
@@ -4970,5 +4978,233 @@ function startPCRoomMusic(avatar) {
     console.log(`✅ ${avatar.nickname} PC룸 음원 재생 시작됨`);
   } else {
     console.warn(`⚠️ ${avatar.nickname}의 음원 파일을 찾을 수 없음: ${avatar.musicType}`);
+  }
+}
+
+// ===== 서류철 스타일 악기 패드 시스템 =====
+
+// 패드 시스템 전역 변수
+let padSystemActive = false;
+const activePadButtons = new Set(); // 현재 활성화된 패드 버튼들
+const padAvatars = new Map(); // 패드로 생성된 아바타들 (key: instrument-recipe, value: avatar)
+
+// 세트별 조합법 매핑
+const setRecipeMapping = {
+  'set1': [
+    { name: 'PC방과 온라인 게임', type: 'pcroom_gaming' },
+    { name: '콘솔 게임', type: 'home_console_gaming' },
+    { name: 'SNS 추억', type: 'social_media_memories' }
+  ],
+  'set2': [
+    { name: '축제/이벤트', type: 'festivals_events' },
+    { name: '스포츠/활동', type: 'sports_activities' },
+    { name: '여행/장소', type: 'travel_places' }
+  ],
+  'set3': [
+    { name: '가족 따뜻함', type: 'family_warmth' },
+    { name: '봄 기억', type: 'spring_memories' },
+    { name: '학교 기억', type: 'school_memories' }
+  ],
+  'set4': [
+    { name: '엔터테인먼트/문화', type: 'entertainment_culture' },
+    { name: '밤/새벽', type: 'night_dawn' },
+    { name: '그리움/향수', type: 'nostalgia_longing' }
+  ],
+  'set5': [
+    { name: '미술/창작', type: 'art_creative' },
+    { name: '가을 추억', type: 'autumn_memories' },
+    { name: '겨울 추억', type: 'winter_memories' }
+  ]
+};
+
+// 패드 시스템 초기화
+function initializePadSystem() {
+  const padToggleBtn = document.getElementById('padToggleBtn');
+  const padPanel = document.getElementById('instrumentPadPanel');
+  const instrumentButtons = document.querySelectorAll('.instrument-btn');
+
+  // 패드 토글 버튼 이벤트
+  padToggleBtn.addEventListener('click', () => {
+    padSystemActive = !padSystemActive;
+    
+    if (padSystemActive) {
+      padToggleBtn.classList.add('active');
+      padPanel.classList.add('active');
+      updateCurrentSetDisplay();
+    } else {
+      padToggleBtn.classList.remove('active');
+      padPanel.classList.remove('active');
+    }
+  });
+
+  // 악기 버튼 이벤트
+  instrumentButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const instrument = btn.dataset.instrument;
+      const recipe = btn.dataset.recipe;
+      const buttonKey = `${instrument}-${recipe}`;
+      
+      if (activePadButtons.has(buttonKey)) {
+        // 비활성화
+        deactivatePadButton(buttonKey, btn);
+      } else {
+        // 활성화
+        activatePadButton(buttonKey, btn, instrument, recipe);
+      }
+    });
+  });
+}
+
+// 현재 세트 표시 업데이트
+function updateCurrentSetDisplay() {
+  const currentSetNameSpan = document.getElementById('currentSetName');
+  const setNames = {
+    'set1': 'SET1 - 게임/디지털',
+    'set2': 'SET2 - 활동/에너지',
+    'set3': 'SET3 - 기억/성장',
+    'set4': 'SET4 - 감성/문화',
+    'set5': 'SET5 - 창작/계절'
+  };
+  currentSetNameSpan.textContent = setNames[currentSetSpace] || 'SET1 - 게임/디지털';
+}
+
+// 패드 버튼 활성화
+function activatePadButton(buttonKey, btnElement, instrument, recipeIndex) {
+  try {
+    // 같은 악기의 다른 조합법이 활성화되어 있다면 비활성화
+    const sameInstrumentKeys = Array.from(activePadButtons).filter(key => 
+      key.startsWith(`${instrument}-`) && key !== buttonKey
+    );
+    
+    sameInstrumentKeys.forEach(key => {
+      const existingBtn = document.querySelector(`[data-instrument="${instrument}"][data-recipe="${key.split('-')[1]}"]`);
+      if (existingBtn) {
+        deactivatePadButton(key, existingBtn);
+      }
+    });
+
+    // 현재 세트의 조합법 가져오기
+    const currentRecipes = setRecipeMapping[currentSetSpace] || setRecipeMapping['set1'];
+    const recipeData = currentRecipes[parseInt(recipeIndex) - 1];
+    
+    if (!recipeData) {
+      console.error(`❌ 조합법을 찾을 수 없음: ${currentSetSpace}, recipe ${recipeIndex}`);
+      return;
+    }
+
+    // 스테이지 아바타 생성
+    const stageAvatar = createPadAvatar(instrument, recipeData);
+    
+    if (stageAvatar) {
+      // 무대에 배치
+      const stagePosition = findAvailableStagePosition();
+      if (stagePosition !== -1) {
+        stageAvatar.isOnStage = true;
+        stageAvatar.stageSlot = stagePosition;
+        stageAvatar.x = stageSlots[stagePosition].x;
+        stageAvatar.y = stageSlots[stagePosition].y;
+        stageSlots[stagePosition] = stageAvatar;
+        
+        // 음악 시작
+        playAvatarMusic(stageAvatar);
+        
+        // 패드 상태 업데이트
+        activePadButtons.add(buttonKey);
+        padAvatars.set(buttonKey, stageAvatar);
+        btnElement.classList.add('active', 'playing');
+        
+        console.log(`✅ 패드 아바타 활성화: ${instrument} - ${recipeData.name}`);
+      }
+    }
+  } catch (error) {
+    console.error(`❌ 패드 버튼 활성화 실패: ${buttonKey}`, error);
+  }
+}
+
+// 패드 버튼 비활성화
+function deactivatePadButton(buttonKey, btnElement) {
+  try {
+    const avatar = padAvatars.get(buttonKey);
+    
+    if (avatar) {
+      // 음악 정지
+      stopAvatarMusic(avatar);
+      
+      // 무대에서 제거
+      if (avatar.stageSlot !== -1) {
+        stageSlots[avatar.stageSlot] = null;
+      }
+      avatar.isOnStage = false;
+      avatar.stageSlot = -1;
+      
+      // 상태 업데이트
+      activePadButtons.delete(buttonKey);
+      padAvatars.delete(buttonKey);
+      btnElement.classList.remove('active', 'playing');
+      
+      console.log(`✅ 패드 아바타 비활성화: ${buttonKey}`);
+    }
+  } catch (error) {
+    console.error(`❌ 패드 버튼 비활성화 실패: ${buttonKey}`, error);
+  }
+}
+
+// 패드용 아바타 생성
+function createPadAvatar(instrument, recipeData) {
+  // 기존 스테이지 아바타에서 해당하는 악기 찾기
+  const baseStageAvatar = stageAvatars.find(avatar => {
+    const pos = (avatar.musicPosition || '').toLowerCase();
+    return pos.includes(instrument.toLowerCase());
+  });
+  
+  if (!baseStageAvatar) {
+    console.error(`❌ ${instrument} 스테이지 아바타를 찾을 수 없음`);
+    return null;
+  }
+  
+  // 새 아바타 객체 생성 (기존 스테이지 아바타 복사)
+  const newAvatar = {
+    ...baseStageAvatar,
+    id: `pad-${instrument}-${Date.now()}`,
+    nickname: `${recipeData.name} ${instrument.toUpperCase()}`,
+    musicType: `${recipeData.type}_${instrument}`,
+    musicSet: recipeData.type,
+    setName: currentSetSpace,
+    category: recipeData.name,
+    selectedRecipe: { name: recipeData.name, description: recipeData.name },
+    isPadAvatar: true, // 패드로 생성된 아바타임을 표시
+    x: 0,
+    y: 0,
+    isOnStage: false,
+    stageSlot: -1
+  };
+  
+  return newAvatar;
+}
+
+// 사용 가능한 무대 슬롯 찾기
+function findAvailableStagePosition() {
+  for (let i = 0; i < stageSlots.length; i++) {
+    if (stageSlots[i] === null) {
+      return i;
+    }
+  }
+  return -1; // 모든 슬롯이 차있음
+}
+
+// 세트 공간 변경 시 패드 시스템 업데이트
+function updatePadSystemForSetChange() {
+  if (padSystemActive) {
+    // 모든 활성 패드 버튼 비활성화
+    const allButtons = document.querySelectorAll('.instrument-btn.active');
+    allButtons.forEach(btn => {
+      const instrument = btn.dataset.instrument;
+      const recipe = btn.dataset.recipe;
+      const buttonKey = `${instrument}-${recipe}`;
+      deactivatePadButton(buttonKey, btn);
+    });
+    
+    // 현재 세트 표시 업데이트
+    updateCurrentSetDisplay();
   }
 }
