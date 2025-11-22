@@ -17,7 +17,7 @@ import { db } from './firebase-init.js';
 (() => {
   /* ---------- 전역 상태 ---------- */
   const musicPositions = ['리드 멜로디', '서브 멜로디', '코드', '베이스', '드럼/퍼커션', '효과음/FX'];
-  const categories = ['바디', '헤드', '소품', '눈색']; // 하단 카테고리 (성별 제거)
+  const categories = ['바디', '헤드', '소품']; // 바디, 헤드, 소품만 사용
 
 
 
@@ -35,8 +35,8 @@ import { db } from './firebase-init.js';
   let jumpProgress = 0;
 
   // UI 상태
-  let selCat = '바디'; // 현재 선택된 카테고리 (성별 제거로 바디가 첫 번째)
-  let summaryDiv, inventoryDiv;
+  let selCat = '바디'; // 현재 선택된 카테고리 (바디가 첫 번째)
+  let inventoryDiv;
 
   /* ---------- 스프라이트 카탈로그/아바타/프리로드 ---------- */
   function makeVariants(prefix, count) {
@@ -44,20 +44,61 @@ import { db } from './firebase-init.js';
     // 첫 번째 파일 (기본 파일)
     variants.push(`assets/${prefix}.png`);
 
-    // 나머지 파일들 (괄호 포함)
+    // 나머지 파일들 (괄호 포함) - 대소문자 확장자 모두 지원
     for (let i = 2; i <= count; i++) {
+      // 소문자 확장자 우선 시도
       variants.push(`assets/${prefix}(${i}).png`);
     }
 
     return variants;
   }
 
+  // 특별히 대문자 확장자가 필요한 파일들을 위한 함수
+  function makeVariantsWithPNG(prefix, normalCount, pngIndexes = []) {
+    const variants = [];
+    variants.push(`assets/${prefix}.png`);
+
+    for (let i = 2; i <= normalCount; i++) {
+      if (pngIndexes.includes(i)) {
+        variants.push(`assets/${prefix}(${i}).PNG`);
+      } else {
+        variants.push(`assets/${prefix}(${i}).png`);
+      }
+    }
+
+    return variants;
+  }
+
   const Catalog = {
-    female: makeVariants('fe', 9),   // fe.png ~ fe(5).png (5개)
-    male: makeVariants('ma', 9),   // ma.png ~ ma(4).png (4개)
-    heads: makeVariants('head', 11), // head.png ~ head(8).png (8개)
-    sopum: makeVariants('sopum', 9),
-    eye: makeVariants('eye', 4),
+    female: makeVariants('fe', 9),   // fe.png ~ fe(9).png
+    male: makeVariants('ma', 9),     // ma.png ~ ma(9).png  
+    heads: [
+      'assets/head.png',
+      'assets/head(2).png',
+      'assets/head(3).png',
+      'assets/head(4).png',
+      'assets/head(5).png',
+      'assets/head(6).png',
+      'assets/head(7).png',
+      'assets/head(8).png',
+      'assets/head(9).PNG',
+      'assets/head(10).PNG',
+      'assets/head(11).PNG'
+    ],
+    sopum: [
+      'assets/sopum.png',
+      'assets/sopum(2).PNG',
+      'assets/sopum(3).PNG',
+      'assets/sopum(4).PNG',
+      'assets/sopum(5).PNG',
+      'assets/sopum(6).PNG',
+      'assets/sopum(7).PNG',
+      'assets/sopum(8).PNG',
+      'assets/sopum(9).png',
+      'assets/sopum(10).PNG',
+      'assets/sopum(11).png'
+    ],
+    eye: makeVariants('eye', 4),     // eye.png ~ eye(4).png
   };
 
   // localStorage에서 기존 아바타 데이터를 가져오거나 기본값 사용
@@ -163,14 +204,6 @@ import { db } from './firebase-init.js';
 
   /* ---------- UI ---------- */
   function buildUI() {
-    /* 선택 요약 메모장 */
-    summaryDiv = createDiv('').id('summary')
-      .style('position', 'absolute')
-      .style('top', '10px').style('right', '10px')
-      .style('width', '46%').style('max-width', '260px')
-      .style('padding', '10px').style('border', '1px solid #ccc')
-      .style('background', '#fafafa').style('font-size', '1.0rem');
-
     /* 이전 버튼 */
     createButton('이전')
       .id('prev-btn')
@@ -238,7 +271,6 @@ import { db } from './firebase-init.js';
       .style('display', 'flex').style('gap', '10px');
 
     fillInventory();      // 초기 로드
-    refreshSummary();     // 초기 요약
   }
 
   function commonCard() {
@@ -256,19 +288,7 @@ import { db } from './firebase-init.js';
         const card = createDiv('').parent(inventoryDiv)
           .style(commonCard()).mousePressed(() => {
             avatar.bodyIdx = idx; saveAvatarToLocal();
-            renderAvatar(); refreshSummary();
-          });
-        createImg(imgPath, '').parent(card).style('width', '90%');
-      });
-      return;
-    }
-    // 3) 눈색
-    if (selCat === '눈색') {
-      Catalog.eye.forEach((imgPath, idx) => {
-        const card = createDiv('').parent(inventoryDiv)
-          .style(commonCard()).mousePressed(() => {
-            avatar.eyes = idx; saveAvatarToLocal();
-            renderAvatar(); refreshSummary();
+            renderAvatar();
           });
         createImg(imgPath, '').parent(card).style('width', '90%');
       });
@@ -279,13 +299,13 @@ import { db } from './firebase-init.js';
     if (selCat === '헤드') {
       createDiv('없음').parent(inventoryDiv).style(commonCard()).mousePressed(() => {
         avatar.headIdx = null; saveAvatarToLocal();
-        renderAvatar(); refreshSummary();
+        renderAvatar();
       });
       Catalog.heads.forEach((imgPath, idx) => {
         const card = createDiv('').parent(inventoryDiv)
           .style(commonCard()).mousePressed(() => {
             avatar.headIdx = idx; saveAvatarToLocal();
-            renderAvatar(); refreshSummary();
+            renderAvatar();
           });
         createImg(imgPath, '').parent(card).style('width', '90%');
       });
@@ -296,14 +316,14 @@ import { db } from './firebase-init.js';
     if (selCat === '소품') {
       createDiv('OFF').parent(inventoryDiv).style(commonCard()).mousePressed(() => {
         avatar.sopumOn = false; saveAvatarToLocal();
-        renderAvatar(); refreshSummary();
+        renderAvatar();
       });
       Catalog.sopum.forEach((imgPath, idx) => {
         const card = createDiv('').parent(inventoryDiv).style(commonCard()).mousePressed(() => {
           avatar.sopumOn = true;
           avatar.sopumIdx = idx;
           saveAvatarToLocal();
-          renderAvatar(); refreshSummary();
+          renderAvatar();
         });
         createImg(imgPath, '').parent(card).style('width', '90%');
       });
@@ -312,35 +332,18 @@ import { db } from './firebase-init.js';
 
 
   }
-  function refreshSummary() {
-    const bodyName = `${avatar.gender}-${(avatar.bodyIdx ?? 0) + 1}`;
-    const headName = (avatar.headIdx == null) ? '-' : `head-${avatar.headIdx + 1}`;
-    const sopumName = avatar.sopumOn ? 'sopum' : '-';
-
-    summaryDiv.html(`
-      <strong>선택 항목</strong><br>
-      성별: ${avatar.gender}<br>
-      바디: ${bodyName}<br>
-      헤드: ${headName}<br>
-      소품: ${sopumName}<br>
-      눈: ${avatar.eyes}<br>
-      포지션: ${selPosition}
-    `);
-  }
 
   /* ---------- 렌더 ---------- */
   function renderAvatar() {
-    // 렌더러가 초기화되었는지 확인
-    if (typeof clear === 'function' && _renderer) {
-      try {
+    // 안전하게 화면을 지우기
+    try {
+      if (typeof clear === 'function') {
         clear();
-      } catch (e) {
-        console.warn('Clear 함수 호출 실패:', e);
-        // 대안: 배경색으로 화면 지우기
+      } else {
         background(255);
       }
-    } else {
-      // 렌더러가 없으면 배경색으로 대체
+    } catch (e) {
+      console.warn('Clear 함수 호출 실패:', e);
       background(255);
     }
 
@@ -359,22 +362,34 @@ import { db } from './firebase-init.js';
     translate(px, py);
     scale(scaleFactor);
 
-    if (avatar.sopumOn && IMG.sopum && typeof avatar.sopumIdx === 'number') {
-      const w = OFFSETS.sopum[avatar.gender];
-      const sopumImg = IMG.sopum[avatar.sopumIdx];
-      if (sopumImg) image(sopumImg, w.x + vOff.x, w.y + vOff.y, w.s, w.s);
-    }
-    // BODY
+    // BODY (먼저 그리기)
     if (bodyImg) {
       image(bodyImg, vOff.x, vOff.y, baseS, baseS);
     }
 
-    // HEAD (앞)
+    // HEAD 
     if (avatar.headIdx != null) {
       const h = OFFSETS.head[avatar.gender];
       const headImg = IMG.heads[avatar.headIdx];
       if (headImg) image(headImg, h.x + vOff.x, h.y + vOff.y, h.s, h.s);
     }
+
+    // SOPUM (바디 위에 그리기 - 손에 잡고 있는 효과)
+    if (avatar.sopumOn && IMG.sopum && typeof avatar.sopumIdx === 'number') {
+      const w = OFFSETS.sopum[avatar.gender];
+      const sopumImg = IMG.sopum[avatar.sopumIdx];
+      
+      // sopum~sopum(8)까지는 오른쪽으로 이동 (손에 잡고 있는 효과)
+      let extraOffsetX = 0;
+      if (avatar.sopumIdx <= 7) { // sopum.png는 인덱스 0, sopum(2).PNG는 인덱스 1, ..., sopum(8).PNG는 인덱스 7
+        extraOffsetX = 15; // 오른쪽으로 15px 이동
+      }
+      
+      if (sopumImg) {
+        image(sopumImg, w.x + vOff.x + extraOffsetX, w.y + vOff.y, w.s, w.s);
+      }
+    }
+
     // EYE (맨 위에)
     if (typeof avatar.eyes === 'number' && IMG.eye[avatar.eyes]) {
       const e = OFFSETS.eye[avatar.gender];
