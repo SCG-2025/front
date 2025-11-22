@@ -2593,10 +2593,18 @@ function draw() {
     console.log(`🎨 렌더링 통계: ${renderedCount}/${avatars.length}개 아바타 표시됨 (${currentSetSpace})`);
   }
 
+  // 패드로 생성된 아바타들 렌더링
+  if (padAvatars && padAvatars.size > 0) {
+    padAvatars.forEach(avatar => {
+      updateAvatar(avatar);
+      drawAvatar(avatar);
+    });
+  }
+
   // 성능 디버그 정보 (10초마다 출력)
   if (frameCount % 600 === 0) {
-    const totalAvatars = stageAvatars.length + avatars.length;
-    console.log(`🔍 렌더링 정보: 전체 ${totalAvatars}개 아바타 렌더링, 성능 모드: ${performanceMode ? '활성' : '비활성'}, FPS: ${Math.round(1000 / deltaTime)}`);
+    const totalAvatars = stageAvatars.length + avatars.length + (padAvatars ? padAvatars.size : 0);
+    console.log(`🔍 렌더링 정보: 전체 ${totalAvatars}개 아바타 렌더링 (패드: ${padAvatars ? padAvatars.size : 0}개), 성능 모드: ${performanceMode ? '활성' : '비활성'}, FPS: ${Math.round(1000 / deltaTime)}`);
   }
 
   pop();
@@ -2723,6 +2731,62 @@ function updateAvatar(avatar) {
   }
 }
 
+// 패드 아바타 전용 렌더링
+function drawPadAvatar(avatar) {
+  const currentY = avatar.y - (avatar.dragElevation || 0) + (avatar.dropBounce || 0);
+  
+  push();
+  
+  // 그림자 (무대 위에 있을 때)
+  if (avatar.isOnStage) {
+    push();
+    fill(0, 0, 0, 30);
+    noStroke();
+    ellipse(avatar.x, avatar.y + 35, 40, 10);
+    pop();
+  }
+  
+  // 메인 원형 배경
+  push();
+  translate(avatar.x, currentY);
+  
+  // 재생 중일 때 펄스 효과
+  if (avatar.state === 'playing') {
+    const pulseScale = 1 + sin(frameCount * 0.1) * 0.1;
+    scale(pulseScale);
+  }
+  
+  // 배경 원
+  fill(avatar.displayColor || '#4ecdc4');
+  stroke(255);
+  strokeWeight(3);
+  circle(0, 0, 60);
+  
+  // 이모지 표시
+  fill(255);
+  noStroke();
+  textAlign(CENTER, CENTER);
+  textSize(24);
+  text(avatar.displayEmoji || '🎵', 0, 0);
+  
+  // 악기 이름 표시
+  fill(255);
+  textAlign(CENTER, CENTER);
+  textSize(10);
+  text(avatar.musicPosition?.toUpperCase() || '', 0, 25);
+  
+  pop();
+  
+  // 닉네임 표시 (아래쪽)
+  fill(50);
+  noStroke();
+  textAlign(CENTER, CENTER);
+  textSize(12);
+  text(avatar.nickname || 'Pad Avatar', avatar.x, currentY + 45);
+  
+  pop();
+}
+
 function drawAvatar(avatar) {
   if (avatar.state === 'plane-in') {
     push();
@@ -2730,6 +2794,12 @@ function drawAvatar(avatar) {
     translate(avatar.x, avatar.y);
     triangle(0, -40, 160, 0, 0, 40);
     pop();
+    return;
+  }
+
+  // 패드 아바타 전용 렌더링
+  if (avatar.isPadAvatar) {
+    drawPadAvatar(avatar);
     return;
   }
 
@@ -3445,6 +3515,23 @@ function resetStage() {
     masterClock.currentMeasure = 0;
 
     let removedCount = 0;
+    
+    // 패드로 생성된 아바타들 정리
+    if (padAvatars && padAvatars.size > 0) {
+      padAvatars.forEach((avatar, key) => {
+        if (avatar.isOnStage) {
+          removedCount++;
+        }
+      });
+      padAvatars.clear();
+      
+      // 패드 버튼들 비활성화
+      document.querySelectorAll('.instrument-btn.active').forEach(btn => {
+        btn.classList.remove('active', 'playing');
+      });
+      activePadButtons.clear();
+    }
+    
     // 모든 세트의 스테이지 아바타 리셋 (세트 구분 없이 전체 무대 초기화)
     stageAvatars.forEach(avatar => {
       if (avatar.isOnStage) {
@@ -3504,20 +3591,24 @@ function sortAvatars() {
     isSorting = true;
     sortingAnimations = [];
 
-    // 현재 세트 공간의 아바타만 수집 (세트별 분리)
-    let allStageAvatars = stageAvatars.filter(avatar => {
-      const avatarSetName = avatar.setName || 'set1';
-      return avatarSetName === currentSetSpace || (avatarSetName === '알 수 없는 세트' && currentSetSpace === 'set1');
-    });
+    // 현재 세트 공간의 아바타만 수집 (세트별 분리) - 스테이지 아바타 제외 (패드 시스템으로 대체)
+    let debugCount = 0; // 디버깅 카운터
     let allRegularAvatars = avatars.filter(avatar => {
-      const avatarSetName = avatar.setName || 'set1';
-      return avatarSetName === currentSetSpace || (avatarSetName === '알 수 없는 세트' && currentSetSpace === 'set1');
+      const avatarSetName = getAvatarSetName(avatar) || 'set1';
+      const shouldInclude = avatarSetName === currentSetSpace || (avatarSetName === '알 수 없는 세트' && currentSetSpace === 'set1');
+      
+      // 디버깅 로그 (처음 5개만)
+      if (debugCount < 5) {
+        console.log(`🔍 아바타 필터링: ${avatar.nickname}, setName: ${avatarSetName}, 현재세트: ${currentSetSpace}, 포함여부: ${shouldInclude}`);
+        debugCount++;
+      }
+      
+      return shouldInclude;
     });
-    let allAvatars = [...allStageAvatars, ...allRegularAvatars];
+    let allAvatars = [...allRegularAvatars]; // 스테이지 아바타 제외
 
     console.log('🔍 아바타 현황 (' + currentSetSpace + ' 세트):', {
       totalAvatars: allAvatars.length,
-      stageAvatars: allStageAvatars.length,
       regularAvatars: allRegularAvatars.length,
       filterState: filterState
     });
@@ -3553,10 +3644,17 @@ function sortAvatars() {
 
     // 정렬 영역 정의 (무대 양 사이드 포함하여 전체 화면 활용)
     // 무대 자체만 피하고 나머지 전 영역에서 아바타 배치
-    const freeAreaStartY = 60; // 화면 상단 여백 (무대 위쪽도 포함)
-    const freeAreaEndY = 1660; // 화면 하단 여백
+    // 무대 영역 정의 (무대를 피하기 위해)
+    const stageW = 1920 * 0.4; // 40% 너비
+    const stageX = (1920 - stageW) / 2; // 중앙 정렬
+    const stageY = 200;
+    const stageH = 300;
+    
+    // 자유 영역을 무대 아래쪽으로 제한
+    const freeAreaStartY = stageY + stageH + 50; // 무대 아래 50px 여백
+    const freeAreaEndY = 1150; // 화면 하단 여백 (1215 - 65px 여백)
     const freeAreaStartX = 100; // 좌측 여백
-    const freeAreaEndX = 2460; // 우측 여백
+    const freeAreaEndX = 1820; // 우측 여백 (1920 - 100px 여백)
     const centerX = (freeAreaStartX + freeAreaEndX) / 2;
     const centerY = (freeAreaStartY + freeAreaEndY) / 2;
 
@@ -4169,7 +4267,7 @@ function updateCombinationFilterForSet(setName) {
   const categories = new Set();
 
   setAvatars.forEach(avatar => {
-    if (avatar.category && avatar.category !== 'all') {
+    if (avatar.category && avatar.category !== 'all' && avatar.category !== '음식과 간식') {
       categories.add(avatar.category);
     }
   });
@@ -4855,21 +4953,22 @@ function updateResetButton() {
   const resetBtn = document.getElementById('resetStageBtn');
   if (!resetBtn) return;
 
-  // 현재 세트의 무대에 있는 아바타만 확인
+  // 모든 세트의 무대에 있는 아바타 확인 (통합 리셋 방식)
   let stageAvatarCount = 0;
 
-  // 현재 세트의 무대아바타 확인
-  stageAvatars.forEach(avatar => {
-    const avatarSetName = avatar.setName || 'set1';
-    const shouldCount = avatarSetName === currentSetSpace || (avatarSetName === '알 수 없는 세트' && currentSetSpace === 'set1');
-    if (avatar.isOnStage && shouldCount) stageAvatarCount++;
+  // 패드로 생성된 아바타들 확인
+  if (padAvatars && padAvatars.size > 0) {
+    stageAvatarCount += padAvatars.size;
+  }
+
+  // 일반 아바타들 중 무대에 있는 것 확인 (모든 세트)
+  avatars.forEach(avatar => {
+    if (avatar.isOnStage) stageAvatarCount++;
   });
 
-  // 현재 세트의 일반 아바타 확인
-  avatars.forEach(avatar => {
-    const avatarSetName = avatar.setName || 'set1';
-    const shouldCount = avatarSetName === currentSetSpace || (avatarSetName === '알 수 없는 세트' && currentSetSpace === 'set1');
-    if (avatar.isOnStage && shouldCount) stageAvatarCount++;
+  // 스테이지 아바타들 중 무대에 있는 것 확인 (모든 세트)
+  stageAvatars.forEach(avatar => {
+    if (avatar.isOnStage) stageAvatarCount++;
   });
 
   if (stageAvatarCount > 0) {
@@ -5066,6 +5165,22 @@ function updateCurrentSetDisplay() {
     'set5': 'SET5 - 창작/계절'
   };
   currentSetNameSpan.textContent = setNames[currentSetSpace] || 'SET1 - 게임/디지털';
+  
+  // 조합법 이름 업데이트
+  updateRecipeNames();
+}
+
+// 조합법 이름 업데이트
+function updateRecipeNames() {
+  const currentRecipes = setRecipeMapping[currentSetSpace] || setRecipeMapping['set1'];
+  
+  const recipe1Name = document.getElementById('recipe1Name');
+  const recipe2Name = document.getElementById('recipe2Name');
+  const recipe3Name = document.getElementById('recipe3Name');
+  
+  if (recipe1Name && currentRecipes[0]) recipe1Name.textContent = currentRecipes[0].name;
+  if (recipe2Name && currentRecipes[1]) recipe2Name.textContent = currentRecipes[1].name;
+  if (recipe3Name && currentRecipes[2]) recipe3Name.textContent = currentRecipes[2].name;
 }
 
 // 패드 버튼 활성화
@@ -5151,20 +5266,24 @@ function deactivatePadButton(buttonKey, btnElement) {
 
 // 패드용 아바타 생성
 function createPadAvatar(instrument, recipeData) {
-  // 기존 스테이지 아바타에서 해당하는 악기 찾기
-  const baseStageAvatar = stageAvatars.find(avatar => {
-    const pos = (avatar.musicPosition || '').toLowerCase();
-    return pos.includes(instrument.toLowerCase());
-  });
+  // 악기별 기본 설정
+  const instrumentConfig = {
+    bass: { color: '#ff6b6b', emoji: '🎵', position: 'bass' },
+    drum: { color: '#4ecdc4', emoji: '🥁', position: 'drum' },
+    lead: { color: '#ffe66d', emoji: '🎸', position: 'lead' },
+    chord: { color: '#a8e6cf', emoji: '🎹', position: 'chord' },
+    sub: { color: '#b8b5ff', emoji: '🎺', position: 'sub' },
+    fx: { color: '#ffb3ba', emoji: '🔊', position: 'fx' }
+  };
   
-  if (!baseStageAvatar) {
-    console.error(`❌ ${instrument} 스테이지 아바타를 찾을 수 없음`);
+  const config = instrumentConfig[instrument];
+  if (!config) {
+    console.error(`❌ 알 수 없는 악기: ${instrument}`);
     return null;
   }
   
-  // 새 아바타 객체 생성 (기존 스테이지 아바타 복사)
+  // 새 아바타 객체 생성 (스테이지 아바타 의존성 제거)
   const newAvatar = {
-    ...baseStageAvatar,
     id: `pad-${instrument}-${Date.now()}`,
     nickname: `${recipeData.name} ${instrument.toUpperCase()}`,
     musicType: `${recipeData.type}_${instrument}`,
@@ -5172,11 +5291,46 @@ function createPadAvatar(instrument, recipeData) {
     setName: currentSetSpace,
     category: recipeData.name,
     selectedRecipe: { name: recipeData.name, description: recipeData.name },
-    isPadAvatar: true, // 패드로 생성된 아바타임을 표시
+    isPadAvatar: true,
+    
+    // 음악 관련
+    musicPosition: config.position,
+    
+    // 위치 관련
     x: 0,
     y: 0,
     isOnStage: false,
-    stageSlot: -1
+    stageSlot: -1,
+    
+    // 상태 관련
+    state: 'playing',
+    currentAction: 'playing',
+    
+    // 애니메이션 관련
+    vx: 0,
+    vy: 0,
+    idleTimer: 0,
+    
+    // 시각적 속성
+    scale: 1.0,
+    alpha: 255,
+    
+    // 아바타 이미지 (기본값)
+    avatarImg: null, // 실제 이미지는 나중에 로드
+    
+    // 기본 색상과 이모지
+    displayColor: config.color,
+    displayEmoji: config.emoji,
+    
+    // 추가 속성들
+    memory: `${recipeData.name} 스타일의 ${instrument} 연주`,
+    keywords: [recipeData.name, instrument, '패드'],
+    
+    // 드래그 관련
+    isDragged: false,
+    dragElevation: 0,
+    isClicked: false,
+    clickTimer: 0
   };
   
   return newAvatar;
