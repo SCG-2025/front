@@ -740,7 +740,39 @@ let avatarAssets = {
   female: [],
   male: [],
   heads: [],
+  sopum: [],
   wing: null
+};
+
+// 개별 오프셋 시스템 (mobile 값에 0.3 scaleFactor 적용)
+const HEAD_INDIVIDUAL_OFFSETS = {
+  8: { // head(9).PNG (인덱스 8)
+    female: { x: 8 * 0.3, y: -20 * 0.3, s: 220 * 0.3 },
+    male: { x: 8 * 0.3, y: -21 * 0.3, s: 220 * 0.3 }
+  }
+};
+
+const SOPUM_INDIVIDUAL_OFFSETS = {
+  6: { // sopum(7).PNG (인덱스 6) - 연필, 적절한 크기로 조정
+    female: { x: (-58 + 15) * 0.3, y: 43 * 0.3, s: 25 * 0.3 },
+    male: { x: (-4 + 15) * 0.3, y: -8 * 0.3, s: 25 * 0.3 }
+  },
+  7: { // sopum(8).PNG (인덱스 7) - 연필, 적절한 크기로 조정
+    female: { x: (-58 + 15) * 0.3, y: 43 * 0.3, s: 25 * 0.3 },
+    male: { x: (-4 + 15) * 0.3, y: -8 * 0.3, s: 25 * 0.3 }
+  },
+  8: { // sopum(9).png (인덱스 8) - 병아리
+    female: { x: 40 * 0.3, y: 70 * 0.3, s: 60 * 0.3 },
+    male: { x: 40 * 0.3, y: 70 * 0.3, s: 60 * 0.3 }
+  },
+  9: { // sopum(10).PNG (인덱스 9) - 안경
+    female: { x: 5 * 0.3, y: -15 * 0.3, s: 180 * 0.3 },
+    male: { x: 5 * 0.3, y: -25 * 0.3, s: 180 * 0.3 }
+  },
+  10: { // sopum(11).png (인덱스 10) - 날개
+    female: { x: 0 * 0.3, y: -20 * 0.3, s: 250 * 0.3 },
+    male: { x: 0 * 0.3, y: -25 * 0.3, s: 250 * 0.3 }
+  }
 };
 
 let avatarImage;
@@ -1544,31 +1576,55 @@ function getCurrentPlaybackPosition() {
 function preload() {
   avatarImage = loadImage('avatar_sample.jpeg'); // 기본 폴백 이미지
 
-  // === 커스터마이징 아바타 assets 로드 ===
-  // Female avatars (fe.png ~ fe(5).png)
+  // === 커스터마이징 아바타 assets 로드 (mobile과 동일한 카탈로그) ===
+  // Female avatars (fe.png ~ fe(7).png)
   avatarAssets.female = [];
   avatarAssets.female.push(loadImage('../mobile/assets/fe.png'));
-  for (let i = 2; i <= 5; i++) {
+  for (let i = 2; i <= 7; i++) {
     avatarAssets.female.push(loadImage(`../mobile/assets/fe(${i}).png`));
   }
 
-  // Male avatars (ma.png ~ ma(4).png)
+  // Male avatars (ma.png ~ ma(9).png)
   avatarAssets.male = [];
   avatarAssets.male.push(loadImage('../mobile/assets/ma.png'));
-  for (let i = 2; i <= 4; i++) {
+  for (let i = 2; i <= 9; i++) {
     avatarAssets.male.push(loadImage(`../mobile/assets/ma(${i}).png`));
   }
 
-  // Head accessories (head.png ~ head(8).png)
-  avatarAssets.heads = [];
-  avatarAssets.heads.push(loadImage('../mobile/assets/head.png'));
-  for (let i = 2; i <= 8; i++) {
-    avatarAssets.heads.push(loadImage(`../mobile/assets/head(${i}).png`));
-  }
+  // Head accessories - mobile과 정확히 동일한 확장자 사용
+  avatarAssets.heads = [
+    loadImage('../mobile/assets/head.png'),
+    loadImage('../mobile/assets/head(2).png'),
+    loadImage('../mobile/assets/head(3).png'),
+    loadImage('../mobile/assets/head(4).png'),
+    loadImage('../mobile/assets/head(5).png'),
+    loadImage('../mobile/assets/head(6).png'),
+    loadImage('../mobile/assets/head(7).png'),
+    loadImage('../mobile/assets/head(8).png'),
+    loadImage('../mobile/assets/head(9).PNG'),
+    loadImage('../mobile/assets/head(10).PNG'),
+    loadImage('../mobile/assets/head(11).PNG')
+  ];
 
-  // Wing (파일이 존재하지 않아 주석 처리)
-  // avatarAssets.wing = loadImage('../mobile/assets/wing.png');
-  avatarAssets.wing = null; // wing 파일 없음
+  // Sopum accessories - mobile과 동일한 확장자 사용
+  avatarAssets.sopum = [
+    loadImage('../mobile/assets/sopum.png'),
+    loadImage('../mobile/assets/sopum(2).PNG'),
+    loadImage('../mobile/assets/sopum(3).PNG'),
+    loadImage('../mobile/assets/sopum(4).PNG'),
+    loadImage('../mobile/assets/sopum(5).PNG'),
+    loadImage('../mobile/assets/sopum(6).PNG'),
+    loadImage('../mobile/assets/sopum(7).PNG'),
+    loadImage('../mobile/assets/sopum(8).PNG'),
+    loadImage('../mobile/assets/sopum(9).png'),
+    loadImage('../mobile/assets/sopum(10).PNG'),
+    loadImage('../mobile/assets/sopum(11).png')
+  ];
+
+  // Eye accessories 제거됨 (사용하지 않음)
+
+  // Wing은 sopum으로 통합됨
+  avatarAssets.wing = null;
 
   // === 검증용 음원들 직접 로드 ===
   musicSamples['Music Sample_Bass.mp3'] = loadSound('Music%20Sample_Bass.mp3',
@@ -2945,32 +3001,106 @@ function drawCustomAvatar(x, y, avatarData, direction, isHighlighted) {
     ellipse(0, 0, 77, 77);
   }
 
-  // 아바타 스케일 – 딱 한 번만 선언
-  const scale_factor = 0.418;
+  // 아바타 스케일 (mobile과 일치하도록 조정)
+  const scaleFactor = 0.3; // 원래 크기로 복원
+  const baseSize = 200 * scaleFactor;
+  
+  // 기본 오프셋 (mobile OFFSETS와 동일하지만 스케일 적용)
+  const OFFSETS = {
+    body: { s: baseSize },
+    sopum: {
+      female: { x: -58 * scaleFactor, y: 43 * scaleFactor, s: 60 * scaleFactor },
+      male: { x: -4 * scaleFactor, y: -8 * scaleFactor, s: 200 * scaleFactor }
+    },
+    head: {
+      female: { x: 0, y: -15 * scaleFactor, s: baseSize },
+      male: { x: 0, y: -16 * scaleFactor, s: baseSize }
+    }
+  };
 
-  // Wing (뒤)
-  if (avatarData.wingOn && avatarAssets.wing) {
-    const wingOffsetX = avatarData.gender === 'female' ? -2.3 : -1.5;
-    const wingOffsetY = avatarData.gender === 'female' ? -4 : -3;
-    image(avatarAssets.wing, wingOffsetX, wingOffsetY, 190 * scale_factor, 190 * scale_factor);
+  // body variant offset 적용 (mobile과 동일)
+  const BODY_VARIANT_OFFSET = {
+    female: { 0: { x: 0, y: 0 }, 1: { x: 2, y: -2 }, 2: { x: 1, y: 0 }, 3: { x: -1, y: 0 }, 4: { x: 0, y: 2 }, 5: { x: 1, y: 1 }, 6: { x: -1, y: 1 } },
+    male: { 0: { x: 0, y: 0 }, 1: { x: 1, y: -2 }, 2: { x: 2, y: 0 }, 3: { x: 0, y: 0 }, 4: { x: 1, y: 1 }, 5: { x: -1, y: 0 }, 6: { x: 0, y: -1 }, 7: { x: 1, y: 0 }, 8: { x: -2, y: 1 } }
+  };
+  
+  const bodyPool = avatarData.gender === 'female' ? avatarAssets.female : avatarAssets.male;
+  const bodyImg = bodyPool && bodyPool[avatarData.bodyIdx || 0];
+  const vOff = BODY_VARIANT_OFFSET[avatarData.gender]?.[avatarData.bodyIdx || 0] || { x: 0, y: 0 };
+  const scaledVOff = { x: vOff.x * scaleFactor, y: vOff.y * scaleFactor };
+
+  // 1. 먼저 날개 렌더링 (아바타 뒤쪽) - sopum(11)인 경우
+  if (avatarData.sopumOn && avatarData.sopumIdx === 10 && avatarAssets.sopum && avatarAssets.sopum[10]) {
+    const sopumImg = avatarAssets.sopum[10];
+    const w = {
+      x: SOPUM_INDIVIDUAL_OFFSETS[10][avatarData.gender].x,
+      y: SOPUM_INDIVIDUAL_OFFSETS[10][avatarData.gender].y,
+      s: SOPUM_INDIVIDUAL_OFFSETS[10][avatarData.gender].s
+    };
+    image(sopumImg, w.x + scaledVOff.x, w.y + scaledVOff.y, w.s, w.s);
   }
 
-  // Body
-  const bodyImages = avatarData.gender === 'female' ? avatarAssets.female : avatarAssets.male;
-  if (bodyImages && bodyImages[avatarData.bodyIdx]) {
-    image(bodyImages[avatarData.bodyIdx], 0, 0, 176 * scale_factor, 176 * scale_factor);
+  // 2. Body 렌더링
+  if (bodyImg) {
+    image(bodyImg, scaledVOff.x, scaledVOff.y, baseSize, baseSize);
   } else {
     // 폴백
     fill('#ffdbac'); noStroke();
-    ellipse(0, 5, 50 * scale_factor, 60 * scale_factor);
+    ellipse(scaledVOff.x, scaledVOff.y + 5 * scaleFactor, 50 * scaleFactor, 60 * scaleFactor);
   }
 
-  // Head (앞)
-  if (avatarData.headIdx !== null && avatarData.headIdx !== undefined && avatarAssets.heads[avatarData.headIdx]) {
-    const headOffsetX = 0;
-    const headOffsetY = -6;
-    image(avatarAssets.heads[avatarData.headIdx], headOffsetX, headOffsetY, 176 * scale_factor, 176 * scale_factor);
+  // 3. Head 렌더링
+  if (avatarData.headIdx !== null && avatarData.headIdx !== undefined && avatarAssets.heads && avatarAssets.heads[avatarData.headIdx]) {
+    const headImg = avatarAssets.heads[avatarData.headIdx];
+    
+    // 개별 헤드 오프셋이 있는지 확인
+    const individualOffset = HEAD_INDIVIDUAL_OFFSETS[avatarData.headIdx];
+    
+    if (individualOffset && individualOffset[avatarData.gender]) {
+      // 개별 오프셋 사용 (이미 scaleFactor가 적용됨)
+      const h = {
+        x: individualOffset[avatarData.gender].x,
+        y: individualOffset[avatarData.gender].y,
+        s: individualOffset[avatarData.gender].s
+      };
+      image(headImg, h.x + scaledVOff.x, h.y + scaledVOff.y, h.s, h.s);
+    } else {
+      // 기본 오프셋 사용
+      const h = OFFSETS.head[avatarData.gender];
+      image(headImg, h.x + scaledVOff.x, h.y + scaledVOff.y, h.s, h.s);
+    }
   }
+
+  // 4. 날개가 아닌 다른 Sopum들 렌더링 (바디 위에)
+  if (avatarData.sopumOn && avatarData.sopumIdx !== 10 && typeof avatarData.sopumIdx === 'number' && avatarAssets.sopum && avatarAssets.sopum[avatarData.sopumIdx]) {
+    const sopumImg = avatarAssets.sopum[avatarData.sopumIdx];
+    
+    // 개별 소품 오프셋이 있는지 확인
+    const individualOffset = SOPUM_INDIVIDUAL_OFFSETS[avatarData.sopumIdx];
+    
+    if (individualOffset && individualOffset[avatarData.gender]) {
+      // 개별 오프셋 사용 (이미 scaleFactor가 적용됨)
+      const w = {
+        x: individualOffset[avatarData.gender].x,
+        y: individualOffset[avatarData.gender].y,
+        s: individualOffset[avatarData.gender].s
+      };
+      image(sopumImg, w.x + scaledVOff.x, w.y + scaledVOff.y, w.s, w.s);
+    } else {
+      // 기본 오프셋 사용
+      const w = OFFSETS.sopum[avatarData.gender];
+      
+      // sopum~sopum(8)까지는 오른쪽으로 이동 (손에 잡고 있는 효과)
+      let extraOffsetX = 0;
+      if (avatarData.sopumIdx <= 7) { // sopum.png는 인덱스 0, sopum(2).PNG는 인덱스 1, ..., sopum(8).PNG는 인덱스 7
+        extraOffsetX = 15 * scaleFactor; // mobile과 동일한 비율로 오른쪽으로 이동
+      }
+      
+      image(sopumImg, w.x + scaledVOff.x + extraOffsetX, w.y + scaledVOff.y, w.s, w.s);
+    }
+  }
+
+  // eye 요소는 사용하지 않음
 
   pop();
 }
@@ -3683,6 +3813,74 @@ function drawPopupAvatar(canvas, avatarData) {
       centerX - headSize / 2,
       centerY + headOffsetY - headSize / 2,
       headSize, headSize);
+  }
+
+  // Sopum (소품) - 가장 앞에 그리기
+  if (avatarData.sopumIdx !== null && avatarData.sopumIdx !== undefined &&
+    avatarAssets.sopum && avatarAssets.sopum[avatarData.sopumIdx] && avatarAssets.sopum[avatarData.sopumIdx].width > 0) {
+    
+    // 팝업용 스케일 팩터 (적절한 크기 조정)
+    const popupScale = 0.8;
+    
+    // 팝업용 개별 소품 오프셋
+    const POPUP_SOPUM_INDIVIDUAL_OFFSETS = {
+      6: { // sopum(7).PNG (인덱스 6) - 연필
+        female: { x: (-58 + 15) * popupScale, y: 43 * popupScale, s: 25 * popupScale },
+        male: { x: (-4 + 15) * popupScale, y: -8 * popupScale, s: 25 * popupScale }
+      },
+      7: { // sopum(8).PNG (인덱스 7) - 연필
+        female: { x: (-58 + 15) * popupScale, y: 43 * popupScale, s: 25 * popupScale },
+        male: { x: (-4 + 15) * popupScale, y: -8 * popupScale, s: 25 * popupScale }
+      },
+      8: { // sopum(9).png (인덱스 8) - 병아리
+        female: { x: 40 * popupScale, y: 70 * popupScale, s: 60 * popupScale },
+        male: { x: 40 * popupScale, y: 70 * popupScale, s: 60 * popupScale }
+      },
+      9: { // sopum(10).PNG (인덱스 9) - 안경
+        female: { x: 5 * popupScale, y: -15 * popupScale, s: 180 * popupScale },
+        male: { x: 5 * popupScale, y: -25 * popupScale, s: 180 * popupScale }
+      },
+      10: { // sopum(11).png (인덱스 10) - 날개
+        female: { x: 0, y: -20 * popupScale, s: 250 * popupScale },
+        male: { x: 0, y: -25 * popupScale, s: 250 * popupScale }
+      }
+    };
+    
+    // 개별 오프셋이 있는지 확인
+    const individualOffset = POPUP_SOPUM_INDIVIDUAL_OFFSETS[avatarData.sopumIdx];
+    
+    let sopumSize, sopumX, sopumY;
+    
+    if (individualOffset && individualOffset[avatarData.gender]) {
+      // 개별 오프셋 사용 (7번 연필 등)
+      const sopumOffset = individualOffset[avatarData.gender];
+      sopumSize = sopumOffset.s;
+      sopumX = centerX + sopumOffset.x;
+      sopumY = centerY + sopumOffset.y;
+    } else {
+      // 기본 오프셋 사용
+      const POPUP_SOPUM_OFFSETS = {
+        female: { x: -58 * popupScale, y: 43 * popupScale, s: 60 * popupScale },
+        male: { x: -4 * popupScale, y: -8 * popupScale, s: 200 * popupScale }
+      };
+      
+      const sopumOffset = POPUP_SOPUM_OFFSETS[avatarData.gender] || POPUP_SOPUM_OFFSETS.male;
+      
+      // 추가 오프셋 적용 (mobile customizing.js의 extraOffsetX 로직)
+      let extraOffsetX = 0;
+      if (avatarData.sopumIdx <= 7) { // sopum~sopum(8)까지는 오른쪽으로 이동
+        extraOffsetX = 15 * popupScale; // 오른쪽으로 이동
+      }
+      
+      sopumSize = sopumOffset.s;
+      sopumX = centerX + sopumOffset.x + extraOffsetX;
+      sopumY = centerY + sopumOffset.y;
+    }
+    
+    ctx.drawImage(avatarAssets.sopum[avatarData.sopumIdx].canvas,
+      sopumX - sopumSize / 2,
+      sopumY - sopumSize / 2,
+      sopumSize, sopumSize);
   }
 }
 

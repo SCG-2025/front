@@ -97,8 +97,7 @@ import { db } from './firebase-init.js';
       'assets/sopum(9).png',
       'assets/sopum(10).PNG',
       'assets/sopum(11).png'
-    ],
-    eye: makeVariants('eye', 4),     // eye.png ~ eye(4).png
+    ]
   };
 
   // localStorage에서 기존 아바타 데이터를 가져오거나 기본값 사용
@@ -106,25 +105,20 @@ import { db } from './firebase-init.js';
   // write에서 넘어온 avatarData가 있으면 그대로 사용, 없으면 최소 기본값
   const avatar = savedAvatar && typeof savedAvatar === 'object'
     ? { ...savedAvatar }
-    : { gender: 'female', bodyIdx: 0, headIdx: null, sopumOn: false, eyes: 0 };
+    : { gender: 'female', bodyIdx: 0, headIdx: null, sopumOn: false };
 
   // 이미지 캐시
-  const IMG = { female: [], male: [], heads: [], sopum: [], eye: [] };
+  const IMG = { female: [], male: [], heads: [], sopum: [] };
   function preload() {
     IMG.female = Catalog.female.map(p => loadImage(p));
     IMG.male = Catalog.male.map(p => loadImage(p));
     IMG.heads = Catalog.heads.map(p => loadImage(p));
     IMG.sopum = Catalog.sopum.map(p => loadImage(p));
-    IMG.eye = Catalog.eye.map(p => loadImage(p));
   }
 
   /* ---------- 오프셋(레이어 보정) ---------- */
   const OFFSETS = {
     body: { s: 200 },
-    eye: {
-      female: { x: 0, y: 0, s: 200 },
-      male: { x: 0, y: -10, s: 60 }
-    },
     sopum: {
       female: { x: -58, y: 43, s: 60 },
       male: { x: -4, y: -8, s: 200 }
@@ -449,12 +443,7 @@ import { db } from './firebase-init.js';
       }
     }
 
-    // EYE (맨 위에)
-    if (typeof avatar.eyes === 'number' && IMG.eye[avatar.eyes]) {
-      const e = OFFSETS.eye[avatar.gender];
-      const eyeImg = IMG.eye[avatar.eyes];
-      image(eyeImg, e.x + vOff.x, e.y + vOff.y, e.s, e.s);
-    }
+    // eye 요소는 더 이상 사용하지 않음
     pop();
   }
 
@@ -489,7 +478,6 @@ import { db } from './firebase-init.js';
       headIdx: avatar.headIdx,
       sopumOn: avatar.sopumOn || false,
       sopumIdx: avatar.sopumIdx,
-      eyes: avatar.eyes || 0,
       // 추가 wall 호환 필드들
       wingOn: false,
       skin: avatar.skin || '#ffdbac',

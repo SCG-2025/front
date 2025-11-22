@@ -189,6 +189,7 @@
             to { transform: rotate(360deg); }
         }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -397,12 +398,224 @@
                     
                     avatarContainer.innerHTML = avatarHTML;
                     
-                    // 아바타 이미지 렌더링
-                    setTimeout(() => {
-                        avatarsData.forEach((avatar, index) => {
-                            renderAvatarOnCanvas(avatar.avatar || {}, `canvas-${avatar.id}`);
-                        });
-                    }, 100);
+                    // 아바타 렌더링 관련 변수들
+        let avatarAssets = { female: [], male: [], heads: [], sopum: [] };
+        let assetsLoaded = false;
+        
+        // 아바타 에셋 로드 함수
+        async function loadAvatarAssets() {
+            if (assetsLoaded) return;
+            
+            try {
+                // Female avatars
+                avatarAssets.female.push(loadImage('assets/fe.png'));
+                for (let i = 2; i <= 7; i++) {
+                    avatarAssets.female.push(loadImage(`assets/fe(${i}).png`));
+                }
+                
+                // Male avatars
+                avatarAssets.male.push(loadImage('assets/ma.png'));
+                for (let i = 2; i <= 9; i++) {
+                    avatarAssets.male.push(loadImage(`assets/ma(${i}).png`));
+                }
+                
+                // Head accessories
+                const headFiles = [
+                    'assets/head.png',
+                    'assets/head(2).png',
+                    'assets/head(3).png',
+                    'assets/head(4).png',
+                    'assets/head(5).png',
+                    'assets/head(6).png',
+                    'assets/head(7).png',
+                    'assets/head(8).png',
+                    'assets/head(9).PNG',
+                    'assets/head(10).PNG',
+                    'assets/head(11).PNG'
+                ];
+                headFiles.forEach(file => {
+                    avatarAssets.heads.push(loadImage(file));
+                });
+                
+                // Sopum accessories
+                const sopumFiles = [
+                    'assets/sopum.png',
+                    'assets/sopum(2).PNG',
+                    'assets/sopum(3).PNG',
+                    'assets/sopum(4).PNG',
+                    'assets/sopum(5).PNG',
+                    'assets/sopum(6).PNG',
+                    'assets/sopum(7).PNG',
+                    'assets/sopum(8).PNG',
+                    'assets/sopum(9).png',
+                    'assets/sopum(10).PNG',
+                    'assets/sopum(11).png'
+                ];
+                sopumFiles.forEach(file => {
+                    avatarAssets.sopum.push(loadImage(file));
+                });
+                
+                assetsLoaded = true;
+                console.log('✅ 아바타 에셋 로드 완료');
+            } catch (error) {
+                console.error('❌ 아바타 에셋 로드 실패:', error);
+            }
+        }
+        
+        // 개별 오프셋 설정 (mobile과 동일)
+        const HEAD_INDIVIDUAL_OFFSETS = {
+            8: {
+                female: { x: 8, y: -20, s: 220 },
+                male: { x: 8, y: -21, s: 220 }
+            }
+        };
+        
+        const SOPUM_INDIVIDUAL_OFFSETS = {
+            8: {
+                female: { x: 40, y: 70, s: 60 },
+                male: { x: 40, y: 70, s: 60 }
+            },
+            9: {
+                female: { x: 5, y: -15, s: 180 },
+                male: { x: 5, y: -25, s: 180 }
+            },
+            10: {
+                female: { x: 0, y: -20, s: 250 },
+                male: { x: 0, y: -25, s: 250 }
+            }
+        };
+        
+        // 캔버스에 아바타 렌더링
+        function renderAvatarOnCanvas(avatarData, canvasId) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas || !assetsLoaded) {
+                setTimeout(() => renderAvatarOnCanvas(avatarData, canvasId), 100);
+                return;
+            }
+            
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, 120, 120);
+            
+            const centerX = 60;
+            const centerY = 60;
+            const scaleFactor = 0.25; // 작은 프리뷰용 스케일
+            const baseSize = 200 * scaleFactor;
+            
+            // 기본 오프셋
+            const OFFSETS = {
+                body: { s: baseSize },
+                sopum: {
+                    female: { x: -58 * scaleFactor, y: 43 * scaleFactor, s: 60 * scaleFactor },
+                    male: { x: -4 * scaleFactor, y: -8 * scaleFactor, s: baseSize }
+                },
+                head: {
+                    female: { x: 0, y: -15 * scaleFactor, s: baseSize },
+                    male: { x: 0, y: -16 * scaleFactor, s: baseSize }
+                }
+            };
+            
+            // Body variant offset
+            const BODY_VARIANT_OFFSET = {
+                female: { 0: { x: 0, y: 0 }, 1: { x: 2, y: -2 }, 2: { x: 1, y: 0 }, 3: { x: -1, y: 0 }, 4: { x: 0, y: 2 }, 5: { x: 1, y: 1 }, 6: { x: -1, y: 1 } },
+                male: { 0: { x: 0, y: 0 }, 1: { x: 1, y: -2 }, 2: { x: 2, y: 0 }, 3: { x: 0, y: 0 }, 4: { x: 1, y: 1 }, 5: { x: -1, y: 0 }, 6: { x: 0, y: -1 }, 7: { x: 1, y: 0 }, 8: { x: -2, y: 1 } }
+            };
+            
+            const bodyPool = avatarData.gender === 'female' ? avatarAssets.female : avatarAssets.male;
+            const bodyImg = bodyPool && bodyPool[avatarData.bodyIdx || 0];
+            const vOff = BODY_VARIANT_OFFSET[avatarData.gender]?.[avatarData.bodyIdx || 0] || { x: 0, y: 0 };
+            const scaledVOff = { x: vOff.x * scaleFactor, y: vOff.y * scaleFactor };
+            
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            
+            // 1. 날개 먼저 (뒤쪽)
+            if (avatarData.sopumOn && avatarData.sopumIdx === 10 && avatarAssets.sopum && avatarAssets.sopum[10] && avatarAssets.sopum[10].complete) {
+                const w = {
+                    x: SOPUM_INDIVIDUAL_OFFSETS[10][avatarData.gender].x * scaleFactor,
+                    y: SOPUM_INDIVIDUAL_OFFSETS[10][avatarData.gender].y * scaleFactor,
+                    s: SOPUM_INDIVIDUAL_OFFSETS[10][avatarData.gender].s * scaleFactor
+                };
+                ctx.drawImage(avatarAssets.sopum[10], 
+                    w.x + scaledVOff.x - w.s/2, w.y + scaledVOff.y - w.s/2, w.s, w.s);
+            }
+            
+            // 2. Body
+            if (bodyImg && bodyImg.complete) {
+                ctx.drawImage(bodyImg, 
+                    scaledVOff.x - baseSize/2, scaledVOff.y - baseSize/2, baseSize, baseSize);
+            } else {
+                // 폴백
+                ctx.fillStyle = '#ffdbac';
+                ctx.fillRect(scaledVOff.x - 25, scaledVOff.y - 30, 50, 60);
+            }
+            
+            // 3. Head
+            if (avatarData.headIdx !== null && avatarData.headIdx !== undefined && 
+                avatarAssets.heads && avatarAssets.heads[avatarData.headIdx] && avatarAssets.heads[avatarData.headIdx].complete) {
+                
+                const headImg = avatarAssets.heads[avatarData.headIdx];
+                const individualOffset = HEAD_INDIVIDUAL_OFFSETS[avatarData.headIdx];
+                
+                if (individualOffset && individualOffset[avatarData.gender]) {
+                    const h = {
+                        x: individualOffset[avatarData.gender].x * scaleFactor,
+                        y: individualOffset[avatarData.gender].y * scaleFactor,
+                        s: individualOffset[avatarData.gender].s * scaleFactor
+                    };
+                    ctx.drawImage(headImg, 
+                        h.x + scaledVOff.x - h.s/2, h.y + scaledVOff.y - h.s/2, h.s, h.s);
+                } else {
+                    const h = OFFSETS.head[avatarData.gender];
+                    ctx.drawImage(headImg, 
+                        h.x + scaledVOff.x - h.s/2, h.y + scaledVOff.y - h.s/2, h.s, h.s);
+                }
+            }
+            
+            // 4. 다른 sopum들 (날개 제외)
+            if (avatarData.sopumOn && avatarData.sopumIdx !== 10 && typeof avatarData.sopumIdx === 'number' && 
+                avatarAssets.sopum && avatarAssets.sopum[avatarData.sopumIdx] && avatarAssets.sopum[avatarData.sopumIdx].complete) {
+                
+                const sopumImg = avatarAssets.sopum[avatarData.sopumIdx];
+                const individualOffset = SOPUM_INDIVIDUAL_OFFSETS[avatarData.sopumIdx];
+                
+                if (individualOffset && individualOffset[avatarData.gender]) {
+                    const w = {
+                        x: individualOffset[avatarData.gender].x * scaleFactor,
+                        y: individualOffset[avatarData.gender].y * scaleFactor,
+                        s: individualOffset[avatarData.gender].s * scaleFactor
+                    };
+                    ctx.drawImage(sopumImg, 
+                        w.x + scaledVOff.x - w.s/2, w.y + scaledVOff.y - w.s/2, w.s, w.s);
+                } else {
+                    const w = OFFSETS.sopum[avatarData.gender];
+                    let extraOffsetX = 0;
+                    if (avatarData.sopumIdx <= 7) {
+                        extraOffsetX = 15 * scaleFactor;
+                    }
+                    ctx.drawImage(sopumImg, 
+                        w.x + scaledVOff.x + extraOffsetX - w.s/2, w.y + scaledVOff.y - w.s/2, w.s, w.s);
+                }
+            }
+            
+            ctx.restore();
+        }
+        
+        // 아바타 이미지 렌더링
+                    if (!assetsLoaded) {
+                        await loadAvatarAssets();
+                        // 에셋 로드 완료 대기
+                        setTimeout(() => {
+                            avatarsData.forEach((avatar, index) => {
+                                renderAvatarOnCanvas(avatar.avatar || {}, `canvas-${avatar.id}`);
+                            });
+                        }, 500);
+                    } else {
+                        setTimeout(() => {
+                            avatarsData.forEach((avatar, index) => {
+                                renderAvatarOnCanvas(avatar.avatar || {}, `canvas-${avatar.id}`);
+                            });
+                        }, 100);
+                    }
                     
                     // 대량 삭제 컨트롤 표시
                     document.getElementById('bulkDeleteControls').style.display = 'block';
