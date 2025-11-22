@@ -102,16 +102,14 @@
                 this.imageNum = imageNum;
                 this.vx = (Math.random() - 0.5) * 4;  // 좌우 속도
                 this.vy = (Math.random() - 0.5) * 4;  // 상하 속도
-                this.size = 200 + Math.random() * 150; // 더 큰 크기
+                this.size = 200 + Math.random() * 150; // 크기
                 this.opacity = 0.6 + Math.random() * 0.4;
                 this.rotation = Math.random() * Math.PI * 2;
                 this.rotationSpeed = (Math.random() - 0.5) * 0.08;
                 this.image = null;
                 this.loaded = false;
-                this.alpha = 1;
-                this.fadeOutSpeed = 0.003; // 매우 천천히 페이드 아웃
-                this.life = 300 + Math.random() * 200; // 생명시간 (프레임)
-                this.lifeCounter = this.life;
+                this.alpha = 0.3; // 시작 투명도
+                // 생명시간 관련 변수들 제거 (더 이상 사용하지 않음)
                 this.loadImage();
             }
 
@@ -127,43 +125,34 @@
             }
 
             update() {
-                // 화면 내에서 반복되도록 위치 조정 (토로이드 래핑)
+                // 위치 업데이트
                 this.x += this.vx;
                 this.y += this.vy;
 
-                // 화면 경계에서 반대쪽으로 나타남
-                if (this.x < -this.size) this.x = canvas.width + this.size;
-                if (this.x > canvas.width + this.size) this.x = -this.size;
-                if (this.y < -this.size) this.y = canvas.height + this.size;
-                if (this.y > canvas.height + this.size) this.y = -this.size;
+                // 창 경계에서 튕겨나오기 (벽 충돌)
+                if (this.x <= this.size/2 || this.x >= canvas.width - this.size/2) {
+                    this.vx = -this.vx; // X축 속도 반전
+                    this.x = Math.max(this.size/2, Math.min(canvas.width - this.size/2, this.x));
+                }
+                
+                if (this.y <= this.size/2 || this.y >= canvas.height - this.size/2) {
+                    this.vy = -this.vy; // Y축 속도 반전
+                    this.y = Math.max(this.size/2, Math.min(canvas.height - this.size/2, this.y));
+                }
 
+                // 회전 업데이트
                 this.rotation += this.rotationSpeed;
-                this.lifeCounter--;
+                
+                // 생명시간 제거 - 이제 계속 살아있음
+                // this.lifeCounter--;
 
-                // 생명 시간이 끝나면 가운데에서 리스폰
-                if (this.lifeCounter <= 0) {
-                    this.respawn();
-                }
+                // 리스폰 제거 - 더 이상 가운데에서 리스폰하지 않음
+                // if (this.lifeCounter <= 0) {
+                //     this.respawn();
+                // }
 
-                // 생명 시간이 많이 남았을 때 페이드 아웃 효과
-                if (this.lifeCounter < 30) {
-                    this.alpha = Math.max(0.3, this.alpha - 0.01); // 너무 투명하지 않게
-                } else {
-                    this.alpha = Math.min(1, this.alpha + 0.02); // 서서히 나타나기
-                }
-            }
-
-            // 가운데에서 리스폰
-            respawn() {
-                this.x = canvas.width / 2 + (Math.random() - 0.5) * 200; // 가운데 근처
-                this.y = canvas.height / 2 + (Math.random() - 0.5) * 200;
-                this.vx = (Math.random() - 0.5) * 4;
-                this.vy = (Math.random() - 0.5) * 4;
-                this.life = 300 + Math.random() * 200; // 새로운 생명시간
-                this.lifeCounter = this.life;
-                this.alpha = 0.3; // 서서히 나타나기 시작
-                this.rotation = Math.random() * Math.PI * 2;
-                console.log(`♾️ 이미지 ${this.imageNum} 리스폰!`);
+                // 투명도는 항상 최대로 유지
+                this.alpha = Math.min(1, this.alpha + 0.02);
             }
 
             draw(ctx) {
@@ -178,8 +167,8 @@
             }
 
             isAlive() {
-                // 리스폰 시스템에서는 이미지가 절대 죽지 않음
-                return this.alpha > 0.1; // 최소 투명도 유지
+                // 이제 이미지들은 계속 살아있음 (창 경계에서 튕겨나오므로)
+                return true;
             }
         }
 
@@ -204,18 +193,18 @@
                 ctx.fillStyle = 'rgba(0,0,0,0.08)';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                floatingImages = floatingImages.filter(img => img.isAlive());
+                // 이제 이미지들이 죽지 않으므로 필터링 불필요
+                // floatingImages = floatingImages.filter(img => img.isAlive());
 
                 floatingImages.forEach(img => {
                     img.update();
                     img.draw(ctx);
                 });
 
-                // 이미지 개수가 줄어들면 새로 생성
+                // 이미지 개수 유지 로직도 수정 - 너무 많아지지 않도록
                 if (floatingImages.length < 8) {
-                    addFloatingImages(2);
+                    addFloatingImages(1); // 더 적게 추가
                 }
-
             } else if (displayMode === 'video') {
                 // 비디오 프레임을 그리되, 비디오가 준비되지 않았으면 투명 배경 유지
                 if (!videoPlayer.paused && videoPlayer.readyState === videoPlayer.HAVE_ENOUGH_DATA) {
