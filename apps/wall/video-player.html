@@ -61,7 +61,7 @@
             'winter_memories': 'Media/video15.mp4'
         };
 
-        // 포지션 매핑
+        // 포지션 매핑 (main.js의 getImageNumberFromPosition과 동일하게)
         const posMap = {
             'Lead': 1,
             '리드멜로디': 1,
@@ -90,7 +90,9 @@
         let currentImageNum = 0;
         let isVideoPlaying = false;
         let showFloatingImages = false;
-        let displayMode = 'none'; // 'image', 'video', 'none'
+        let displayMode = 'none'; // 'image', 'video', 'countdown', 'none'
+        let countdownTimer = 0;
+        let countdownValue = 0;
 
         // 떠다니는 이미지 생성 클래스 (작은 이미지들)
         class FloatingImage {
@@ -161,11 +163,12 @@
         }
 
         // 떠다니는 이미지를 기존 배열에 추가 (새로 생성하지 않음)
-        function addFloatingImages(count = 8) {
+        function addFloatingImages(count = 8, imageNum = null) {
+            const targetImageNum = imageNum || currentImageNum;
             for (let i = 0; i < count; i++) {
                 const x = Math.random() * canvas.width;
                 const y = Math.random() * canvas.height;
-                const img = new FloatingImage(x, y, currentImageNum);
+                const img = new FloatingImage(x, y, targetImageNum);
                 floatingImages.push(img);
             }
         }
@@ -203,6 +206,22 @@
                 if (!videoPlayer.paused && videoPlayer.readyState === videoPlayer.HAVE_ENOUGH_DATA) {
                     ctx.drawImage(videoPlayer, 0, 0, canvas.width, canvas.height);
                 }
+            } else if (displayMode === 'countdown') {
+                // 카운트다운 표시
+                ctx.fillStyle = '#ff6b6b';
+                ctx.font = 'bold 120px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(countdownValue, canvas.width / 2, canvas.height / 2);
+                
+                // 배경 효과
+                ctx.fillStyle = 'rgba(255, 107, 107, 0.1)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // 하단 메시지
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 32px Arial';
+                ctx.fillText('6개 포지션 완성! 비디오 재생 준비 중...', canvas.width / 2, canvas.height / 2 + 100);
             }
 
             requestAnimationFrame(animate);
@@ -211,14 +230,30 @@
         animate();
 
         window.addEventListener('message', (event) => {
-            const { type, payload, position, bpm } = event.data;
+            const { type, payload, position, bpm, imageNumbers, countdown, keepExisting } = event.data;
 
             if (type === 'SHOW_IMAGE') {
                 console.log('🖼️ 이미지 표시 명령 받음:', payload.nickname, payload.musicPosition);
                 showFloatingImageSequence(payload, position, bpm);
+            } else if (type === 'SHOW_IMAGES') {
+                // 비디오 재생 중이면 새로운 이미지 명령 무시
+                if (displayMode === 'video') {
+                    console.log('🎬 비디오 재생 중 - 이미지 명령 무시:', imageNumbers);
+                    return;
+                }
+                console.log('🖼️ 다중 이미지 표시 명령 받음:', imageNumbers, keepExisting ? '(기존 유지)' : '(새로 시작)');
+                showMultipleImages(imageNumbers, keepExisting);
+            } else if (type === 'START_COUNTDOWN') {
+                console.log('⏰ 카운트다운 시작:', countdown);
+                startCountdown(countdown);
             } else if (type === 'PLAY_VIDEO') {
-                console.log('🎬 비디오 재생 명령 받음:', payload.nickname, payload.musicType);
-                playVideo(payload, position, bpm);
+                if (payload && payload.nickname) {
+                    console.log('🎬 비디오 재생 명령 받음:', payload.nickname, payload.musicType);
+                    playVideo(payload, position, bpm);
+                } else {
+                    console.log('🎬 6개 포지션 완성 비디오 재생');
+                    playCompletionVideo();
+                }
             } else if (type === 'STOP_VIDEO' || type === 'RESET_STAGE') {
                 console.log('⏹️ 비디오 정지 명령 받음');
                 videoPlayer.pause();
@@ -226,6 +261,7 @@
                 displayMode = 'none';
                 floatingImages = []; // 모든 떠다니는 이미지 제거
                 currentImageNum = 0;
+                countdownValue = 0;
                 console.log('✨ 모든 이미지가 제거되었습니다.');
             }
         });
@@ -318,6 +354,77 @@
             displayMode = 'image';
 
             console.log(`✅ 이미지 표시 시작: ${avatar.nickname}`);
+        }
+
+        // 다중 포지션 이미지 표시 (누적 관리 지원)
+        function showMultipleImages(imageNumbers, keepExisting = false) {
+            console.log(`🖼️ showMultipleImages 호출: imageNumbers=[${imageNumbers.join(',')}], keepExisting=${keepExisting}`);
+            
+            // keepExisting가 false면 기존 이미지 완전 초기화
+            if (!keepExisting) {
+                console.log('🗑️ 기존 이미지 모두 제거');
+                floatingImages = [];
+            }
+            
+            // 현재 활성 이미지 번호들 추적
+            const currentImageNumbers = new Set();
+            floatingImages.forEach(img => currentImageNumbers.add(img.imageNum));
+            
+            // 각 이미지 번호에 대해 플로팅 이미지 추가/관리
+            imageNumbers.forEach(imageNum => {
+                // 해당 이미지 번호의 현재 개수 확인
+                const existingCount = floatingImages.filter(img => img.imageNum === imageNum && img.isAlive()).length;
+                const targetCount = 8; // 각 포지션마다 8개씩
+                
+                console.log(`🔍 이미지 ${imageNum}: 현재 ${existingCount}개, 목표 ${targetCount}개`);
+                
+                // 부족한 만큼 추가 생성
+                if (existingCount < targetCount) {
+                    const needCount = targetCount - existingCount;
+                    console.log(`➕ 이미지 ${imageNum} - ${needCount}개 추가 생성`);
+                    
+                    for (let i = 0; i < needCount; i++) {
+                        const x = Math.random() * canvas.width;
+                        const y = Math.random() * canvas.height;
+                        const img = new FloatingImage(x, y, imageNum);
+                        floatingImages.push(img);
+                    }
+                }
+            });
+            
+            displayMode = 'image';
+            const totalCount = floatingImages.length;
+            console.log(`✅ 다중 이미지 완료: [${imageNumbers.join(',')}] ${keepExisting ? '누적모드' : '새시작'} (총 ${totalCount}개)`);
+        }
+
+        // 카운트다운 시작
+        function startCountdown(seconds) {
+            countdownValue = seconds;
+            displayMode = 'countdown';
+            
+            const timer = setInterval(() => {
+                countdownValue--;
+                if (countdownValue <= 0) {
+                    clearInterval(timer);
+                    displayMode = 'none';
+                }
+            }, 1000);
+        }
+
+        // 6개 포지션 완성 시 재생할 비디오
+        function playCompletionVideo() {
+            // 첫 번째 비디오를 기본으로 재생 (추후 특별한 완성 비디오로 교체 가능)
+            const firstVideo = Object.values(videoSamples)[0];
+            videoPlayer.src = firstVideo;
+            videoPlayer.currentTime = 0;
+            videoPlayer.playbackRate = 1;
+            
+            videoPlayer.play().catch(e => {
+                console.error('완성 비디오 재생 실패:', e);
+            });
+            
+            displayMode = 'video';
+            console.log('🎊 6개 포지션 완성 비디오 재생!');
         }
 
         // 아바타가 무대에서 나갔을 때 호출될 함수 (main.js에서 호출)

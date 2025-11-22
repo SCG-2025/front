@@ -261,11 +261,6 @@
       background: #357abd;
     }
 
-    .pad-tab.active {
-      background: #2c5282;
-      transform: translateX(-50%) translateY(-210px);
-    }
-
     .pad-panel {
       background: white;
       border-radius: 15px 15px 0 0;
@@ -287,6 +282,11 @@
     .pad-panel.active {
       transform: translateY(0);
       opacity: 1;
+    }
+
+    .pad-tab.active {
+      background: #2c5282;
+      /* transform은 JavaScript에서 동적으로 설정됩니다 */
     }
 
     .pad-header {
@@ -328,6 +328,21 @@
       display: flex;
       gap: 8px;
       justify-content: center;
+    }
+
+    .instrument-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .instrument-label {
+      font-size: 12px;
+      font-weight: bold;
+      color: #666;
+      text-align: center;
+      white-space: nowrap;
     }
 
     .instrument-btn {
@@ -451,15 +466,15 @@
       background: rgba(255, 100, 100, 0.9);
       color: white;
       border: none;
-      padding: 20px 32px; /* 패딩 2배 증가 */
-      border-radius: 30px; /* 둥글기 증가 */
-      font-size: 24px; /* 글씨 크기 증가 */
+      padding: 16px 26px; /* 패딩 줄임 */
+      border-radius: 25px; /* 둥글기 줄임 */
+      font-size: 20px; /* 글씨 크기 줄임 */
       font-weight: bold;
       cursor: pointer;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
       transition: all 0.2s ease;
       white-space: nowrap; /* 텍스트 줄바꿈 방지 */
-      min-width: 200px; /* 최소 너비 증가 */
+      min-width: 170px; /* 최소 너비 줄임 */
     }
 
     .reset-stage-btn:hover {
@@ -492,15 +507,15 @@
       background: rgba(100, 150, 255, 0.9);
       color: white;
       border: none;
-      padding: 20px 32px; /* 패딩 2배 증가 */
-      border-radius: 30px; /* 둥글기 증가 */
-      font-size: 24px; /* 글씨 크기 증가 */
+      padding: 16px 26px; /* 패딩 줄임 */
+      border-radius: 25px; /* 둥글기 살짝 줄임 */
+      font-size: 20px; /* 글씨 크기 줄임 */
       font-weight: bold;
       cursor: pointer;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
       transition: all 0.2s ease;
       white-space: nowrap; /* 텍스트 줄바꿈 방지 */
-      min-width: 200px; /* 최소 너비 증가 */
+      min-width: 170px; /* 최소 너비 줄임 */
     }
 
     .sort-avatars-btn:hover {
@@ -514,15 +529,15 @@
       background: rgba(150, 100, 255, 0.9);
       color: white;
       border: none;
-      padding: 20px 32px; /* 패딩 2배 증가 */
-      border-radius: 30px; /* 둥글기 증가 */
-      font-size: 24px; /* 글씨 크기 증가 */
+      padding: 16px 26px; /* 패딩 줄임 */
+      border-radius: 25px; /* 둥글기 살짝 줄임 */
+      font-size: 20px; /* 글씨 크기 줄임 */
       font-weight: bold;
       cursor: pointer;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
       transition: all 0.2s ease;
       white-space: nowrap;
-      min-width: 260px; /* 최소 너비 증가 */
+      min-width: 220px; /* 최소 너비 줄임 */
     }
 
     .toggle-stage-avatars-btn:hover {
@@ -552,9 +567,9 @@
       right: 30px; /* 오른쪽으로 이동 */
       z-index: 100;
       background: rgba(0, 0, 0, 0.8);
-      border-radius: 30px; /* 다른 버튼들과 같은 둥글기 */
+      border-radius: 25px; /* 다른 버튼들과 같은 둥글기 */
       padding: 0; /* 패딩 제거 - 내부에서 조절 */
-      width: 420px; /* 버튼 2개 + 간격에 맞춤 (200px + 20px + 200px = 420px) */
+      width: 360px; /* 버튼 2개 + 간격에 맞춤 (170px + 20px + 170px = 360px) */
       box-shadow: 0 6px 30px rgba(0, 0, 0, 0.3);
     }
 
@@ -564,9 +579,9 @@
       background: rgba(100, 150, 255, 0.9);
       color: white;
       border: none;
-      padding: 20px 32px; /* 다른 버튼들과 동일한 패딩 */
-      border-radius: 30px; /* 다른 버튼들과 동일한 둥글기 */
-      font-size: 24px; /* 글씨 크기 증가 */
+      padding: 16px 26px; /* 패딩 줄임 */
+      border-radius: 25px; /* 둥글기 살짝 줄임 */
+      font-size: 20px; /* 글씨 크기 줄임 */
       font-weight: bold;
       cursor: pointer;
       transition: all 0.2s ease;
@@ -581,7 +596,7 @@
     /* 필터가 펼쳐져 있을 때 토글 버튼 스타일 */
     .filter-content:not(.collapsed) + .filter-toggle-btn,
     .filter-toggle-btn:not(.collapsed) {
-      border-radius: 30px 30px 0 0; /* 상단만 둥글게 */
+      border-radius: 25px 25px 0 0; /* 상단만 둥글게 */
     }
 
     .filter-toggle-btn:hover {
@@ -1003,12 +1018,30 @@
         <div class="recipe-section">
           <h4 id="recipe1Name">조합법 1</h4>
           <div class="instrument-buttons">
-            <button class="instrument-btn bass-btn" data-instrument="bass" data-recipe="1">🎵</button>
-            <button class="instrument-btn drum-btn" data-instrument="drum" data-recipe="1">🥁</button>
-            <button class="instrument-btn lead-btn" data-instrument="lead" data-recipe="1">🎸</button>
-            <button class="instrument-btn chord-btn" data-instrument="chord" data-recipe="1">🎹</button>
-            <button class="instrument-btn sub-btn" data-instrument="sub" data-recipe="1">🎺</button>
-            <button class="instrument-btn fx-btn" data-instrument="fx" data-recipe="1">🔊</button>
+            <div class="instrument-item">
+              <button class="instrument-btn lead-btn" data-instrument="lead" data-recipe="1">🎤</button>
+              <span class="instrument-label">리드</span>
+            </div>
+            <div class="instrument-item">
+              <button class="instrument-btn sub-btn" data-instrument="sub" data-recipe="1">🎷</button>
+              <span class="instrument-label">서브</span>
+            </div>
+            <div class="instrument-item">
+              <button class="instrument-btn chord-btn" data-instrument="chord" data-recipe="1">🎹</button>
+              <span class="instrument-label">코드</span>
+            </div>
+            <div class="instrument-item">
+              <button class="instrument-btn bass-btn" data-instrument="bass" data-recipe="1">🎸</button>
+              <span class="instrument-label">베이스</span>
+            </div>
+            <div class="instrument-item">
+              <button class="instrument-btn drum-btn" data-instrument="drum" data-recipe="1">🥁</button>
+              <span class="instrument-label">드럼</span>
+            </div>
+            <div class="instrument-item">
+              <button class="instrument-btn fx-btn" data-instrument="fx" data-recipe="1">🎬</button>
+              <span class="instrument-label">FX</span>
+            </div>
           </div>
         </div>
         
@@ -1016,12 +1049,30 @@
         <div class="recipe-section">
           <h4 id="recipe2Name">조합법 2</h4>
           <div class="instrument-buttons">
-            <button class="instrument-btn bass-btn" data-instrument="bass" data-recipe="2">🎵</button>
-            <button class="instrument-btn drum-btn" data-instrument="drum" data-recipe="2">🥁</button>
-            <button class="instrument-btn lead-btn" data-instrument="lead" data-recipe="2">🎸</button>
-            <button class="instrument-btn chord-btn" data-instrument="chord" data-recipe="2">🎹</button>
-            <button class="instrument-btn sub-btn" data-instrument="sub" data-recipe="2">🎺</button>
-            <button class="instrument-btn fx-btn" data-instrument="fx" data-recipe="2">🔊</button>
+            <div class="instrument-item">
+              <button class="instrument-btn lead-btn" data-instrument="lead" data-recipe="2">🎤</button>
+              <span class="instrument-label">리드</span>
+            </div>
+            <div class="instrument-item">
+              <button class="instrument-btn sub-btn" data-instrument="sub" data-recipe="2">🎷</button>
+              <span class="instrument-label">서브</span>
+            </div>
+            <div class="instrument-item">
+              <button class="instrument-btn chord-btn" data-instrument="chord" data-recipe="2">🎹</button>
+              <span class="instrument-label">코드</span>
+            </div>
+            <div class="instrument-item">
+              <button class="instrument-btn bass-btn" data-instrument="bass" data-recipe="2">🎸</button>
+              <span class="instrument-label">베이스</span>
+            </div>
+            <div class="instrument-item">
+              <button class="instrument-btn drum-btn" data-instrument="drum" data-recipe="2">🥁</button>
+              <span class="instrument-label">드럼</span>
+            </div>
+            <div class="instrument-item">
+              <button class="instrument-btn fx-btn" data-instrument="fx" data-recipe="2">🎬</button>
+              <span class="instrument-label">FX</span>
+            </div>
           </div>
         </div>
         
@@ -1029,12 +1080,30 @@
         <div class="recipe-section">
           <h4 id="recipe3Name">조합법 3</h4>
           <div class="instrument-buttons">
-            <button class="instrument-btn bass-btn" data-instrument="bass" data-recipe="3">🎵</button>
-            <button class="instrument-btn drum-btn" data-instrument="drum" data-recipe="3">🥁</button>
-            <button class="instrument-btn lead-btn" data-instrument="lead" data-recipe="3">🎸</button>
-            <button class="instrument-btn chord-btn" data-instrument="chord" data-recipe="3">🎹</button>
-            <button class="instrument-btn sub-btn" data-instrument="sub" data-recipe="3">🎺</button>
-            <button class="instrument-btn fx-btn" data-instrument="fx" data-recipe="3">🔊</button>
+            <div class="instrument-item">
+              <button class="instrument-btn lead-btn" data-instrument="lead" data-recipe="3">🎤</button>
+              <span class="instrument-label">리드</span>
+            </div>
+            <div class="instrument-item">
+              <button class="instrument-btn sub-btn" data-instrument="sub" data-recipe="3">🎷</button>
+              <span class="instrument-label">서브</span>
+            </div>
+            <div class="instrument-item">
+              <button class="instrument-btn chord-btn" data-instrument="chord" data-recipe="3">🎹</button>
+              <span class="instrument-label">코드</span>
+            </div>
+            <div class="instrument-item">
+              <button class="instrument-btn bass-btn" data-instrument="bass" data-recipe="3">🎸</button>
+              <span class="instrument-label">베이스</span>
+            </div>
+            <div class="instrument-item">
+              <button class="instrument-btn drum-btn" data-instrument="drum" data-recipe="3">🥁</button>
+              <span class="instrument-label">드럼</span>
+            </div>
+            <div class="instrument-item">
+              <button class="instrument-btn fx-btn" data-instrument="fx" data-recipe="3">🎬</button>
+              <span class="instrument-label">FX</span>
+            </div>
           </div>
         </div>
       </div>
