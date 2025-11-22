@@ -5624,20 +5624,44 @@ function activatePadButton(buttonKey, btnElement, instrument, recipeIndex) {
       
       const avatarName = avatar.nickname.toLowerCase();
       const musicType = (avatar.musicType || '').toLowerCase();
+      const musicTypeWithoutExt = musicType.replace('.wav', '');
+      const lastPart = musicTypeWithoutExt.split('_').pop();
       const category = (avatar.category || '').toLowerCase();
-      
+
       // 조합법 매칭 확인 (nickname, musicType, category에서 모두 확인)
       const recipeMatch = searchKeywords.some(keyword => 
         avatarName.includes(keyword.toLowerCase()) || 
         musicType.includes(keyword.toLowerCase()) ||
         category.includes(keyword.toLowerCase())
       );
-      
-      // 악기 매칭 확인  
-      const instrumentMatch = instrumentMap[instrument] && instrumentMap[instrument].some(inst =>
-        avatarName.includes(inst.toLowerCase()) ||
-        musicType.includes(inst.toLowerCase())
-      );
+
+      // 악기 매칭 확인 (엄격화)
+      // 1) 파일명 마지막 세그먼트가 악기와 정확히 일치하는지 확인
+      // 2) 실패 시 이름/파일명 경계(언더스코어 기준)에서 키워드 포함 여부를 확인 (완화된 매칭)
+      let instrumentMatch = false;
+      if (instrumentMap[instrument]) {
+        // 정확한 접미사 일치 우선 (예: '..._drum' 또는 '..._drum_drum', '..._bass')
+        if (lastPart === instrument || lastPart === instrument + 's') {
+          instrumentMatch = true;
+        } else {
+          // 완화된 매칭: 닉네임 포함 또는 파일명에서 언더스코어 경계에 맞는 키워드
+          // 단, musicType에 '_drum_'처럼 세트명 내부에 'drum'이 포함된 경우
+          // (예: set2_travel_places_drum_bass)에는 내부 'drum' 토큰이 악기 매칭으로
+          // 오인되지 않도록 방지한다. 즉, 내부에 '_drum_'이 포함되어 있고
+          // 마지막 세그먼트(lastPart)가 요청 악기와 다르면 매칭하지 않는다.
+          instrumentMatch = instrumentMap[instrument].some(inst => {
+            const instLower = inst.toLowerCase();
+            const boundaryRegex = new RegExp('(^|_)' + instLower + '($|_)');
+
+            // 특수 케이스 방지: 내부 '_drum_' 토큰이 존재하면 악기 'drum'의 완화 매칭 금지
+            if (instLower === 'drum' && /_drum_/.test(musicTypeWithoutExt) && lastPart !== 'drum') {
+              return false;
+            }
+
+            return avatarName.includes(instLower) || boundaryRegex.test(musicTypeWithoutExt);
+          });
+        }
+      }
       
       // 디버깅 로그 추가
       if (recipeMatch || instrumentMatch) {
