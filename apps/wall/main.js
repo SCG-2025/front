@@ -1828,6 +1828,14 @@ function setup() {
   // image-player.html 창들은 제거 (video-player.html에서 이미지+비디오 모두 처리)
   console.log('🖥️ 총 3개 화면 설정: 메인(1) + 미디어아트(2)');
 
+  // 비디오 플레이어로부터의 메시지 수신 리스너
+  window.addEventListener('message', (event) => {
+    if (event.data.type === 'VIDEO_STARTED') {
+      isVideoPlaying = true;
+      console.log('🎬 비디오 재생 상태 업데이트: true');
+    }
+  });
+
   // 미디어 아트는 별도 빔 프로젝터에서 처리
   // initMediaArt();
 
@@ -4328,25 +4336,98 @@ function getCategoryDisplayName(category) {
 
 // 두 개의 비디오 플레이어 창에 메시지를 보내는 헬퍼 함수
 function sendVideoMessage(messageData) {
-  // 비디오 창 1에 메시지 전송
+  let successCount = 0;
+  let totalWindows = 0;
+  
+  // 비디오 창 1 확인 및 재생성
+  if (!videoWindow || videoWindow.closed) {
+    console.log('🔧 비디오 창 1 재생성');
+    videoWindow = window.open('video-player.html', 'videoPlayerWindow1', 'width=1280,height=720,left=100,top=100');
+    // 창이 로드될 시간을 줌
+    setTimeout(() => {
+      if (videoWindow && !videoWindow.closed) {
+        try {
+          videoWindow.postMessage(messageData, '*');
+          console.log('✅ 비디오 창 1 재생성 후 메시지 전송 성공:', messageData.type);
+        } catch (e) {
+          console.error('❌ 재생성된 비디오 창 1 메시지 전송 실패:', e);
+        }
+      }
+    }, 500);
+  }
+  
+  // 비디오 창 2 확인 및 재생성
+  if (!videoWindow2 || videoWindow2.closed) {
+    console.log('🔧 비디오 창 2 재생성');
+    videoWindow2 = window.open('video-player.html', 'videoPlayerWindow2', 'width=1280,height=720,left=1400,top=100');
+    // 창이 로드될 시간을 줌
+    setTimeout(() => {
+      if (videoWindow2 && !videoWindow2.closed) {
+        try {
+          videoWindow2.postMessage(messageData, '*');
+          console.log('✅ 비디오 창 2 재생성 후 메시지 전송 성공:', messageData.type);
+        } catch (e) {
+          console.error('❌ 재생성된 비디오 창 2 메시지 전송 실패:', e);
+        }
+      }
+    }, 500);
+  }
+
+  // 기존 창들에 메시지 전송
   if (videoWindow && !videoWindow.closed) {
+    totalWindows++;
     try {
       videoWindow.postMessage(messageData, '*');
+      successCount++;
+      console.log('✅ 비디오 창 1 메시지 전송 성공:', messageData.type);
+      
+      // 중요한 메시지는 여러 번 전송으로 확실히 처리
+      if (messageData.type === 'CLEAR_ALL_IMAGES' || messageData.type === 'RESET_STAGE') {
+        setTimeout(() => {
+          if (videoWindow && !videoWindow.closed) {
+            videoWindow.postMessage(messageData, '*');
+            console.log('🔄 비디오 창 1 중복 전송:', messageData.type);
+          }
+        }, 50);
+      }
     } catch (e) {
-      console.warn('⚠️ 첫 번째 비디오 플레이어에 메시지 전송 실패', e);
+      console.error('❌ 첫 번째 비디오 플레이어에 메시지 전송 실패:', e);
     }
+  } else {
+    console.warn('⚠️ 비디오 창 1이 없거나 닫힘 - 재생성 중');
   }
 
-  // 비디오 창 2에 메시지 전송
   if (videoWindow2 && !videoWindow2.closed) {
+    totalWindows++;
     try {
       videoWindow2.postMessage(messageData, '*');
+      successCount++;
+      console.log('✅ 비디오 창 2 메시지 전송 성공:', messageData.type);
+      
+      // 중요한 메시지는 여러 번 전송으로 확실히 처리
+      if (messageData.type === 'CLEAR_ALL_IMAGES' || messageData.type === 'RESET_STAGE') {
+        setTimeout(() => {
+          if (videoWindow2 && !videoWindow2.closed) {
+            videoWindow2.postMessage(messageData, '*');
+            console.log('🔄 비디오 창 2 중복 전송:', messageData.type);
+          }
+        }, 50);
+      }
     } catch (e) {
-      console.warn('⚠️ 두 번째 비디오 플레이어에 메시지 전송 실패', e);
+      console.error('❌ 두 번째 비디오 플레이어에 메시지 전송 실패:', e);
     }
+  } else {
+    console.warn('⚠️ 비디오 창 2가 없거나 닫힘 - 재생성 중');
   }
 
-  console.log('📨 비디오 메시지 전송:', messageData.type);
+  console.log(`📨 메시지 전송 결과: ${messageData.type} - ${successCount}/${totalWindows} 성공`);
+  
+  // 전송 실패 시 경고
+  if (successCount === 0 && totalWindows > 0) {
+    console.error('☠️ 모든 비디오 창에 메시지 전송 실패!');
+  } else if (successCount < totalWindows) {
+    console.warn(`⚠️ 일부 창에만 메시지 전송 성공: ${successCount}/${totalWindows}`);
+  }
 }
 
 // 음악 재생 함수 (다중 BPM 지원)
@@ -4894,6 +4975,51 @@ function isFullRecipeComplete() {
   return hasAllPositions;
 }
 
+// 현재 무대에 있는 아바타들의 musicSet 확인
+function getCurrentStageMusicSet() {
+  const onStageAvatars = [];
+  
+  // 스테이지 아바타들 추가
+  stageAvatars.forEach(avatar => {
+    if (avatar.isOnStage) {
+      onStageAvatars.push(avatar);
+    }
+  });
+  
+  // 일반 아바타들 추가
+  avatars.forEach(avatar => {
+    if (avatar.isOnStage) {
+      onStageAvatars.push(avatar);
+    }
+  });
+  
+  // 패드 아바타들 추가
+  padAvatars.forEach(avatar => {
+    if (avatar.isOnStage) {
+      onStageAvatars.push(avatar);
+    }
+  });
+  
+  if (onStageAvatars.length === 0) {
+    console.warn('⚠️ 무대에 아바타가 없음 - 기본 PC방 세트 사용');
+    return 'pcroom_gaming'; // 기본값
+  }
+  
+  // 가장 많이 나타나는 musicSet 확인
+  const musicSetCounts = {};
+  onStageAvatars.forEach(avatar => {
+    const musicSet = avatar.musicSet || 'pcroom_gaming';
+    musicSetCounts[musicSet] = (musicSetCounts[musicSet] || 0) + 1;
+  });
+  
+  const dominantMusicSet = Object.keys(musicSetCounts).reduce((a, b) => 
+    musicSetCounts[a] > musicSetCounts[b] ? a : b
+  );
+  
+  console.log(`🎤 무대 musicSet 분석:`, musicSetCounts, `-> 주도: ${dominantMusicSet}`);
+  return dominantMusicSet;
+}
+
 // 미디어아트 상태 업데이트
 function updateMediaArt() {
   console.log(`🎵 현재 활성 포지션들:`, Array.from(activePositions));
@@ -4909,11 +5035,17 @@ function updateMediaArt() {
     setTimeout(() => {
       if (isFullRecipeComplete()) { // 카운트다운 중에도 여전히 완성 상태인지 확인
         isVideoPlaying = true; // 비디오 재생 상태로 설정
+        
+        // 현재 무대에 있는 아바타들의 musicSet 확인
+        const currentMusicSet = getCurrentStageMusicSet();
+        console.log(`🎬 현재 조합법: ${currentMusicSet}`);
+        
         sendVideoMessage({
           type: 'PLAY_VIDEO',
-          positions: Array.from(activePositions)
+          positions: Array.from(activePositions),
+          musicSet: currentMusicSet
         });
-        console.log('🎬 6개 포지션 완성! 비디오 재생 시작');
+        console.log(`🎬 6개 포지션 완성! 동영상 재생 시작 (${currentMusicSet})`);
       }
     }, 3000);
   } else {
@@ -4923,15 +5055,35 @@ function updateMediaArt() {
       console.log('🛑 6개 포지션 조건 미충족 - 비디오 재생 상태 해제');
     }
     
-    // 불완전한 상태 - 현재 활성 포지션들의 모든 이미지 표시 (누적)
-    const imageNumbers = Array.from(activePositions).map(pos => getImageNumberFromPosition(pos));
-    console.log(`🖼️ 포지션 이미지 표시: [${activePositions.size}개] ${imageNumbers.join(', ')} - 누적모드`);
-    sendVideoMessage({
-      type: 'SHOW_IMAGES',
-      imageNumbers: imageNumbers,
-      keepExisting: true,  // 기존 이미지들을 유지하면서 새 이미지 추가
-      forceCumulative: true // 강제 누적 모드
-    });
+    if (activePositions.size > 0) {
+      // 불완전한 상태 - 현재 활성 포지션들의 모든 이미지 표시 (누적)
+      const imageNumbers = Array.from(activePositions).map(pos => getImageNumberFromPosition(pos));
+      console.log(`🖼️ 포지션 이미지 표시: [${activePositions.size}개] ${imageNumbers.join(', ')} - 누적모드`);
+      sendVideoMessage({
+        type: 'SHOW_IMAGES',
+        imageNumbers: imageNumbers,
+        keepExisting: true,  // 기존 이미지들을 유지하면서 새 이미지 추가
+        forceCumulative: true // 강제 누적 모드
+      });
+    } else {
+      // 포지션이 하나도 없으면 모든 화면 비우기 (강제 동기화)
+      console.log('🌃 모든 포지션 제거됨 - 모든 화면을 빈 화면으로 강제 동기화');
+      
+      // 여러 메시지로 확실히 동기화
+      sendVideoMessage({ type: 'CLEAR_ALL_IMAGES', force: true });
+      sendVideoMessage({ type: 'RESET_STAGE', force: true });
+      
+      // 추가 동기화 메시지들
+      setTimeout(() => {
+        sendVideoMessage({ type: 'CLEAR_ALL_IMAGES', force: true });
+        console.log('🔄 1차 강제 리셋 완료');
+        
+        setTimeout(() => {
+          sendVideoMessage({ type: 'RESET_STAGE', force: true });
+          console.log('🔄 2차 강제 리셋 완료');
+        }, 50);
+      }, 100);
+    }
   }
 }
 
@@ -5034,7 +5186,35 @@ function stopAvatarMusic(avatar) {
     console.log(`🎯 포지션 제거 ${wasRemoved ? '성공' : '실패'}: ${avatar.musicPosition}`);
     console.log(`🔍 제거 후 활성 포지션:`, Array.from(activePositions));
     
-    // 미디어아트 상태 업데이트
+    // 동영상 재생 중이면 즉시 중단
+    if (isVideoPlaying) {
+      console.log('🚫 동영상 재생 중 아바타 변경 감지 - 동영상 중단!');
+      isVideoPlaying = false;
+      sendVideoMessage({
+        type: 'STOP_VIDEO',
+        reason: 'avatar_changed'
+      });
+    }
+    
+    // 동영상 재생 중이면 즉시 중단
+    if (isVideoPlaying) {
+      console.log('🚫 동영상 재생 중 아바타 변경 감지 - 동영상 중단!');
+      isVideoPlaying = false;
+      sendVideoMessage({
+        type: 'STOP_VIDEO',
+        reason: 'avatar_changed'
+      });
+    }
+    
+    // 해당 포지션의 이미지 제거 메시지 전송
+    const removedImageNumber = getImageNumberFromPosition(avatar.musicPosition);
+    sendVideoMessage({
+      type: 'REMOVE_IMAGES',
+      imageNumbers: [removedImageNumber]
+    });
+    console.log(`🖼️ 포지션 ${avatar.musicPosition} 이미지 제거 메시지 전송: ${removedImageNumber}번`);
+    
+    // 남은 포지션들로 미디어아트 업데이트
     updateMediaArt();
 
     // 대기 중이었다면 대기 목록에서도 제거

@@ -140,10 +140,30 @@
                 this.rotation += this.rotationSpeed;
                 this.lifeCounter--;
 
-                // 생명 시간이 남았을 때 페이드 아웃
-                if (this.lifeCounter < 30) {
-                    this.alpha = Math.max(0, this.alpha - 0.03);
+                // 생명 시간이 끝나면 가운데에서 리스폰
+                if (this.lifeCounter <= 0) {
+                    this.respawn();
                 }
+
+                // 생명 시간이 많이 남았을 때 페이드 아웃 효과
+                if (this.lifeCounter < 30) {
+                    this.alpha = Math.max(0.3, this.alpha - 0.01); // 너무 투명하지 않게
+                } else {
+                    this.alpha = Math.min(1, this.alpha + 0.02); // 서서히 나타나기
+                }
+            }
+
+            // 가운데에서 리스폰
+            respawn() {
+                this.x = canvas.width / 2 + (Math.random() - 0.5) * 200; // 가운데 근처
+                this.y = canvas.height / 2 + (Math.random() - 0.5) * 200;
+                this.vx = (Math.random() - 0.5) * 4;
+                this.vy = (Math.random() - 0.5) * 4;
+                this.life = 300 + Math.random() * 200; // 새로운 생명시간
+                this.lifeCounter = this.life;
+                this.alpha = 0.3; // 서서히 나타나기 시작
+                this.rotation = Math.random() * Math.PI * 2;
+                console.log(`♾️ 이미지 ${this.imageNum} 리스폰!`);
             }
 
             draw(ctx) {
@@ -158,7 +178,8 @@
             }
 
             isAlive() {
-                return this.alpha > 0 && this.lifeCounter > 0;
+                // 리스폰 시스템에서는 이미지가 절대 죽지 않음
+                return this.alpha > 0.1; // 최소 투명도 유지
             }
         }
 
@@ -230,6 +251,7 @@
         animate();
 
         window.addEventListener('message', (event) => {
+            console.log('📬 메시지 수신:', event.data.type, '- 현재 displayMode:', displayMode);
             const { type, payload, position, bpm, imageNumbers, countdown, keepExisting } = event.data;
 
             if (type === 'SHOW_IMAGE') {
@@ -247,11 +269,18 @@
                 console.log('⏰ 카운트다운 시작:', countdown);
                 startCountdown(countdown);
             } else if (type === 'PLAY_VIDEO') {
+                console.log('🎬 PLAY_VIDEO 메시지 수신:', event.data);
                 if (payload && payload.nickname) {
-                    console.log('🎬 비디오 재생 명령 받음:', payload.nickname, payload.musicType);
+                    // 개별 아바타 비디오 재생
+                    console.log('🎬 개별 비디오 재생 명령 받음:', payload.nickname, payload.musicType);
                     playVideo(payload, position, bpm);
+                } else if (event.data.positions && Array.isArray(event.data.positions)) {
+                    // 6개 포지션 완성 비디오 재생
+                    const musicSet = event.data.musicSet || 'pcroom_gaming';
+                    console.log(`🎬 6개 포지션 완성 비디오 재생! 조합법: ${musicSet}, 포지션:`, event.data.positions);
+                    playCompletionVideo(musicSet);
                 } else {
-                    console.log('🎬 6개 포지션 완성 비디오 재생');
+                    console.log('🎬 기본 6개 포지션 완성 비디오 재생');
                     playCompletionVideo();
                 }
             } else if (type === 'STOP_VIDEO' || type === 'RESET_STAGE') {
@@ -263,6 +292,32 @@
                 currentImageNum = 0;
                 countdownValue = 0;
                 console.log('✨ 모든 이미지가 제거되었습니다.');
+            } else if (type === 'REMOVE_IMAGES') {
+                // 특정 포지션 이미지 제거
+                if (event.data.imageNumbers && Array.isArray(event.data.imageNumbers)) {
+                    event.data.imageNumbers.forEach(imageNum => {
+                        removeImagesForPosition(imageNum);
+                    });
+                } else {
+                    clearAllImages();
+                }
+            } else if (type === 'CLEAR_ALL_IMAGES') {
+                console.log('🔧 메시지 받음: 모든 이미지 강제 제거');
+                clearAllImages();
+                // 메인 창에 처리 완료 응답
+                if (event.source) {
+                    event.source.postMessage({type: 'CLEAR_COMPLETE'}, '*');
+                }
+            } else if (type === 'RESET_STAGE') {
+                console.log('🔄 메시지 받음: 스테이지 리셋');
+                clearAllImages();
+                // 추가 리셋 로직
+                displayMode = 'none';
+                floatingImages = [];
+                // 메인 창에 처리 완료 응답
+                if (event.source) {
+                    event.source.postMessage({type: 'RESET_COMPLETE'}, '*');
+                }
             }
         });
 
@@ -356,7 +411,7 @@
             console.log(`✅ 이미지 표시 시작: ${avatar.nickname}`);
         }
 
-        // 다중 포지션 이미지 표시 (누적 관리 지원)
+        // 다중 포지션 이미지 표시 (리스폰 순환 시스템)
         function showMultipleImages(imageNumbers, keepExisting = false) {
             console.log(`🖼️ showMultipleImages 호출: imageNumbers=[${imageNumbers.join(',')}], keepExisting=${keepExisting}`);
             
@@ -366,35 +421,27 @@
                 floatingImages = [];
             }
             
-            // 현재 활성 이미지 번호들 추적
-            const currentImageNumbers = new Set();
-            floatingImages.forEach(img => currentImageNumbers.add(img.imageNum));
-            
-            // 각 이미지 번호에 대해 플로팅 이미지 추가/관리
+            // 각 이미지 번호에 대해 기존 이미지가 있는지 확인
             imageNumbers.forEach(imageNum => {
-                // 해당 이미지 번호의 현재 개수 확인
-                const existingCount = floatingImages.filter(img => img.imageNum === imageNum && img.isAlive()).length;
-                const targetCount = 8; // 각 포지션마다 8개씩
+                const existingImages = floatingImages.filter(img => img.imageNum === imageNum);
                 
-                console.log(`🔍 이미지 ${imageNum}: 현재 ${existingCount}개, 목표 ${targetCount}개`);
-                
-                // 부족한 만큼 추가 생성
-                if (existingCount < targetCount) {
-                    const needCount = targetCount - existingCount;
-                    console.log(`➕ 이미지 ${imageNum} - ${needCount}개 추가 생성`);
-                    
-                    for (let i = 0; i < needCount; i++) {
+                if (existingImages.length === 0) {
+                    // 새로운 포지션 - 8개 생성
+                    console.log(`➕ 이미지 ${imageNum} - 8개 새로 생성`);
+                    for (let i = 0; i < 8; i++) {
                         const x = Math.random() * canvas.width;
                         const y = Math.random() * canvas.height;
                         const img = new FloatingImage(x, y, imageNum);
                         floatingImages.push(img);
                     }
+                } else {
+                    console.log(`♾️ 이미지 ${imageNum} - 기존 ${existingImages.length}개 유지`);
                 }
             });
             
             displayMode = 'image';
             const totalCount = floatingImages.length;
-            console.log(`✅ 다중 이미지 완료: [${imageNumbers.join(',')}] ${keepExisting ? '누적모드' : '새시작'} (총 ${totalCount}개)`);
+            console.log(`✅ 다중 이미지 완료: [포지션: ${imageNumbers.join(',')}] ${keepExisting ? '누적모드' : '새시작'} (총 ${totalCount}개)`);
         }
 
         // 카운트다운 시작
@@ -411,23 +458,68 @@
             }, 1000);
         }
 
-        // 6개 포지션 완성 시 재생할 비디오
-        function playCompletionVideo() {
-            // 첫 번째 비디오를 기본으로 재생 (추후 특별한 완성 비디오로 교체 가능)
-            const firstVideo = Object.values(videoSamples)[0];
-            videoPlayer.src = firstVideo;
+        // 6개 포지션 완성 시 재생할 비디오 (musicSet에 따라 다른 비디오 선택)
+        function playCompletionVideo(musicSet = 'pcroom_gaming') {
+            // musicSet에 맞는 비디오 선택
+            const videoSrc = videoSamples[musicSet] || videoSamples['pcroom_gaming'];
+            console.log(`🎬 musicSet "${musicSet}"에 맞는 비디오: ${videoSrc}`);
+            
+            videoPlayer.src = videoSrc;
             videoPlayer.currentTime = 0;
             videoPlayer.playbackRate = 1;
             
-            videoPlayer.play().catch(e => {
-                console.error('완성 비디오 재생 실패:', e);
+            videoPlayer.play().then(() => {
+                displayMode = 'video';
+                console.log(`🎆 ${musicSet} 조합법 완성 비디오 재생 시작! (${videoSrc})`);
+                // main.js에 비디오 재생 상태 알림
+                window.parent.postMessage({type: 'VIDEO_STARTED', musicSet: musicSet}, '*');
+            }).catch(e => {
+                console.error(`${musicSet} 비디오 재생 실패:`, e);
+                // 실패 시 기본 비디오로 대체
+                if (musicSet !== 'pcroom_gaming') {
+                    console.log('기본 PC방 비디오로 대체 시도...');
+                    playCompletionVideo('pcroom_gaming');
+                }
             });
-            
-            displayMode = 'video';
-            console.log('🎊 6개 포지션 완성 비디오 재생!');
         }
 
-        // 아바타가 무대에서 나갔을 때 호출될 함수 (main.js에서 호출)
+        // 특정 포지션의 이미지들을 제거
+        function removeImagesForPosition(imageNumber) {
+            console.log(`🗑️ 포지션 ${imageNumber} 이미지 제거 시작`);
+            const initialCount = floatingImages.length;
+            
+            // 해당 이미지 번호의 모든 이미지 제거
+            floatingImages = floatingImages.filter(img => img.imageNum !== imageNumber);
+            
+            const removedCount = initialCount - floatingImages.length;
+            console.log(`✅ 포지션 ${imageNumber} 이미지 ${removedCount}개 제거 완료 (${floatingImages.length}개 남음)`);
+            
+            // 남은 이미지가 없으면 빈 화면
+            if (floatingImages.length === 0) {
+                displayMode = 'none';
+                console.log('🌃 모든 이미지 제거됨 - 빈 화면으로 전환');
+            }
+        }
+
+        // 전체 이미지 제거 (강제 동기화)
+        function clearAllImages() {
+            console.log('🗑️ 모든 이미지 강제 제거 시작');
+            floatingImages = [];
+            displayMode = 'none';
+            currentImageNum = 0;
+            
+            // 투명한 배경으로 화면 클리어 (검은색 대신)
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 강제 렌더링 트리거
+            requestAnimationFrame(() => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            });
+            
+            console.log('✅ 모든 이미지 제거 완료 - displayMode: none, 투명 배경 적용');
+        }
         function stopImageDisplay() {
             displayMode = 'none';
             floatingImages = [];
