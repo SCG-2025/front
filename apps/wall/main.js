@@ -753,14 +753,7 @@ const HEAD_INDIVIDUAL_OFFSETS = {
 };
 
 const SOPUM_INDIVIDUAL_OFFSETS = {
-  6: { // sopum(7).PNG (인덱스 6) - 연필, 적절한 크기로 조정
-    female: { x: (-58 + 15) * 0.3, y: 43 * 0.3, s: 25 * 0.3 },
-    male: { x: (-4 + 15) * 0.3, y: -8 * 0.3, s: 25 * 0.3 }
-  },
-  7: { // sopum(8).PNG (인덱스 7) - 연필, 적절한 크기로 조정
-    female: { x: (-58 + 15) * 0.3, y: 43 * 0.3, s: 25 * 0.3 },
-    male: { x: (-4 + 15) * 0.3, y: -8 * 0.3, s: 25 * 0.3 }
-  },
+  // 6번, 7번 연필은 개별 오프셋 없음 - 기본 오프셋 + extraOffsetX 사용
   8: { // sopum(9).png (인덱스 8) - 병아리
     female: { x: 40 * 0.3, y: 70 * 0.3, s: 60 * 0.3 },
     male: { x: 40 * 0.3, y: 70 * 0.3, s: 60 * 0.3 }
@@ -2910,7 +2903,13 @@ function drawAvatar(avatar) {
 
   // === 본체 렌더 ===
   if (avatar.customData && typeof avatar.customData === 'object') {
-    // 커스텀 아바타
+    // 커스텀 아바타 - 실제 customData 사용
+    if (avatar.nickname === '제발성공해라') {
+      console.log('🔴 제발성공해라 아바타 로드됨!');
+      console.log('customData:', JSON.stringify(avatar.customData, null, 2));
+      console.log('bodyIdx:', avatar.customData.bodyIdx, 'gender:', avatar.customData.gender);
+    }
+    console.log('🖥️ 커스텀 아바타 렌더링:', avatar.nickname, avatar.customData);
     drawCustomAvatar(avatar.x, currentY, avatar.customData, avatar.direction, isHighlighted);
   } else if (avatar.musicType) {
     // Stage 아바타(샘플 이미지) - 3D 깊이감 적용
@@ -2923,19 +2922,18 @@ function drawAvatar(avatar) {
       for (let i = 0; i < idStr.length; i++) {
         hash = ((hash << 5) - hash + idStr.charCodeAt(i)) & 0xffffffff;
       }
-      // headIdx가 없거나 유효하지 않으면 기본값 할당
-      if (avatar.customData.headIdx === null || avatar.customData.headIdx === undefined || avatar.customData.headIdx < 0 || avatar.customData.headIdx > 8) {
-        avatar.customData.headIdx = Math.floor(Math.random() * 9);
-        console.log('🔧 머리만 수정:', avatar.nickname, 'headIdx:', avatar.customData.headIdx);
-      }
+      
       const seedRandom = (seed) => {
         const x = Math.sin(seed) * 10000;
         return x - Math.floor(x);
       };
+      const gender = seedRandom(hash) > 0.5 ? 'female' : 'male';
       avatar.defaultCustomData = {
-        headIdx: Math.floor(Math.random() * 9),
-        gender: seedRandom(hash) > 0.5 ? 'female' : 'male',
-        bodyIdx: Math.floor(seedRandom(hash + 2) * 5),
+        headIdx: Math.floor(seedRandom(hash + 1) * 11), // head.png ~ head(11).PNG (0-10)
+        gender: gender,
+        bodyIdx: gender === 'male' 
+          ? Math.floor(seedRandom(hash + 2) * 9)  // ma.png ~ ma(9).png (0-8)
+          : Math.floor(seedRandom(hash + 2) * 7), // fe.png ~ fe(7).png (0-6)
       };
     }
     drawCustomAvatar(avatar.x, currentY, avatar.defaultCustomData, avatar.direction, isHighlighted);
@@ -3005,12 +3003,12 @@ function drawCustomAvatar(x, y, avatarData, direction, isHighlighted) {
   const scaleFactor = 0.3; // 원래 크기로 복원
   const baseSize = 200 * scaleFactor;
   
-  // 기본 오프셋 (mobile OFFSETS와 동일하지만 스케일 적용)
+  // 기본 오프셋 (mobile customizing과 정확히 동일)
   const OFFSETS = {
     body: { s: baseSize },
     sopum: {
-      female: { x: -58 * scaleFactor, y: 43 * scaleFactor, s: 60 * scaleFactor },
-      male: { x: -4 * scaleFactor, y: -8 * scaleFactor, s: 200 * scaleFactor }
+      female: { x: 35 * scaleFactor, y: 40 * scaleFactor, s: 45 * scaleFactor }, // mobile customizing과 동일
+      male: { x: 35 * scaleFactor, y: 40 * scaleFactor, s: 45 * scaleFactor }   // mobile customizing과 동일
     },
     head: {
       female: { x: 0, y: -15 * scaleFactor, s: baseSize },
@@ -3087,13 +3085,13 @@ function drawCustomAvatar(x, y, avatarData, direction, isHighlighted) {
       };
       image(sopumImg, w.x + scaledVOff.x, w.y + scaledVOff.y, w.s, w.s);
     } else {
-      // 기본 오프셋 사용
+      // 기본 오프셋 사용 (남녀 동일)
       const w = OFFSETS.sopum[avatarData.gender];
       
-      // sopum~sopum(8)까지는 오른쪽으로 이동 (손에 잡고 있는 효과)
+      // sopum~sopum(8)까지는 오른쪽으로 이동 (손에 잡고 있는 효과) - mobile과 동일
       let extraOffsetX = 0;
       if (avatarData.sopumIdx <= 7) { // sopum.png는 인덱스 0, sopum(2).PNG는 인덱스 1, ..., sopum(8).PNG는 인덱스 7
-        extraOffsetX = 15 * scaleFactor; // mobile과 동일한 비율로 오른쪽으로 이동
+        extraOffsetX = 15 * scaleFactor; // 오른쪽으로 15px 이동 (scaleFactor 적용)
       }
       
       image(sopumImg, w.x + scaledVOff.x + extraOffsetX, w.y + scaledVOff.y, w.s, w.s);
@@ -3822,16 +3820,8 @@ function drawPopupAvatar(canvas, avatarData) {
     // 팝업용 스케일 팩터 (적절한 크기 조정)
     const popupScale = 0.8;
     
-    // 팝업용 개별 소품 오프셋
+    // 팝업용 개별 소품 오프셋 (6번, 7번 연필은 기본 오프셋 사용)
     const POPUP_SOPUM_INDIVIDUAL_OFFSETS = {
-      6: { // sopum(7).PNG (인덱스 6) - 연필
-        female: { x: (-58 + 15) * popupScale, y: 43 * popupScale, s: 25 * popupScale },
-        male: { x: (-4 + 15) * popupScale, y: -8 * popupScale, s: 25 * popupScale }
-      },
-      7: { // sopum(8).PNG (인덱스 7) - 연필
-        female: { x: (-58 + 15) * popupScale, y: 43 * popupScale, s: 25 * popupScale },
-        male: { x: (-4 + 15) * popupScale, y: -8 * popupScale, s: 25 * popupScale }
-      },
       8: { // sopum(9).png (인덱스 8) - 병아리
         female: { x: 40 * popupScale, y: 70 * popupScale, s: 60 * popupScale },
         male: { x: 40 * popupScale, y: 70 * popupScale, s: 60 * popupScale }
@@ -3858,23 +3848,23 @@ function drawPopupAvatar(canvas, avatarData) {
       sopumX = centerX + sopumOffset.x;
       sopumY = centerY + sopumOffset.y;
     } else {
-      // 기본 오프셋 사용
+      // 기본 오프셋 사용 - mobile customizing과 동일
       const POPUP_SOPUM_OFFSETS = {
-        female: { x: -58 * popupScale, y: 43 * popupScale, s: 60 * popupScale },
-        male: { x: -4 * popupScale, y: -8 * popupScale, s: 200 * popupScale }
+        female: { x: 35, y: 40, s: 45 },  // mobile customizing과 동일
+        male: { x: 35, y: 40, s: 45 }    // mobile customizing과 동일
       };
       
       const sopumOffset = POPUP_SOPUM_OFFSETS[avatarData.gender] || POPUP_SOPUM_OFFSETS.male;
       
-      // 추가 오프셋 적용 (mobile customizing.js의 extraOffsetX 로직)
+      // sopum~sopum(8)까지는 오른쪽으로 이동 (손에 잡고 있는 효과) - mobile과 동일
       let extraOffsetX = 0;
-      if (avatarData.sopumIdx <= 7) { // sopum~sopum(8)까지는 오른쪽으로 이동
-        extraOffsetX = 15 * popupScale; // 오른쪽으로 이동
+      if (avatarData.sopumIdx <= 7) {
+        extraOffsetX = 15 * popupScale; // 오른쪽으로 15px 이동
       }
       
-      sopumSize = sopumOffset.s;
-      sopumX = centerX + sopumOffset.x + extraOffsetX;
-      sopumY = centerY + sopumOffset.y;
+      sopumSize = sopumOffset.s * popupScale;
+      sopumX = centerX + (sopumOffset.x + extraOffsetX) * popupScale;
+      sopumY = centerY + sopumOffset.y * popupScale;
     }
     
     ctx.drawImage(avatarAssets.sopum[avatarData.sopumIdx].canvas,

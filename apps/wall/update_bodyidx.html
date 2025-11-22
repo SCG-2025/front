@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>아바타 bodyIdx 업데이트</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <h1>제발성공해라 아바타 bodyIdx 업데이트</h1>
+    <button id="updateBtn">bodyIdx를 4에서 7로 업데이트</button>
+    <button id="checkBtn">현재 데이터 확인</button>
+    <button id="forceUpdateBtn" style="background: red; color: white;">강제 업데이트 (bodyIdx=7)</button>
+    <div id="status"></div>
+    
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, query, where, getDocs, doc, updateDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // Firebase 설정 (wall/firebase-init.js와 동일)
+        const firebaseConfig = {
+          apiKey: "AIzaSyCPifL6M7FqDw6eM65mqWysUuJvVlY6FJU",
+          authDomain: "scg2025-2e856.firebaseapp.com",
+          projectId: "scg2025-2e856",
+          storageBucket: "scg2025-2e856.firebasestorage.app",
+          messagingSenderId: "527723848030",
+          appId: "1:527723848030:web:d4d3435560645204556fcf",
+          measurementId: "G-RQT6Q3VW5R"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const statusDiv = document.getElementById('status');
+        
+        async function updateAvatarBodyIdx() {
+          statusDiv.innerHTML = '<p>🔍 제발성공해라 아바타를 찾는 중...</p>';
+          
+          try {
+            const q = query(collection(db, 'memories'), where('nickname', '==', '제발성공해라'));
+            const querySnapshot = await getDocs(q);
+            
+            if (querySnapshot.empty) {
+              statusDiv.innerHTML = '<p style="color: red;">❌ 아바타를 찾을 수 없습니다.</p>';
+              return;
+            }
+            
+            let updateCount = 0;
+            
+            for (const docSnapshot of querySnapshot.docs) {
+              const data = docSnapshot.data();
+              statusDiv.innerHTML += `<p>📄 문서 ID: ${docSnapshot.id}</p>`;
+              statusDiv.innerHTML += `<p>🔍 현재 bodyIdx: ${data.avatar?.bodyIdx}</p>`;
+              
+              if (data.avatar && data.avatar.bodyIdx === 4) {
+                statusDiv.innerHTML += '<p>🔄 bodyIdx를 4에서 7로 업데이트 중...</p>';
+                
+                const docRef = doc(db, 'memories', docSnapshot.id);
+                await updateDoc(docRef, {
+                  'avatar.bodyIdx': 7
+                });
+                
+                statusDiv.innerHTML += '<p style="color: green;">✅ 업데이트 완료! bodyIdx: 4 → 7</p>';
+                updateCount++;
+              }
+            }
+            
+            if (updateCount > 0) {
+              statusDiv.innerHTML += '<p style="color: green; font-weight: bold;">🎉 모든 업데이트 완료! 이제 wall을 새로고침하세요.</p>';
+            } else {
+              statusDiv.innerHTML += '<p>ℹ️ 업데이트할 항목이 없습니다.</p>';
+            }
+            
+          } catch (error) {
+            statusDiv.innerHTML += `<p style="color: red;">❌ 오류 발생: ${error.message}</p>`;
+          }
+        }
+        
+        async function checkCurrentData() {
+          statusDiv.innerHTML = '<p>🔍 모든 collection 확인 중...</p>';
+          
+          try {
+            // 여러 collection 확인
+            const collections = ['memories', 'avatars', 'users'];
+            
+            for (const collectionName of collections) {
+              statusDiv.innerHTML += `<h3>📂 ${collectionName} collection 확인 중...</h3>`;
+              
+              try {
+                const querySnapshot = await getDocs(collection(db, collectionName));
+                
+                if (querySnapshot.empty) {
+                  statusDiv.innerHTML += `<p>❌ ${collectionName} collection이 비어있습니다.</p>`;
+                } else {
+                  statusDiv.innerHTML += `<p>✅ ${collectionName}에서 ${querySnapshot.size}개 문서 발견</p>`;
+                  
+                  let foundCount = 0;
+                  querySnapshot.forEach(doc => {
+                    const data = doc.data();
+                    const nickname = data.nickname || data.name || '닉네임 없음';
+                    
+                    if (nickname.includes('제발성공') || nickname.includes('성공') || doc.id === 'bUVXBIbY96RkEikYSq5c') {
+                      foundCount++;
+                      const isCorrectDoc = doc.id === 'bUVXBIbY96RkEikYSq5c';
+                      const bodyIdx = data.avatar?.bodyIdx || data.bodyIdx;
+                      
+                      statusDiv.innerHTML += `<div style="border: 2px solid ${isCorrectDoc ? 'green' : 'orange'}; padding: 10px; margin: 10px 0;">`;
+                      statusDiv.innerHTML += `<h4 style="color: ${isCorrectDoc ? 'green' : 'orange'};">${isCorrectDoc ? '✅ 올바른 문서' : '⚠️ 중복 문서'} (${collectionName})</h4>`;
+                      statusDiv.innerHTML += `<p><strong>문서 ID:</strong> ${doc.id}</p>`;
+                      statusDiv.innerHTML += `<p><strong>nickname:</strong> "${nickname}"</p>`;
+                      statusDiv.innerHTML += `<p><strong>bodyIdx:</strong> <span style="font-size: 20px; color: ${bodyIdx === 7 ? 'green' : 'red'};">${bodyIdx}</span></p>`;
+                      statusDiv.innerHTML += `<p><strong>gender:</strong> ${data.avatar?.gender || data.gender}</p>`;
+                      
+                      if (!isCorrectDoc && bodyIdx !== 7) {
+                        statusDiv.innerHTML += `<button onclick="deleteDoc('${collectionName}', '${doc.id}')" style="background: red; color: white; padding: 5px 10px; border: none; cursor: pointer;">🗑️ 이 중복 문서 삭제</button>`;
+                      }
+                      
+                      statusDiv.innerHTML += `</div>`;
+                    }
+                  });
+                  
+                  if (foundCount > 1) {
+                    statusDiv.innerHTML += `<p style="color: orange; font-weight: bold;">⚠️ "${foundCount}"개의 중복 문서가 발견되었습니다! wall이 잘못된 문서를 참조하고 있을 수 있습니다.</p>`;
+                  }
+                }
+              } catch (err) {
+                statusDiv.innerHTML += `<p style="color: orange;">⚠️ ${collectionName} collection 접근 오류: ${err.message}</p>`;
+              }
+            }
+            
+          } catch (error) {
+            statusDiv.innerHTML += `<p style="color: red;">❌ 전체 오류 발생: ${error.message}</p>`;
+          }
+        }
+        
+        async function forceUpdate() {
+          statusDiv.innerHTML = '<p>🔄 강제 업데이트 중...</p>';
+          
+          try {
+            const q = query(collection(db, 'memories'), where('nickname', '==', '제발성공해라'));
+            const querySnapshot = await getDocs(q);
+            
+            if (querySnapshot.empty) {
+              statusDiv.innerHTML = '<p style="color: red;">❌ 아바타를 찾을 수 없습니다.</p>';
+              return;
+            }
+            
+            for (const docSnapshot of querySnapshot.docs) {
+              const docRef = doc(db, 'memories', docSnapshot.id);
+              await updateDoc(docRef, {
+                'avatar.bodyIdx': 7
+              });
+              statusDiv.innerHTML += `<p style="color: green;">✅ 강제 업데이트 완료! 문서 ID: ${docSnapshot.id}</p>`;
+            }
+            
+          } catch (error) {
+            statusDiv.innerHTML += `<p style="color: red;">❌ 오류 발생: ${error.message}</p>`;
+          }
+        }
+        
+        document.getElementById('updateBtn').addEventListener('click', updateAvatarBodyIdx);
+        document.getElementById('checkBtn').addEventListener('click', checkCurrentData);
+        document.getElementById('forceUpdateBtn').addEventListener('click', forceUpdate);
+    </script>
+</body>
+</html>

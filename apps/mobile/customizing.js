@@ -120,8 +120,8 @@ import { db } from './firebase-init.js';
   const OFFSETS = {
     body: { s: 200 },
     sopum: {
-      female: { x: -58, y: 43, s: 60 },
-      male: { x: -4, y: -8, s: 200 }
+      female: { x: 35, y: 40, s: 45 }, // y값을 아래쪽으로 이동
+      male: { x: 35, y: 40, s: 45 }    // 남녀 동일
     },
     head: {
       female: { x: 0, y: -15, s: 200 },
@@ -513,6 +513,8 @@ import { db } from './firebase-init.js';
     // 저장할 데이터 디버깅 로그
     console.log('💾 Firebase에 저장할 데이터:');
     console.log('nickname:', data.nickname);
+    console.log('avatar.bodyIdx 최종 확인:', avatar.bodyIdx);
+    console.log('avatarForWall.bodyIdx 최종 확인:', avatarForWall.bodyIdx);
     console.log('wall 호환 avatar 데이터:', JSON.stringify(avatarForWall, null, 2));
     console.log('musicPosition:', data.musicPosition);
     console.log('selectedRecipe:', data.selectedRecipe);
