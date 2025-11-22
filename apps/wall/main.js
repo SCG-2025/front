@@ -2121,7 +2121,7 @@ try {
         }
         // customData가 있으면 bodyIdx/gender 보정
         if (avatar.customData) {
-          if (avatar.customData.bodyIdx === null || avatar.customData.bodyIdx === undefined || avatar.customData.bodyIdx < 0 || avatar.customData.bodyIdx > 4) {
+          if (avatar.customData.bodyIdx === null || avatar.customData.bodyIdx === undefined || avatar.customData.bodyIdx < 0) {
             avatar.customData.bodyIdx = Math.floor(Math.random() * 5);
           }
           if (!avatar.customData.gender || (avatar.customData.gender !== 'male' && avatar.customData.gender !== 'female')) {
@@ -2394,6 +2394,9 @@ try {
     avatars.forEach((avatar, index) => {
       console.log(`  ${index + 1}. ${avatar.nickname} (${avatar.setName})`);
     });
+    
+    console.log(`✅ Firebase 아바타 로딩 완료! 총 ${avatars.length}개 아바타 로드됨`);
+    console.log('로드된 아바타 목록:', avatars.map(a => `${a.nickname} (${a.customData?.bodyIdx || 'N/A'})`));
     console.log('==========================================');
 
   }, (error) => {
@@ -2916,6 +2919,12 @@ function drawAvatar(avatar) {
     draw3DAvatar(avatar.x, currentY, avatar, isHighlighted);
   } else {
     // 커스텀 데이터가 없으면 ID 기반 기본 스킨 생성 후 렌더
+    if (avatar.nickname === '제발성공해라') {
+      console.log('❌ 제발성공해라가 기본 아바타 생성 로직으로 빠짐!');
+      console.log('avatar.customData:', avatar.customData);
+      console.log('avatar.musicType:', avatar.musicType);
+      console.log('전체 avatar 객체:', avatar);
+    }
     if (!avatar.defaultCustomData) {
       let hash = 0;
       const idStr = avatar.id || 'default';
