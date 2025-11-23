@@ -11,10 +11,11 @@
     /* 1. 전체 화면 및 기본 스타일 */
     html,
     body {
-      height: 100%;
+      height: 100vh; /* 정확한 뇠이트 높이 */
       margin: 0;
       padding: 0;
       box-sizing: border-box;
+      overflow: hidden; /* 모든 스크롤 완전 차단 */
     }
 
     body {
@@ -28,7 +29,8 @@
       background: url('bg_sample.jpg') no-repeat center center;
       background-size: 100% 100%; /* 화면에 정확히 맞춤 */
       background-attachment: fixed; /* 스크롤해도 고정 */
-      overflow-x: hidden; /* 가로 스크롤 방지 */
+      overflow: hidden; /* 모든 스크롤 차단 */
+      position: relative;
     }
 
     /* 2. 로고 스타일 */
@@ -113,6 +115,29 @@
       width: 64px;
       height: 64px;
       fill: #fff;
+    }
+
+    /* 모바일에서 스크롤 완전 방지 */
+    @media (hover: none) and (pointer: coarse) {
+      html, body {
+        position: fixed; /* 모바일에서 스크롤 완전 차단 */
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      /* iOS Safari에서 주소창 변화 대응 */
+      body {
+        height: 100vh;
+        height: -webkit-fill-available; /* iOS Safari 지원 */
+      }
+    }
+
+    /* iOS Safari 전용 높이 처리 */
+    @supports (-webkit-touch-callout: none) {
+      body {
+        height: -webkit-fill-available;
+      }
     }
   </style>
 </head>
