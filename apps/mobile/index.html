@@ -24,10 +24,11 @@
       flex-direction: column;
       justify-content: space-between;
       align-items: center;
-      /* background: #f5f5f5; 배경 흰색으로 */
+      /* 배경 완전 고정 */
       background: url('bg_sample.jpg') no-repeat center center;
-      background-size: cover;
-      /* 배경 이미지를 화면에 꽉 차게 */
+      background-size: 100% 100%; /* 화면에 정확히 맞춤 */
+      background-attachment: fixed; /* 스크롤해도 고정 */
+      overflow-x: hidden; /* 가로 스크롤 방지 */
     }
 
     /* 2. 로고 스타일 */

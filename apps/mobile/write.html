@@ -21,9 +21,35 @@
             font-family: sans-serif;
             color: #222;
             min-height: 100vh;
+            width: 100%;
+            overflow-x: hidden;
+            /* 배경 완전 고정 */
             background: url('bg_sample2.jpg') no-repeat center center;
-            background-size: cover;
+            background-size: 100% 100%; /* 화면에 정확히 맞춤 */
+            background-attachment: fixed; /* 스크롤해도 고정 */
+            -webkit-overflow-scrolling: touch; /* iOS 부드러운 스크롤 */
+        }
 
+        /* 모바일에서 배경 완전 고정 */
+        @media (hover: none) and (pointer: coarse) {
+            body {
+                background-attachment: scroll; /* iOS에서 fixed 대신 scroll 사용 */
+                background-size: 100vw 100vh; /* 뷰포트 크기에 정확히 맞춤 */
+                background-position: top center;
+            }
+            
+            /* iOS Safari에서 스크롤 시 배경 고정을 위한 추가 처리 */
+            body::before {
+                content: '';
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: url('bg_sample2.jpg') no-repeat center center;
+                background-size: 100vw 100vh;
+                z-index: -1;
+            }
         }
     </style>
 </head>
