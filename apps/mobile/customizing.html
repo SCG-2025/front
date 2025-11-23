@@ -60,6 +60,41 @@
             position: relative;
             z-index: 2;
         }
+
+        /* 가로 스크롤 최적화 */
+        #inventory {
+            scrollbar-width: thin; /* Firefox */
+            scrollbar-color: #ccc transparent; /* Firefox */
+        }
+
+        /* 웹킷 기반 브라우저 스크롤바 */
+        #inventory::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        #inventory::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        #inventory::-webkit-scrollbar-thumb {
+            background-color: #ccc;
+            border-radius: 3px;
+        }
+
+        #inventory::-webkit-scrollbar-thumb:hover {
+            background-color: #999;
+        }
+
+        /* 터치 디바이스 최적화 */
+        @media (hover: none) and (pointer: coarse) {
+            #inventory {
+                scrollbar-width: none; /* 모바일에서는 스크롤바 숨김 */
+            }
+            
+            #inventory::-webkit-scrollbar {
+                display: none; /* 모바일에서는 스크롤바 숨김 */
+            }
+        }
     </style>
 </head>
 

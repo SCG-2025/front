@@ -289,21 +289,23 @@ import { db } from './firebase-init.js';
         .style('background', '#fff');
     });
 
-    /* 인벤토리(가로 스크롤) */
+    /* 인벤토리(가로 스크롤 최적화) */
     inventoryDiv = createDiv('').id('inventory')
       .style('position', 'fixed')
       .style('bottom', '68px').style('left', '0')
-      .style('width', '100%').style('height', '140px')
-      .style('overflow-x', 'auto').style('white-space', 'nowrap')
+      .style('width', '100%').style('height', '160px') // 높이 증가
+      .style('overflow-x', 'auto').style('overflow-y', 'hidden')
+      .style('white-space', 'nowrap')
       .style('background', '#f5f5f5')
-      .style('padding', '10px')
-      .style('display', 'flex').style('gap', '10px');
+      .style('padding', '15px')
+      .style('display', 'flex').style('gap', '15px') // gap 증가
+      .style('-webkit-overflow-scrolling', 'touch'); // iOS 스맨스러운 스크롤
 
     fillInventory();      // 초기 로드
   }
 
   function commonCard() {
-    return 'width:110px;height:110px;border:1px solid #aaa;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,0.08);display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;background:#fff;';
+    return 'width:130px;height:130px;flex-shrink:0;border:2px solid #ddd;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;background:#fff;transition:all 0.2s ease;';
   }
 
   /* ---------- 인벤토리 채우기 ---------- */
@@ -319,14 +321,19 @@ import { db } from './firebase-init.js';
             avatar.bodyIdx = idx; saveAvatarToLocal();
             renderAvatar();
           });
-        createImg(imgPath, '').parent(card).style('width', '90%');
+        createImg(imgPath, '').parent(card)
+          .style('width', '95%')
+          .style('height', '95%')
+          .style('object-fit', 'contain');
       });
       return;
     }
 
     // 3) 헤드(없음 + 목록)
     if (selCat === '헤드') {
-      createDiv('없음').parent(inventoryDiv).style(commonCard()).mousePressed(() => {
+      createDiv('없음').parent(inventoryDiv)
+        .style(commonCard() + 'font-size:16px;font-weight:bold;color:#666;')
+        .mousePressed(() => {
         avatar.headIdx = null; saveAvatarToLocal();
         renderAvatar();
       });
@@ -336,14 +343,19 @@ import { db } from './firebase-init.js';
             avatar.headIdx = idx; saveAvatarToLocal();
             renderAvatar();
           });
-        createImg(imgPath, '').parent(card).style('width', '90%');
+        createImg(imgPath, '').parent(card)
+          .style('width', '95%')
+          .style('height', '95%')
+          .style('object-fit', 'contain');
       });
       return;
     }
 
     // 4)소품(OFF/ON)
     if (selCat === '소품') {
-      createDiv('OFF').parent(inventoryDiv).style(commonCard()).mousePressed(() => {
+      createDiv('OFF').parent(inventoryDiv)
+        .style(commonCard() + 'font-size:16px;font-weight:bold;color:#666;')
+        .mousePressed(() => {
         avatar.gear = null; saveAvatarToLocal();
         renderAvatar();
       });
@@ -353,7 +365,10 @@ import { db } from './firebase-init.js';
           saveAvatarToLocal();
           renderAvatar();
         });
-        createImg(imgPath, '').parent(card).style('width', '90%');
+        createImg(imgPath, '').parent(card)
+          .style('width', '95%')
+          .style('height', '95%')
+          .style('object-fit', 'contain');
       });
       return;
     }
