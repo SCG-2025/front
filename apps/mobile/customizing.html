@@ -34,31 +34,28 @@
         }
 
         html {
-            height: 100%;
-            width: 100%;
-            /* 모바일에서 배경 이동 방지 */
-            overflow-x: hidden;
+            height: 100vh; /* 정확한 뇠이트 높이 */
+            width: 100vw;
+            overflow: hidden; /* 모든 스크롤 제거 */
         }
 
         body {
             font-family: sans-serif;
             color: #222;
-            min-height: 100vh;
-            width: 100%;
-            overflow-x: hidden;
+            height: 100vh; /* min-height 대신 정확한 height 사용 */
+            width: 100vw;
+            overflow: hidden; /* 모든 스크롤 제거 */
             position: relative;
-            /* 모바일 스크롤 최적화 */
-            -webkit-overflow-scrolling: touch;
-            /* 배경 고정 추가 보강 */
-            background-attachment: fixed;
+            margin: 0;
+            padding: 0;
         }
 
-        /* p5 캔버스가 화면 너비에 맞게 줄어들도록 */
+        /* p5 캔버스가 화면에 딱 맞도록 */
         canvas {
-            max-width: 100%;
-            height: auto;
+            width: 100vw !important;
             display: block;
-            margin: 0 auto;
+            margin: 0;
+            padding: 0;
             position: relative;
             z-index: 1;
             background: transparent;
@@ -106,12 +103,12 @@
 
             /* 모바일에서 배경 완전 고정 */
             body::before {
-                position: absolute; /* iOS Safari 호환성을 위해 absolute 사용 */
+                position: fixed; /* absolute 대신 fixed 사용 */
                 top: 0;
                 left: 0;
                 width: 100vw;
-                height: 200vh; /* 스크롤 영역보다 충분히 크게 */
-                background-size: 100vw 100vh; /* 뷰포트 크기에 정확히 맞춤 */
+                height: 100vh; /* 200vh 대신 100vh로 제한 */
+                background-size: 100vw 100vh;
                 background-repeat: no-repeat;
                 background-position: top center;
             }
@@ -119,6 +116,7 @@
             /* 모바일에서 body 추가 고정 */
             body {
                 background: none; /* body 자체 배경 제거 */
+                overflow: hidden; /* 스크롤 완전 차단 */
             }
         }
     </style>

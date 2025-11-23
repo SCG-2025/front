@@ -199,8 +199,9 @@ import { db } from './firebase-init.js';
       }
     } catch { }
 
-    // 캔버스
-    const cv = createCanvas(windowWidth, windowHeight * 0.6);
+    // 캔버스 (전체 화면에서 하단 UI 영역 228px를 뺄 크기)
+    const canvasHeight = windowHeight - 228; // inventory(160px) + cat-bar(68px)
+    const cv = createCanvas(windowWidth, canvasHeight);
     cv.parent(createDiv('').id('avatar-wrap'));
 
     // UI 구성
@@ -219,7 +220,8 @@ import { db } from './firebase-init.js';
 
   function windowResized() {
     try {
-      resizeCanvas(windowWidth, windowHeight * 0.6);
+      const canvasHeight = windowHeight - 228; // 동일한 비율 사용
+      resizeCanvas(windowWidth, canvasHeight);
       // 캔버스 리사이즈 후 약간의 지연을 두고 렌더링
       setTimeout(() => {
         renderAvatar();
