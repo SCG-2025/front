@@ -3695,8 +3695,11 @@ function mouseReleased() {
       }
     }
     
-    // 드래그 상태 초기화
+    // 드래그 상태 완전 초기화
     window.selectedPadAvatar.avatar.isDragging = false;
+    window.selectedPadAvatar.avatar.isClicked = false;
+    window.selectedPadAvatar.avatar.clickTimer = 0;
+    window.selectedPadAvatar.avatar.dragElevation = 0;
     window.selectedPadAvatar = null;
     return; // 다른 mouseReleased 처리 방지
   }
