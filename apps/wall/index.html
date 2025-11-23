@@ -371,6 +371,24 @@
       animation: pulse 1.5s infinite;
     }
 
+    /* 드래그 앤 드롭 관련 스타일 */
+    .instrument-btn {
+      cursor: grab;
+    }
+
+    .instrument-btn:active {
+      cursor: grabbing;
+    }
+
+    .instrument-btn[draggable="true"] {
+      cursor: grab;
+    }
+
+    .instrument-btn[draggable="true"]:hover {
+      transform: translateY(-3px) scale(1.05);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+    }
+
     /* 악기별 컬러 */
     .bass-btn { background: linear-gradient(135deg, #ff6b6b, #ff8e8e); }
     .drum-btn { background: linear-gradient(135deg, #4ecdc4, #7ed7d1); }
@@ -1019,27 +1037,27 @@
           <h4 id="recipe1Name">조합법 1</h4>
           <div class="instrument-buttons">
             <div class="instrument-item">
-              <button class="instrument-btn lead-btn" data-instrument="lead" data-recipe="1">🎤</button>
+              <button class="instrument-btn lead-btn" draggable="true" data-instrument="lead" data-recipe="1">🎤</button>
               <span class="instrument-label">리드</span>
             </div>
             <div class="instrument-item">
-              <button class="instrument-btn sub-btn" data-instrument="sub" data-recipe="1">🎷</button>
+              <button class="instrument-btn sub-btn" draggable="true" data-instrument="sub" data-recipe="1">🎷</button>
               <span class="instrument-label">서브</span>
             </div>
             <div class="instrument-item">
-              <button class="instrument-btn chord-btn" data-instrument="chord" data-recipe="1">🎹</button>
+              <button class="instrument-btn chord-btn" draggable="true" data-instrument="chord" data-recipe="1">🎹</button>
               <span class="instrument-label">코드</span>
             </div>
             <div class="instrument-item">
-              <button class="instrument-btn bass-btn" data-instrument="bass" data-recipe="1">🎸</button>
+              <button class="instrument-btn bass-btn" draggable="true" data-instrument="bass" data-recipe="1">🎸</button>
               <span class="instrument-label">베이스</span>
             </div>
             <div class="instrument-item">
-              <button class="instrument-btn drum-btn" data-instrument="drum" data-recipe="1">🥁</button>
+              <button class="instrument-btn drum-btn" draggable="true" data-instrument="drum" data-recipe="1">🥁</button>
               <span class="instrument-label">드럼</span>
             </div>
             <div class="instrument-item">
-              <button class="instrument-btn fx-btn" data-instrument="fx" data-recipe="1">🎬</button>
+              <button class="instrument-btn fx-btn" draggable="true" data-instrument="fx" data-recipe="1">🎬</button>
               <span class="instrument-label">FX</span>
             </div>
           </div>
@@ -1050,27 +1068,27 @@
           <h4 id="recipe2Name">조합법 2</h4>
           <div class="instrument-buttons">
             <div class="instrument-item">
-              <button class="instrument-btn lead-btn" data-instrument="lead" data-recipe="2">🎤</button>
+              <button class="instrument-btn lead-btn" draggable="true" data-instrument="lead" data-recipe="2">🎤</button>
               <span class="instrument-label">리드</span>
             </div>
             <div class="instrument-item">
-              <button class="instrument-btn sub-btn" data-instrument="sub" data-recipe="2">🎷</button>
+              <button class="instrument-btn sub-btn" draggable="true" data-instrument="sub" data-recipe="2">🎷</button>
               <span class="instrument-label">서브</span>
             </div>
             <div class="instrument-item">
-              <button class="instrument-btn chord-btn" data-instrument="chord" data-recipe="2">🎹</button>
+              <button class="instrument-btn chord-btn" draggable="true" data-instrument="chord" data-recipe="2">🎹</button>
               <span class="instrument-label">코드</span>
             </div>
             <div class="instrument-item">
-              <button class="instrument-btn bass-btn" data-instrument="bass" data-recipe="2">🎸</button>
+              <button class="instrument-btn bass-btn" draggable="true" data-instrument="bass" data-recipe="2">🎸</button>
               <span class="instrument-label">베이스</span>
             </div>
             <div class="instrument-item">
-              <button class="instrument-btn drum-btn" data-instrument="drum" data-recipe="2">🥁</button>
+              <button class="instrument-btn drum-btn" draggable="true" data-instrument="drum" data-recipe="2">🥁</button>
               <span class="instrument-label">드럼</span>
             </div>
             <div class="instrument-item">
-              <button class="instrument-btn fx-btn" data-instrument="fx" data-recipe="2">🎬</button>
+              <button class="instrument-btn fx-btn" draggable="true" data-instrument="fx" data-recipe="2">🎬</button>
               <span class="instrument-label">FX</span>
             </div>
           </div>
@@ -1081,27 +1099,27 @@
           <h4 id="recipe3Name">조합법 3</h4>
           <div class="instrument-buttons">
             <div class="instrument-item">
-              <button class="instrument-btn lead-btn" data-instrument="lead" data-recipe="3">🎤</button>
+              <button class="instrument-btn lead-btn" draggable="true" data-instrument="lead" data-recipe="3">🎤</button>
               <span class="instrument-label">리드</span>
             </div>
             <div class="instrument-item">
-              <button class="instrument-btn sub-btn" data-instrument="sub" data-recipe="3">🎷</button>
+              <button class="instrument-btn sub-btn" draggable="true" data-instrument="sub" data-recipe="3">🎷</button>
               <span class="instrument-label">서브</span>
             </div>
             <div class="instrument-item">
-              <button class="instrument-btn chord-btn" data-instrument="chord" data-recipe="3">🎹</button>
+              <button class="instrument-btn chord-btn" draggable="true" data-instrument="chord" data-recipe="3">🎹</button>
               <span class="instrument-label">코드</span>
             </div>
             <div class="instrument-item">
-              <button class="instrument-btn bass-btn" data-instrument="bass" data-recipe="3">🎸</button>
+              <button class="instrument-btn bass-btn" draggable="true" data-instrument="bass" data-recipe="3">🎸</button>
               <span class="instrument-label">베이스</span>
             </div>
             <div class="instrument-item">
-              <button class="instrument-btn drum-btn" data-instrument="drum" data-recipe="3">🥁</button>
+              <button class="instrument-btn drum-btn" draggable="true" data-instrument="drum" data-recipe="3">🥁</button>
               <span class="instrument-label">드럼</span>
             </div>
             <div class="instrument-item">
-              <button class="instrument-btn fx-btn" data-instrument="fx" data-recipe="3">🎬</button>
+              <button class="instrument-btn fx-btn" draggable="true" data-instrument="fx" data-recipe="3">🎬</button>
               <span class="instrument-label">FX</span>
             </div>
           </div>

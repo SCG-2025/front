@@ -105,7 +105,7 @@ import { db } from './firebase-init.js';
   // write에서 넘어온 avatarData가 있으면 그대로 사용, 없으면 최소 기본값
   const avatar = savedAvatar && typeof savedAvatar === 'object'
     ? { ...savedAvatar }
-    : { gender: 'female', bodyIdx: 0, headIdx: null, sopumOn: false };
+    : { gender: 'female', bodyIdx: 0, headIdx: null, gear: null };
 
   // 이미지 캐시
   const IMG = { female: [], male: [], heads: [], sopum: [] };
@@ -154,8 +154,16 @@ import { db } from './firebase-init.js';
   };
   
   const BODY_VARIANT_OFFSET = {
-    female: { 0: { x: 0, y: 0 }, 1: { x: 2, y: -2 }, 2: { x: 1, y: 0 }, 3: { x: -1, y: 0 }, 4: { x: 0, y: 2 } },
-    male: { 0: { x: 0, y: 0 }, 1: { x: 1, y: -2 }, 2: { x: 2, y: 0 }, 3: { x: 0, y: 0 } }
+    female: { 
+      0: { x: 0, y: 0 }, 1: { x: 2, y: -2 }, 2: { x: 1, y: 0 }, 
+      3: { x: -1, y: 0 }, 4: { x: 0, y: 2 }, 5: { x: 1, y: 1 }, 
+      6: { x: -1, y: 1 } 
+    },
+    male: { 
+      0: { x: 0, y: 0 }, 1: { x: 1, y: -2 }, 2: { x: 2, y: 0 }, 
+      3: { x: 0, y: 0 }, 4: { x: 1, y: 1 }, 5: { x: -1, y: 0 }, 
+      6: { x: 0, y: -1 }, 7: { x: 1, y: 0 }, 8: { x: -2, y: 1 } 
+    }
   };
 
   /* ---------- 유틸 ---------- */
@@ -336,13 +344,12 @@ import { db } from './firebase-init.js';
     // 4)소품(OFF/ON)
     if (selCat === '소품') {
       createDiv('OFF').parent(inventoryDiv).style(commonCard()).mousePressed(() => {
-        avatar.sopumOn = false; saveAvatarToLocal();
+        avatar.gear = null; saveAvatarToLocal();
         renderAvatar();
       });
       Catalog.sopum.forEach((imgPath, idx) => {
         const card = createDiv('').parent(inventoryDiv).style(commonCard()).mousePressed(() => {
-          avatar.sopumOn = true;
-          avatar.sopumIdx = idx;
+          avatar.gear = idx;
           saveAvatarToLocal();
           renderAvatar();
         });
@@ -384,8 +391,8 @@ import { db } from './firebase-init.js';
     scale(scaleFactor);
 
     // 먼저 날개 렌더링 (아바타 뒤쪽)
-    if (avatar.sopumOn && IMG.sopum && typeof avatar.sopumIdx === 'number' && avatar.sopumIdx === 10) {
-      const sopumImg = IMG.sopum[avatar.sopumIdx];
+    if (avatar.gear === 10) {
+      const sopumImg = IMG.sopum[avatar.gear];
       if (sopumImg) {
         const w = SOPUM_INDIVIDUAL_OFFSETS[10][avatar.gender];
         image(sopumImg, w.x + vOff.x, w.y + vOff.y, w.s, w.s);
@@ -417,12 +424,12 @@ import { db } from './firebase-init.js';
     }
 
     // 날개가 아닌 다른 SOPUM들 (바디 위에 그리기)
-    if (avatar.sopumOn && IMG.sopum && typeof avatar.sopumIdx === 'number' && avatar.sopumIdx !== 10) {
-      const sopumImg = IMG.sopum[avatar.sopumIdx];
+    if (avatar.gear !== null && avatar.gear !== 10 && IMG.sopum) {
+      const sopumImg = IMG.sopum[avatar.gear];
       
       if (sopumImg) {
         // 개별 소품 오프셋이 있는지 확인
-        const individualOffset = SOPUM_INDIVIDUAL_OFFSETS[avatar.sopumIdx];
+        const individualOffset = SOPUM_INDIVIDUAL_OFFSETS[avatar.gear];
         
         if (individualOffset && individualOffset[avatar.gender]) {
           // 개별 오프셋 사용 (sopum(9), sopum(10) 등)
@@ -434,7 +441,7 @@ import { db } from './firebase-init.js';
           
           // sopum~sopum(8)까지는 오른쪽으로 이동 (손에 잡고 있는 효과)
           let extraOffsetX = 0;
-          if (avatar.sopumIdx <= 7) { // sopum.png는 인덱스 0, sopum(2).PNG는 인덱스 1, ..., sopum(8).PNG는 인덱스 7
+          if (avatar.gear <= 7) { // sopum.png는 인덱스 0, sopum(2).PNG는 인덱스 1, ..., sopum(8).PNG는 인덱스 7
             extraOffsetX = 15; // 오른쪽으로 15px 이동
           }
           
@@ -474,13 +481,10 @@ import { db } from './firebase-init.js';
     // wall 웹에서 읽을 수 있는 아바타 데이터 형태로 변환
     const avatarForWall = {
       gender: avatar.gender,
-      bodyIdx: avatar.bodyIdx || 0,
+      bodyIdx: avatar.bodyIdx || 0, // 기본값 0
       headIdx: avatar.headIdx,
-      sopumOn: avatar.sopumOn || false,
-      sopumIdx: avatar.sopumIdx,
-      // 추가 wall 호환 필드들
-      wingOn: false,
-      skin: avatar.skin || '#ffdbac',
+      gear: avatar.gear, // sopumOn/sopumIdx 대신 gear 사용
+      // wall 호환 필드들
       isDragged: false,
       dragElevation: 0,
       dropBounce: 0,

@@ -202,6 +202,53 @@
             <p id="docCount">문서 개수: 확인 중...</p>
         </div>
 
+        <div class="info-box" style="border-left: 5px solid #00cec9;">
+            <h3>🚀 빠른 아바타 생성</h3>
+            <p>테스트용 아바타를 빠르게 생성할 수 있습니다. 포지션과 조합법만 선택하면 나머지는 자동으로 생성됩니다.</p>
+            
+            <div style="margin: 20px 0;">
+                <label for="positionSelect" style="display: block; margin-bottom: 10px; font-weight: bold;">🎵 음악 포지션:</label>
+                <select id="positionSelect" style="width: 100%; padding: 10px; border-radius: 5px; border: none; background: rgba(255,255,255,0.9); color: #333;">
+                    <option value="lead">리드 멜로디</option>
+                    <option value="sub">서브 멜로디</option>
+                    <option value="chord">코드</option>
+                    <option value="bass">베이스</option>
+                    <option value="drum">드럼/퍼커션</option>
+                    <option value="fx">효과음/FX</option>
+                </select>
+            </div>
+            
+            <div style="margin: 20px 0;">
+                <label for="recipeSelect" style="display: block; margin-bottom: 10px; font-weight: bold;">🎭 추억 조합법:</label>
+                <select id="recipeSelect" style="width: 100%; padding: 10px; border-radius: 5px; border: none; background: rgba(255,255,255,0.9); color: #333;">
+                    <option value="pcroom_gaming">PC방과 온라인 게임</option>
+                    <option value="home_console_gaming">집에서 게임기로</option>
+                    <option value="social_media_memories">SNS 속 디지털 추억</option>
+                    <option value="sports_activities">운동과 스포츠</option>
+                    <option value="festivals_events">축제와 이벤트</option>
+                    <option value="travel_places">여행지에서의 특별한 경험</option>
+                    <option value="family_warmth">가족과의 따뜻한 시간</option>
+                    <option value="school_memories">학창시절 추억</option>
+                    <option value="spring_memories">봄의 따뜻한 추억</option>
+                    <option value="nostalgia_longing">그리운 옛날 생각</option>
+                    <option value="night_dawn">밤과 새벽</option>
+                    <option value="entertainment_culture">드라마, 영화, 웹툰과 함께</option>
+                    <option value="art_creative">미술과 창작활동</option>
+                    <option value="autumn_memories">감성적인 가을의 추억</option>
+                    <option value="winter_memories">포근한 겨울의 추억</option>
+                </select>
+            </div>
+            
+            <div style="margin: 20px 0;">
+                <label for="avatarCount" style="display: block; margin-bottom: 10px; font-weight: bold;">🔢 생성할 아바타 개수:</label>
+                <input type="number" id="avatarCount" min="1" max="20" value="5" style="width: 100%; padding: 10px; border-radius: 5px; border: none; background: rgba(255,255,255,0.9); color: #333;">
+            </div>
+            
+            <button id="generateBtn" onclick="generateRandomAvatars()" style="width: 100%; padding: 15px; background: linear-gradient(45deg, #00cec9, #0984e3); color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px;">
+                ✨ 랜덤 아바타 생성하기
+            </button>
+        </div>
+
         <div class="warning-box">
             <h3>⚠️ 주의사항</h3>
             <p><strong>이 작업은 되돌릴 수 없습니다!</strong></p>
@@ -254,6 +301,8 @@
             collection, 
             getDocs, 
             deleteDoc, 
+            addDoc,
+            serverTimestamp,
             doc 
         } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js';
 
@@ -915,7 +964,252 @@
             ctx.strokeRect(0, 0, 120, 120);
         }
 
-        // 페이지 로드시 자동으로 문서 개수 확인
+        // 🚀 랜덤 아바타 생성 기능
+        const musicSetData = {
+            'pcroom_gaming': { name: 'PC방과 온라인 게임', category: 'gaming' },
+            'home_console_gaming': { name: '집에서 게임기로', category: 'gaming' },
+            'social_media_memories': { name: 'SNS 속 디지털 추억', category: 'digital' },
+            'sports_activities': { name: '운동과 스포츠', category: 'sports' },
+            'festivals_events': { name: '축제와 이벤트', category: 'festival' },
+            'travel_places': { name: '여행지에서의 특별한 경험', category: 'travel' },
+            'family_warmth': { name: '가족과의 따뜻한 시간', category: 'family' },
+            'school_memories': { name: '학창시절 추억', category: 'school' },
+            'spring_memories': { name: '봄의 따뜻한 추억', category: 'season' },
+            'nostalgia_longing': { name: '그리운 옛날 생각', category: 'nostalgia' },
+            'night_dawn': { name: '밤과 새벽', category: 'night' },
+            'entertainment_culture': { name: '드라마, 영화, 웹툰과 함께', category: 'culture' },
+            'art_creative': { name: '미술과 창작활동', category: 'art' },
+            'autumn_memories': { name: '감성적인 가을의 추억', category: 'season' },
+            'winter_memories': { name: '포근한 겨울의 추억', category: 'season' }
+        };
+
+        const sampleMemories = {
+            'pcroom_gaming': [
+                'PC방에서 친구들과 밤새워 롤을 하던 추억이 생생해요',
+                '카트라이더로 친구들과 레이싱을 즐기던 그 시절',
+                '메이플스토리에서 레벨업의 기쁨을 나누던 순간들',
+                '오버워치에서 팀워크의 중요성을 배운 소중한 경험',
+                'PC방에서 친구들과 함께 먹던 라면의 맛이 그리워요'
+            ],
+            'home_console_gaming': [
+                '집에서 닌텐도로 친구들과 마리오카트를 하던 즐거운 시간',
+                'PS에서 피파를 하며 사촌들과 경쟁하던 추억',
+                '동물의 숲에서 나만의 섬을 꾸미던 평화로운 순간',
+                '가족들과 함께 위 스포츠를 즐기던 시간들',
+                '콘솔게임으로 친구들과 협동하며 클리어한 게임들'
+            ],
+            'social_media_memories': [
+                '싸이월드 미니홈피를 꾸미며 친구들과 소통하던 시절',
+                '인스타그램에 일상을 기록하며 추억을 쌓던 순간들',
+                'SNS에서 친구들의 근황을 보며 느꼈던 따뜻함',
+                '페이스북에 올린 사진들을 보며 웃던 기억',
+                '모바일 게임을 하며 온라인 친구들과 만든 추억'
+            ],
+            'sports_activities': [
+                '친구들과 함께한 축구 경기의 열정적인 순간들',
+                '헬스장에서 운동하며 느꼈던 성취감',
+                '농구 코트에서 친구들과 즐긴 자유로운 시간',
+                '마라톤 대회에 참여하며 느낀 뿌듯함',
+                '수영장에서 친구들과 물놀이를 즐긴 여름날'
+            ],
+            'festivals_events': [
+                '음악 축제에서 친구들과 함께 열광했던 밤',
+                '지역 축제에서 맛있는 음식을 먹으며 즐긴 시간',
+                '콘서트에서 좋아하는 가수의 노래를 들었던 감동',
+                '문화제에서 친구들과 함께 공연을 본 기억',
+                '불꽃축제에서 아름다운 불꽃을 보며 느낀 벅찬 감정'
+            ],
+            'travel_places': [
+                '부산 바닷가에서 친구들과 함께 본 아름다운 일몰',
+                '제주도 여행에서 만난 특별한 순간들',
+                '가족 여행에서 함께 찍은 소중한 사진들',
+                '강릉 바다에서 느낀 자유로운 기분',
+                '여행지에서 만난 새로운 사람들과의 인연'
+            ],
+            'family_warmth': [
+                '가족들과 함께한 따뜻한 저녁시간이 그립습니다',
+                '엄마가 만들어준 맛있는 밥을 먹던 행복한 시간',
+                '아버지와 함께 산책하며 나눈 소중한 대화들',
+                '할머니가 들려주던 옛날 이야기가 아직도 생생해요',
+                '가족 모두가 모여 함께 본 TV 프로그램의 추억'
+            ],
+            'school_memories': [
+                '친구들과 함께한 즐거운 학교생활이 그리워요',
+                '체육대회에서 함께 응원하던 뜨거운 열정',
+                '점심시간에 친구들과 나눈 도시락의 맛',
+                '야자 시간에 친구들과 몰래 나눈 이야기들',
+                '수학여행에서 친구들과 만든 잊지 못할 추억'
+            ],
+            'spring_memories': [
+                '벚꽃이 피는 길을 친구들과 걸었던 봄날',
+                '새학기 시작의 설렘과 기대감이 가득했던 시간',
+                '봄 소풍에서 친구들과 함께 먹은 김밥의 맛',
+                '따뜻해진 날씨에 친구들과 공원에서 놀던 추억',
+                '꽃구경을 하며 가족과 함께한 평화로운 주말'
+            ],
+            'nostalgia_longing': [
+                '어린 시절 놀던 동네 골목길이 그리워요',
+                '옛날에 즐겨 듣던 노래가 나오면 떠오르는 추억들',
+                '친할머니가 계시던 시골집에서의 여름휴가',
+                '과거의 순수했던 시간들이 가끔 그리워져요',
+                '예전에 자주 가던 문방구의 따뜻한 기억'
+            ],
+            'night_dawn': [
+                '친구들과 밤새 이야기를 나누던 깊은 대화',
+                '새벽에 혼자 걸으며 생각에 잠겼던 시간',
+                '밤하늘의 별을 보며 꿈을 꾸던 순간들',
+                '새벽 공기의 차가움 속에서 느낀 청량함',
+                '밤늦은 시간 친구들과 함께한 특별한 순간'
+            ],
+            'entertainment_culture': [
+                '드라마를 보며 친구들과 함께 울고 웃던 시간',
+                '영화관에서 본 감동적인 영화의 여운',
+                '웹툰을 보며 밤새워 읽던 재미있던 시절',
+                '좋아하는 캐릭터에 대해 친구들과 나눈 이야기',
+                'K-드라마를 보며 가족들과 함께한 시간들'
+            ],
+            'art_creative': [
+                '미술 시간에 친구들과 함께 그림을 그리던 즐거움',
+                '창작 활동을 하며 느꼈던 성취감과 뿌듯함',
+                '전시회에서 본 아름다운 작품들에 대한 감동',
+                '손으로 무언가를 만들며 느꼈던 행복한 시간',
+                '예술 작품을 보며 친구들과 나눈 깊은 대화'
+            ],
+            'autumn_memories': [
+                '가을 단풍을 보며 친구들과 산책했던 추억',
+                '낙엽이 떨어지는 길을 걸으며 느꼈던 감성',
+                '가을 축제에서 친구들과 함께 즐긴 시간',
+                '선선한 가을바람과 함께한 야외활동의 기억',
+                '가을 하늘의 높고 푸른 색깔이 주던 평온함'
+            ],
+            'winter_memories': [
+                '눈이 내리는 날 친구들과 눈사람을 만든 추억',
+                '따뜻한 실내에서 가족들과 함께한 겨울밤',
+                '크리스마스 때 친구들과 교환한 선물의 기쁨',
+                '겨울 스포츠를 즐기며 느꼈던 스릴과 재미',
+                '추운 날씨에 마신 따뜻한 음료의 포근함'
+            ]
+        };
+
+        const names = [
+            '민준', '서연', '도윤', '수아', '예준', '지우', '시우', '채원',
+            '하준', '지유', '주원', '다은', '지호', '예은', '선우', '하은',
+            '윤우', '소율', '건우', '지민', '현우', '서현', '준서', '서우',
+            '은우', '하윤', '지안', '유진', '준혁', '시연', '태민', '가은'
+        ];
+
+        function generateRandomAvatar(position, musicSetId) {
+            const gender = Math.random() > 0.5 ? 'female' : 'male';
+            const bodyIdx = gender === 'male' ? Math.floor(Math.random() * 9) : Math.floor(Math.random() * 7);
+            const headIdx = Math.random() > 0.3 ? Math.floor(Math.random() * 11) : null;
+            const gear = Math.random() > 0.3 ? Math.floor(Math.random() * 11) : null; // 70% 확률로 소품
+            
+            const musicSetInfo = musicSetData[musicSetId];
+            const memoryPool = sampleMemories[musicSetId] || sampleMemories['family_warmth'];
+            const memory = memoryPool[Math.floor(Math.random() * memoryPool.length)];
+            const nickname = names[Math.floor(Math.random() * names.length)] + Math.floor(Math.random() * 100);
+
+            // Mobile과 정확히 동일한 구조
+            const avatarForWall = {
+                gender: gender,
+                bodyIdx: bodyIdx,
+                headIdx: headIdx,
+                gear: gear,
+                // wall 호환 필드들
+                isDragged: false,
+                dragElevation: 0,
+                dropBounce: 0,
+                dropBounceVel: 0,
+                baseY: 0,
+                clickTimer: 0,
+                isClicked: false,
+                isOnStage: false,
+                stageSlot: -1,
+                isSpecial: false,
+                isPending: false,
+                pendingStartTime: 0
+            };
+
+            // Firebase 저장 데이터 (Mobile customizing.js와 동일)
+            return {
+                nickname: nickname,
+                memory: memory,
+                category: musicSetInfo.name,
+                avatar: avatarForWall,
+                sound: null,
+                musicSet: musicSetId,
+                musicPosition: position,
+                musicFilePath: null,
+                musicBpm: null,
+                extractedKeywords: null,
+                selectedRecipe: {
+                    id: musicSetId,
+                    name: musicSetInfo.name,
+                    category: musicSetInfo.category
+                },
+                timestamp: serverTimestamp()
+            };
+        }
+
+        async function generateRandomAvatars() {
+            const position = document.getElementById('positionSelect').value;
+            const musicSetId = document.getElementById('recipeSelect').value;
+            const count = parseInt(document.getElementById('avatarCount').value);
+            
+            const generateBtn = document.getElementById('generateBtn');
+            const status = document.getElementById('status');
+            
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = '⏳ 생성 중...';
+            
+            try {
+                let successCount = 0;
+                const errors = [];
+                
+                status.innerHTML = `<div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 10px; margin: 20px 0;">
+                    <h4 style="color: #00cec9;">✨ 아바타 생성 진행중...</h4>
+                    <p>진행률: <span id="progressText">0/${count}</span></p>
+                </div>`;
+                
+                for (let i = 0; i < count; i++) {
+                    try {
+                        const avatarData = generateRandomAvatar(position, musicSetId);
+                        await addDoc(collection(db, 'memories'), avatarData);
+                        successCount++;
+                        document.getElementById('progressText').textContent = `${successCount}/${count}`;
+                        
+                        // 약간의 딜레이로 부하 분산
+                        if (i % 3 === 0) await new Promise(resolve => setTimeout(resolve, 100));
+                    } catch (error) {
+                        errors.push(`아바타 ${i+1}: ${error.message}`);
+                    }
+                }
+                
+                status.innerHTML = `<div style="background: rgba(100, 255, 100, 0.3); padding: 20px; border-radius: 10px; margin: 20px 0; border-left: 5px solid #44ff44;">
+                    <h4 style="color: #00b894;">✅ 생성 완료!</h4>
+                    <p><strong>${successCount}개</strong>의 아바타가 성공적으로 생성되었습니다.</p>
+                    <p>포지션: <strong>${position}</strong>, 조합법: <strong>${musicSetData[musicSetId].name}</strong></p>
+                    ${errors.length > 0 ? `<p style="color: #ff7675;">실패: ${errors.length}개</p>` : ''}
+                </div>`;
+                
+                // 문서 개수 업데이트
+                setTimeout(checkDocuments, 500);
+                
+            } catch (error) {
+                console.error('아바타 생성 오류:', error);
+                status.innerHTML = `<div style="background: rgba(255, 100, 100, 0.3); padding: 20px; border-radius: 10px; margin: 20px 0; border-left: 5px solid #ff4444;">
+                    <h4 style="color: #d63031;">❌ 생성 실패</h4>
+                    <p>${error.message}</p>
+                </div>`;
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.innerHTML = '✨ 랜덤 아바타 생성하기';
+            }
+        }
+
+        // 전역 함수로 노출
+        window.generateRandomAvatars = generateRandomAvatars;
+
         window.addEventListener('load', () => {
             setTimeout(checkDocuments, 1000);
         });

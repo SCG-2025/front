@@ -2001,13 +2001,10 @@ function setup() {
 
 try {
   onSnapshot(collection(db, 'memories'), (snapshot) => {
-    // Firebase 연결 성공 (${snapshot.size}개 문서)
-
-    // 문서 로딩 (로그 제거)
+    console.log(`🔥 Firebase 연결 성공! ${snapshot.size}개 문서 감지`);
 
     // 기존 Firebase 아바타 전체 제거 (새로 로딩)
     avatars.length = 0;
-    // 기존 아바타 배열 초기화
 
     snapshot.docChanges().forEach(change => {
       if (change.type === 'added') {
@@ -2121,12 +2118,28 @@ try {
         }
         // customData가 있으면 bodyIdx/gender 보정
         if (avatar.customData) {
-          if (avatar.customData.bodyIdx === null || avatar.customData.bodyIdx === undefined || avatar.customData.bodyIdx < 0) {
-            avatar.customData.bodyIdx = Math.floor(Math.random() * 5);
+          // bodyIdx 범위: 남자 0-8, 여자 0-6
+          const maxBodyIdx = avatar.customData.gender === 'male' ? 8 : 6;
+          if (avatar.customData.bodyIdx === null || avatar.customData.bodyIdx === undefined || avatar.customData.bodyIdx < 0 || avatar.customData.bodyIdx > maxBodyIdx) {
+            avatar.customData.bodyIdx = Math.floor(Math.random() * (maxBodyIdx + 1));
           }
           if (!avatar.customData.gender || (avatar.customData.gender !== 'male' && avatar.customData.gender !== 'female')) {
             avatar.customData.gender = Math.random() > 0.5 ? 'female' : 'male';
           }
+          
+          // 호환성: 기존 wingOn/sopumOn 데이터를 gear로 변환
+          if (avatar.customData.wingOn === true && !avatar.customData.gear) {
+            avatar.customData.gear = 10; // 날개는 10번 인덱스
+          }
+          if (avatar.customData.sopumOn === true && avatar.customData.sopumIdx !== undefined && !avatar.customData.gear) {
+            avatar.customData.gear = avatar.customData.sopumIdx;
+          }
+          // 기존 속성들 정리
+          delete avatar.customData.wingOn;
+          delete avatar.customData.sopumOn;
+          delete avatar.customData.sopumIdx;
+          delete avatar.customData.skin;
+          delete avatar.customData.eyes;
         }
 
         // 음악 포지션 정보 추가
@@ -2309,20 +2322,11 @@ try {
                 }
               }
             }
-          } else if (avatar.selectedRecipe && avatar.musicSet) {
-            // position 추출: selectedRecipe에서 bass/drum/lead/sub/chord/fx 등 추출
-            let position = 'bass';
-            const posList = ['bass', 'drum', 'lead', 'sub', 'chord', 'fx'];
-            for (const pos of posList) {
-              if (avatar.selectedRecipe.toLowerCase().includes(pos)) {
-                position = pos;
-                break;
-              }
-            }
-            // musicPosition 설정
-            avatar.musicPosition = position;
-            // musicType 조합
-            avatar.musicType = `set3_${avatar.musicSet}_${position}.wav`;
+          } else if (avatar.musicSet && avatar.musicPosition) {
+            // musicType 조합: 이미 설정된 musicPosition 사용
+            const setGroup = getMusicSetGroup(avatar.musicSet);
+            const setNumber = setGroup.replace('SET', '').replace('_UNKNOWN', '1'); // SET1, SET2 등에서 숫자만 추출
+            avatar.musicType = `set${setNumber}_${avatar.musicSet}_${avatar.musicPosition}.wav`;
           } else {
             // musicType이 설정되지 않은 경우 기본값 생성
             if (avatar.musicSet && avatar.musicPosition) {
@@ -2786,6 +2790,15 @@ function drawPadAvatar(avatar) {
   
   push();
   
+  // 드래그 그림자 (사용자 아바타와 동일)
+  if (avatar.isClicked && avatar.clickTimer > 6 && avatar.dragElevation > 0) {
+    push();
+    fill(0, 0, 0, 50);
+    noStroke();
+    ellipse(avatar.x, avatar.y + 32, 50 - avatar.dragElevation, 15 - avatar.dragElevation / 3);
+    pop();
+  }
+  
   // avatar_sample.jpeg 이미지 사용 (사용자 아바타와 동일)
   if (avatarImage) {
     push();
@@ -2842,24 +2855,14 @@ function drawPadAvatar(avatar) {
   noStroke();
   text(nickname, avatar.x, currentY + 57); // 이름을 3px 위로
   
-  pop();
-  
-  // 조합법 정보 표시 (아바타 바지 아래로 이동)
-  if (avatar.musicSet || avatar.selectedRecipe) {
-    const recipeText = avatar.selectedRecipe?.name || avatar.musicSet || '미지정';
+  // 드래그 가능 힌트 (호버시에만 표시)
+  if (avatar.isOnStage && !avatar.isClicked) {
     push();
     textAlign(CENTER, CENTER);
-    textSize(11);
-    
-    // 배경 사각형으로 가독성 향상
-    const recipeTextW = textWidth(recipeText);
-    fill(0, 0, 0, 120); // 반투명 검은색 배경
+    textSize(10);
+    fill(255, 255, 255, 150);
     noStroke();
-    rect(avatar.x - recipeTextW/2 - 6, currentY + 45 - 8, recipeTextW + 12, 16, 3); // 13px 아래로
-    
-    // 텍스트 (명확한 흰색)
-    fill(255);
-    text(recipeText, avatar.x, currentY + 45); // 13px 아래로
+    text('드래그로 제거', avatar.x, currentY + 75);
     pop();
   }
   
@@ -2912,7 +2915,7 @@ function drawAvatar(avatar) {
       console.log('customData:', JSON.stringify(avatar.customData, null, 2));
       console.log('bodyIdx:', avatar.customData.bodyIdx, 'gender:', avatar.customData.gender);
     }
-    console.log('🖥️ 커스텀 아바타 렌더링:', avatar.nickname, avatar.customData);
+    // console.log('🖥️ 커스텀 아바타 렌더링:', avatar.nickname, avatar.customData);
     drawCustomAvatar(avatar.x, currentY, avatar.customData, avatar.direction, isHighlighted);
   } else if (avatar.musicType) {
     // Stage 아바타(샘플 이미지) - 3D 깊이감 적용
@@ -2943,6 +2946,7 @@ function drawAvatar(avatar) {
         bodyIdx: gender === 'male' 
           ? Math.floor(seedRandom(hash + 2) * 9)  // ma.png ~ ma(9).png (0-8)
           : Math.floor(seedRandom(hash + 2) * 7), // fe.png ~ fe(7).png (0-6)
+        gear: null // 소품은 사용자가 설정하지 않았으면 없음
       };
     }
     drawCustomAvatar(avatar.x, currentY, avatar.defaultCustomData, avatar.direction, isHighlighted);
@@ -3025,10 +3029,18 @@ function drawCustomAvatar(x, y, avatarData, direction, isHighlighted) {
     }
   };
 
-  // body variant offset 적용 (mobile과 동일)
+  // body variant offset 적용 (0부터 시작)
   const BODY_VARIANT_OFFSET = {
-    female: { 0: { x: 0, y: 0 }, 1: { x: 2, y: -2 }, 2: { x: 1, y: 0 }, 3: { x: -1, y: 0 }, 4: { x: 0, y: 2 }, 5: { x: 1, y: 1 }, 6: { x: -1, y: 1 } },
-    male: { 0: { x: 0, y: 0 }, 1: { x: 1, y: -2 }, 2: { x: 2, y: 0 }, 3: { x: 0, y: 0 }, 4: { x: 1, y: 1 }, 5: { x: -1, y: 0 }, 6: { x: 0, y: -1 }, 7: { x: 1, y: 0 }, 8: { x: -2, y: 1 } }
+    female: { 
+      0: { x: 0, y: 0 }, 1: { x: 2, y: -2 }, 2: { x: 1, y: 0 }, 
+      3: { x: -1, y: 0 }, 4: { x: 0, y: 2 }, 5: { x: 1, y: 1 }, 
+      6: { x: -1, y: 1 } 
+    },
+    male: { 
+      0: { x: 0, y: 0 }, 1: { x: 1, y: -2 }, 2: { x: 2, y: 0 }, 
+      3: { x: 0, y: 0 }, 4: { x: 1, y: 1 }, 5: { x: -1, y: 0 }, 
+      6: { x: 0, y: -1 }, 7: { x: 1, y: 0 }, 8: { x: -2, y: 1 } 
+    }
   };
   
   const bodyPool = avatarData.gender === 'female' ? avatarAssets.female : avatarAssets.male;
@@ -3036,8 +3048,8 @@ function drawCustomAvatar(x, y, avatarData, direction, isHighlighted) {
   const vOff = BODY_VARIANT_OFFSET[avatarData.gender]?.[avatarData.bodyIdx || 0] || { x: 0, y: 0 };
   const scaledVOff = { x: vOff.x * scaleFactor, y: vOff.y * scaleFactor };
 
-  // 1. 먼저 날개 렌더링 (아바타 뒤쪽) - sopum(11)인 경우
-  if (avatarData.sopumOn && avatarData.sopumIdx === 10 && avatarAssets.sopum && avatarAssets.sopum[10]) {
+  // 1. 먼저 날개 렌더링 (아바타 뒤쪽) - gear가 10(날개)인 경우
+  if (avatarData.gear === 10 && avatarAssets.sopum && avatarAssets.sopum[10]) {
     const sopumImg = avatarAssets.sopum[10];
     const w = {
       x: SOPUM_INDIVIDUAL_OFFSETS[10][avatarData.gender].x,
@@ -3079,11 +3091,11 @@ function drawCustomAvatar(x, y, avatarData, direction, isHighlighted) {
   }
 
   // 4. 날개가 아닌 다른 Sopum들 렌더링 (바디 위에)
-  if (avatarData.sopumOn && avatarData.sopumIdx !== 10 && typeof avatarData.sopumIdx === 'number' && avatarAssets.sopum && avatarAssets.sopum[avatarData.sopumIdx]) {
-    const sopumImg = avatarAssets.sopum[avatarData.sopumIdx];
+  if (avatarData.gear !== null && avatarData.gear !== 10 && typeof avatarData.gear === 'number' && avatarAssets.sopum && avatarAssets.sopum[avatarData.gear]) {
+    const sopumImg = avatarAssets.sopum[avatarData.gear];
     
     // 개별 소품 오프셋이 있는지 확인
-    const individualOffset = SOPUM_INDIVIDUAL_OFFSETS[avatarData.sopumIdx];
+    const individualOffset = SOPUM_INDIVIDUAL_OFFSETS[avatarData.gear];
     
     if (individualOffset && individualOffset[avatarData.gender]) {
       // 개별 오프셋 사용 (이미 scaleFactor가 적용됨)
@@ -3099,7 +3111,7 @@ function drawCustomAvatar(x, y, avatarData, direction, isHighlighted) {
       
       // sopum~sopum(8)까지는 오른쪽으로 이동 (손에 잡고 있는 효과) - mobile과 동일
       let extraOffsetX = 0;
-      if (avatarData.sopumIdx <= 7) { // sopum.png는 인덱스 0, sopum(2).PNG는 인덱스 1, ..., sopum(8).PNG는 인덱스 7
+      if (avatarData.gear <= 7) { // sopum.png는 인덱스 0, sopum(2).PNG는 인덱스 1, ..., sopum(8).PNG는 인덱스 7
         extraOffsetX = 15 * scaleFactor; // 오른쪽으로 15px 이동 (scaleFactor 적용)
       }
       
@@ -3498,6 +3510,32 @@ function mousePressed() {
 
   // 스테이지 아바타들은 완전히 비활성화됨 - 클릭 이벤트 제거
 
+  // 무대 위 패드 아바타 클릭 감지 (드래그 제거용)
+  for (let [buttonKey, avatar] of padAvatars) {
+    if (avatar.isOnStage) {
+      let distance = dist(worldMouseX, worldMouseY, avatar.x, avatar.y);
+      if (distance <= 40) { // 패드 아바타는 더 큰 클릭 영역
+        console.log('🎯 패드 아바타 클릭됨:', avatar.nickname);
+        
+        // 패드 아바타에 사용자 아바타와 동일한 드래그 상태 설정
+        avatar.isClicked = true;
+        avatar.clickTimer = 0;
+        avatar.isDragged = false;
+        avatar.dragElevation = 0;
+        avatar.baseY = avatar.y;
+        
+        // 패드 아바타에 대한 드래그 시작 정보 저장
+        window.selectedPadAvatar = {
+          buttonKey: buttonKey,
+          avatar: avatar,
+          dragStartPos: { x: worldMouseX, y: worldMouseY }
+        };
+        
+        return; // 다른 클릭 이벤트 방지
+      }
+    }
+  }
+
   // Firebase 아바타 클릭 (현재 세트 공간에 해당하는 아바타만)
   for (let avatar of avatars) {
     const avatarSetName = getAvatarSetName(avatar) || 'set1';
@@ -3533,6 +3571,34 @@ function mousePressed() {
 function mouseDragged() {
   // 성능 최적화: 드래그 이벤트 쓰로틀링
   if (Date.now() - lastFrameTime < 16) return; // 60fps 제한
+  
+  // 패드 아바타 드래그 처리 (최우선)
+  if (window.selectedPadAvatar) {
+    const worldMouseX = mouseX + cameraX;
+    const worldMouseY = mouseY + cameraY;
+    
+    const padAvatar = window.selectedPadAvatar.avatar;
+    
+    // 사용자 아바타와 동일한 드래그 처리
+    padAvatar.clickTimer++;
+    if (padAvatar.clickTimer > 6 && !padAvatar.isDragged) {
+      padAvatar.isDragged = true;
+    }
+    
+    if (padAvatar.isDragged) {
+      // 드래그 높이 효과
+      if (padAvatar.dragElevation < 12) {
+        padAvatar.dragElevation += 4;
+      }
+      
+      // 패드 아바타 위치를 마우스 커서에 맞춰 업데이트
+      padAvatar.x = worldMouseX;
+      padAvatar.y = worldMouseY;
+    }
+    
+    console.log(`🖱️ 패드 아바타 드래그 중: (${worldMouseX.toFixed(0)}, ${worldMouseY.toFixed(0)}), elevation: ${padAvatar.dragElevation}`);
+    return; // 다른 드래그 처리 방지
+  }
   
   if (isPanning) {
     const deltaX = mouseX - panStart.x;
@@ -3586,6 +3652,55 @@ function mouseDragged() {
 }
 
 function mouseReleased() {
+  // 패드 아바타 드래그 종료 처리 (최우선)
+  if (window.selectedPadAvatar) {
+    const worldMouseX = mouseX + cameraX;
+    const worldMouseY = mouseY + cameraY;
+    
+    const dragDistance = dist(
+      worldMouseX, worldMouseY,
+      window.selectedPadAvatar.dragStartPos.x,
+      window.selectedPadAvatar.dragStartPos.y
+    );
+    
+    console.log(`🎯 패드 아바타 드래그 종료 - 거리: ${dragDistance.toFixed(0)}px`);
+    
+    // 최소 드래그 거리 확인 (실수 클릭 방지)
+    if (dragDistance > 20) {
+      const isInStage = isInStageArea(worldMouseX, worldMouseY);
+      console.log(`📍 드롭 위치 무대 확인: ${isInStage}`);
+      
+      if (!isInStage) {
+        // 무대 밖으로 드래그 시 제거
+        console.log('🗑️ 패드 아바타를 무대 밖으로 드래그 - 제거');
+        const { buttonKey } = window.selectedPadAvatar;
+        const btn = document.querySelector(`.instrument-btn[data-instrument*="${buttonKey.split('-')[0]}"][data-recipe="${buttonKey.split('-')[1]}"]`);
+        
+        if (btn && activePadButtons.has(buttonKey)) {
+          deactivatePadButton(buttonKey, btn);
+        }
+      } else {
+        console.log('✅ 무대 내 이동 - 위치만 변경');
+        // 무대 내에서만 이동 (제거하지 않음)
+      }
+    } else {
+      console.log('📍 최소 드래그 거리 미달 - 클릭으로 처리');
+      // 짧은 드래그는 클릭으로 처리 (제거)
+      const { buttonKey } = window.selectedPadAvatar;
+      const btn = document.querySelector(`.instrument-btn[data-instrument*="${buttonKey.split('-')[0]}"][data-recipe="${buttonKey.split('-')[1]}"]`);
+      
+      if (btn && activePadButtons.has(buttonKey)) {
+        console.log('🔽 패드 아바타 클릭 제거');
+        deactivatePadButton(buttonKey, btn);
+      }
+    }
+    
+    // 드래그 상태 초기화
+    window.selectedPadAvatar.avatar.isDragging = false;
+    window.selectedPadAvatar = null;
+    return; // 다른 mouseReleased 처리 방지
+  }
+  
   if (isPanning) {
     // 패닝 종료
     isPanning = false;
@@ -3790,12 +3905,12 @@ function drawPopupAvatar(canvas, avatarData) {
 
   const scale = 1.0; // 팝업용 스케일 (더 크게)
 
-  // Wing (뒤에 그리기)
-  if (avatarData.wingOn && avatarAssets.wing && avatarAssets.wing.width > 0) {
+  // Wing (뒤에 그리기) - gear가 10(날개)인 경우
+  if (avatarData.gear === 10 && avatarAssets.sopum && avatarAssets.sopum[10] && avatarAssets.sopum[10].width > 0) {
     const wingOffsetX = avatarData.gender === 'female' ? -6 : -4;
     const wingOffsetY = avatarData.gender === 'female' ? -10 : -8;
     const wingSize = 190 * scale;
-    ctx.drawImage(avatarAssets.wing.canvas,
+    ctx.drawImage(avatarAssets.sopum[10].canvas,
       centerX + wingOffsetX - wingSize / 2,
       centerY + wingOffsetY - wingSize / 2,
       wingSize, wingSize);
@@ -3803,9 +3918,9 @@ function drawPopupAvatar(canvas, avatarData) {
 
   // Body
   const bodyImages = avatarData.gender === 'female' ? avatarAssets.female : avatarAssets.male;
-  if (bodyImages && bodyImages[avatarData.bodyIdx] && bodyImages[avatarData.bodyIdx].width > 0) {
+  if (bodyImages && bodyImages[avatarData.bodyIdx || 0] && bodyImages[avatarData.bodyIdx || 0].width > 0) {
     const bodySize = 176 * scale;
-    ctx.drawImage(bodyImages[avatarData.bodyIdx].canvas,
+    ctx.drawImage(bodyImages[avatarData.bodyIdx || 0].canvas,
       centerX - bodySize / 2,
       centerY - bodySize / 2,
       bodySize, bodySize);
@@ -3822,9 +3937,9 @@ function drawPopupAvatar(canvas, avatarData) {
       headSize, headSize);
   }
 
-  // Sopum (소품) - 가장 앞에 그리기
-  if (avatarData.sopumIdx !== null && avatarData.sopumIdx !== undefined &&
-    avatarAssets.sopum && avatarAssets.sopum[avatarData.sopumIdx] && avatarAssets.sopum[avatarData.sopumIdx].width > 0) {
+  // Sopum (소품) - 가장 앞에 그리기 (날개 제외)
+  if (avatarData.gear !== null && avatarData.gear !== 10 && typeof avatarData.gear === 'number' &&
+    avatarAssets.sopum && avatarAssets.sopum[avatarData.gear] && avatarAssets.sopum[avatarData.gear].width > 0) {
     
     // 팝업용 스케일 팩터 (적절한 크기 조정)
     const popupScale = 0.8;
@@ -3846,7 +3961,7 @@ function drawPopupAvatar(canvas, avatarData) {
     };
     
     // 개별 오프셋이 있는지 확인
-    const individualOffset = POPUP_SOPUM_INDIVIDUAL_OFFSETS[avatarData.sopumIdx];
+    const individualOffset = POPUP_SOPUM_INDIVIDUAL_OFFSETS[avatarData.gear];
     
     let sopumSize, sopumX, sopumY;
     
@@ -3867,7 +3982,7 @@ function drawPopupAvatar(canvas, avatarData) {
       
       // sopum~sopum(8)까지는 오른쪽으로 이동 (손에 잡고 있는 효과) - mobile과 동일
       let extraOffsetX = 0;
-      if (avatarData.sopumIdx <= 7) {
+      if (avatarData.gear <= 7) {
         extraOffsetX = 15 * popupScale; // 오른쪽으로 15px 이동
       }
       
@@ -3876,7 +3991,7 @@ function drawPopupAvatar(canvas, avatarData) {
       sopumY = centerY + sopumOffset.y * popupScale;
     }
     
-    ctx.drawImage(avatarAssets.sopum[avatarData.sopumIdx].canvas,
+    ctx.drawImage(avatarAssets.sopum[avatarData.gear].canvas,
       sopumX - sopumSize / 2,
       sopumY - sopumSize / 2,
       sopumSize, sopumSize);
@@ -4734,6 +4849,9 @@ function setupEventListeners() {
     initializePadSystem();
     console.log('✅ 패드 시스템 초기화 완료');
   }, 1500); // 다른 초기화가 완료된 후 실행
+  
+  // 드래그 앤 드롭 이벤트 설정
+  setupDragAndDropEvents();
 }
 
 // DOM이 준비되면 이벤트 리스너 설정
@@ -6352,19 +6470,121 @@ function initializePadSystem() {
     }
   });
 
-  // 악기 버튼 이벤트
+  // 악기 버튼 드래그 앤 드롭 이벤트
   instrumentButtons.forEach(btn => {
+    console.log('🔧 버튼 이벤트 등록:', btn.dataset.instrument, btn.dataset.recipe);
+    
+    // 드래그 시작 이벤트
+    btn.addEventListener('dragstart', (e) => {
+      console.log('🚀 드래그 시작 이벤트 발생!', e.target);
+      
+      const instrument = btn.dataset.instrument;
+      const recipe = btn.dataset.recipe;
+      const buttonKey = `${instrument}-${recipe}`;
+      
+      console.log(`📝 드래그 데이터: ${instrument}, ${recipe}, ${buttonKey}`);
+      
+      // 드래그 데이터 저장
+      const dragDataObj = {
+        type: 'instrument-button',
+        instrument: instrument,
+        recipe: recipe,
+        buttonKey: buttonKey
+      };
+      
+      const dragDataString = JSON.stringify(dragDataObj);
+      console.log('💾 저장할 드래그 데이터:', dragDataString);
+      
+      e.dataTransfer.setData('text/plain', dragDataString);
+      
+      // 전역 변수에도 저장
+      window.currentDragData = dragDataObj;
+      console.log('✅ 전역 백업 데이터 저장:', window.currentDragData);
+      
+      // 드래그 중 시각적 피드백
+      btn.style.opacity = '0.5';
+      
+      console.log(`🎵 드래그 시작 완료: ${instrument} (조합법 ${recipe})`);
+    });
+    
+    // 드래그 종료 이벤트
+    btn.addEventListener('dragend', (e) => {
+      console.log('🏁 드래그 종료 - 마우스 위치 확인');
+      btn.style.opacity = '1';
+      
+      // 드래그 종료 시점에서 마우스 위치 확인
+      if (window.currentDragData) {
+        console.log('📍 드래그 종료 시 데이터 있음, 위치 계산');
+        
+        // 약간의 지연 후 처리 (드래그 종료 이벤트가 완료된 후)
+        setTimeout(() => {
+          const canvas = document.querySelector('canvas');
+          if (canvas) {
+            const canvasRect = canvas.getBoundingClientRect();
+            
+            // 현재 마우스 위치 가져오기 (이벤트에서)
+            let mouseX = e.clientX;
+            let mouseY = e.clientY;
+            
+            console.log(`🖱️ 드래그 종료 위치: 화면(${mouseX}, ${mouseY})`);
+            
+            // 캔버스 영역 내인지 확인
+            const isOverCanvas = (
+              mouseX >= canvasRect.left && mouseX <= canvasRect.right &&
+              mouseY >= canvasRect.top && mouseY <= canvasRect.bottom
+            );
+            
+            console.log('📍 캔버스 위 드래그 종료 여부:', isOverCanvas);
+            
+            if (isOverCanvas) {
+              const canvasX = mouseX - canvasRect.left;
+              const canvasY = mouseY - canvasRect.top;
+              
+              console.log(`🎯 캔버스 내 위치: (${canvasX.toFixed(0)}, ${canvasY.toFixed(0)})`);
+              
+              // 무대 영역 확인
+              const stageCheck = isInStageArea(canvasX, canvasY);
+              console.log(`🎭 무대 영역 체크 결과:`, stageCheck);
+              
+              if (stageCheck) {
+                console.log('✅ 무대 영역에 드래그 종료 - 아바타 추가');
+                
+                const dragData = window.currentDragData;
+                const targetBtn = document.querySelector(`.instrument-btn[data-instrument="${dragData.instrument}"][data-recipe="${dragData.recipe}"]`);
+                
+                if (targetBtn && !activePadButtons.has(dragData.buttonKey)) {
+                  console.log('🚀 activatePadButton 호출');
+                  activatePadButton(dragData.buttonKey, targetBtn, dragData.instrument, dragData.recipe);
+                }
+              } else {
+                console.log('🗑️ 무대 밖 드래그 종료 - 아바타 제거');
+                
+                const dragData = window.currentDragData;
+                const targetBtn = document.querySelector(`.instrument-btn[data-instrument="${dragData.instrument}"][data-recipe="${dragData.recipe}"]`);
+                if (targetBtn && activePadButtons.has(dragData.buttonKey)) {
+                  deactivatePadButton(dragData.buttonKey, targetBtn);
+                }
+              }
+            }
+          }
+          
+          window.currentDragData = null;
+        }, 50);
+      }
+    });
+    
+    // 기존 클릭 이벤트도 유지 (토글용)
     btn.addEventListener('click', () => {
       const instrument = btn.dataset.instrument;
       const recipe = btn.dataset.recipe;
       const buttonKey = `${instrument}-${recipe}`;
       
+      console.log('👆 버튼 클릭:', buttonKey);
+      
       if (activePadButtons.has(buttonKey)) {
-        // 비활성화
+        // 비활성화 (무대에서 제거)
+        console.log('🔽 버튼 비활성화');
         deactivatePadButton(buttonKey, btn);
-      } else {
-        // 활성화
-        activatePadButton(buttonKey, btn, instrument, recipe);
       }
     });
   });
@@ -6638,6 +6858,183 @@ function findAvailableStagePosition(avatar = null) {
     }
   }
   return -1; // 모든 슬롯이 차있거나 올바른 포지션 슬롯이 없음
+}
+
+// 드래그 앤 드롭 이벤트 설정
+function setupDragAndDropEvents() {
+  console.log('🔧 드래그 앤 드롭 설정 시작...');
+  console.log('🔍 p5.js 상태 확인:', typeof window.p5, typeof createCanvas);
+  
+  // 캔버스가 생성될 때까지 기다리는 함수
+  function waitForCanvas(attempts = 0) {
+    const canvas = document.querySelector('canvas');
+    console.log(`🔍 캔버스 검색 시도 ${attempts + 1}:`, canvas);
+    
+    if (canvas) {
+      console.log('✅ 캔버스 찾음! 드래그 이벤트 설정 시작');
+      setupCanvasDragEvents(canvas);
+    } else if (attempts < 20) {
+      console.log(`⏳ 캔버스를 찾지 못함. ${attempts + 1}/20 시도 후 재시도...`);
+      setTimeout(() => waitForCanvas(attempts + 1), 500);
+    } else {
+      console.error('❌ 20번 시도 후에도 캔버스를 찾을 수 없습니다.');
+      console.log('🔍 DOM 전체 검색:', document.querySelectorAll('*'));
+      
+      // 캔버스 없이도 작동하는 대안 방법 사용
+      setupAlternativeDragEvents();
+    }
+  }
+  
+  // 즉시 시도 후 주기적 재시도
+  waitForCanvas();
+}
+
+function setupCanvasDragEvents(canvas) {
+  console.log('🎯 캔버스 드래그 이벤트 설정:', canvas);
+  
+  // 전체 body에 드래그 이벤트 설정 (캔버스 영역 계산 포함)
+  document.body.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // 드래그 중 시각적 피드백 (선택사항)
+    const canvas = document.querySelector('canvas');
+    if (canvas && window.currentDragData) {
+      const canvasRect = canvas.getBoundingClientRect();
+      const isOverCanvas = (
+        e.clientX >= canvasRect.left && e.clientX <= canvasRect.right &&
+        e.clientY >= canvasRect.top && e.clientY <= canvasRect.bottom
+      );
+      
+      if (isOverCanvas) {
+        document.body.style.cursor = 'copy';
+      } else {
+        document.body.style.cursor = 'not-allowed';
+      }
+    }
+  });
+  
+  document.body.addEventListener('drop', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // 커서 원래대로
+    document.body.style.cursor = 'default';
+    
+    console.log('🎯 BODY 드롭 이벤트 발생!', e.clientX, e.clientY);
+    
+    if (window.currentDragData) {
+      const canvasRect = canvas.getBoundingClientRect();
+      
+      console.log('📏 캔버스 영역:', {
+        left: canvasRect.left,
+        right: canvasRect.right,
+        top: canvasRect.top,
+        bottom: canvasRect.bottom,
+        dropX: e.clientX,
+        dropY: e.clientY
+      });
+      
+      const isOverCanvas = (
+        e.clientX >= canvasRect.left && e.clientX <= canvasRect.right &&
+        e.clientY >= canvasRect.top && e.clientY <= canvasRect.bottom
+      );
+      
+      console.log('📍 캔버스 위 드롭 여부:', isOverCanvas);
+      
+      if (isOverCanvas) {
+        const canvasX = e.clientX - canvasRect.left + cameraX; // 카메라 오프셋 추가
+        const canvasY = e.clientY - canvasRect.top + cameraY;  // 카메라 오프셋 추가
+        
+        console.log(`🎯 드롭 위치 (카메라 보정): (${canvasX.toFixed(0)}, ${canvasY.toFixed(0)})`);
+        console.log(`📷 현재 카메라: (${cameraX}, ${cameraY})`);
+        
+        const stageCheck = isInStageArea(canvasX, canvasY);
+        console.log(`🎭 무대 영역 체크:`, stageCheck);
+        
+        if (stageCheck) {
+          console.log('✅ 무대에 드롭 - 아바타 추가');
+          const dragData = window.currentDragData;
+          const btn = document.querySelector(`.instrument-btn[data-instrument="${dragData.instrument}"][data-recipe="${dragData.recipe}"]`);
+          
+          if (btn && !activePadButtons.has(dragData.buttonKey)) {
+            activatePadButton(dragData.buttonKey, btn, dragData.instrument, dragData.recipe);
+          } else {
+            console.log('⚠️ 이미 활성화되었거나 버튼을 찾을 수 없음');
+          }
+        } else {
+          console.log('🗑️ 무대 밖 드롭 - 제거');
+          const dragData = window.currentDragData;
+          const btn = document.querySelector(`.instrument-btn[data-instrument="${dragData.instrument}"][data-recipe="${dragData.recipe}"]`);
+          if (btn && activePadButtons.has(dragData.buttonKey)) {
+            deactivatePadButton(dragData.buttonKey, btn);
+          }
+        }
+      } else {
+        console.log('🚫 캔버스 밖 드롭 - 무시');
+      }
+    }
+    
+    window.currentDragData = null;
+  });
+  
+  // 드래그 종료시 커서 원래대로
+  document.body.addEventListener('dragend', (e) => {
+    document.body.style.cursor = 'default';
+  });
+}
+
+function setupAlternativeDragEvents() {
+  console.log('🔄 캔버스 없이 대안 드래그 시스템 설정');
+  // 드래그 종료 이벤트만으로 처리하는 방식은 이미 버튼에 설정되어 있음
+}
+
+// 간단한 토스트 메시지 함수
+function showToast(message, type = 'info', duration = 3000) {
+  // 기존 토스트 제거
+  const existingToast = document.querySelector('.toast-message');
+  if (existingToast) {
+    existingToast.remove();
+  }
+  
+  // 새 토스트 생성
+  const toast = document.createElement('div');
+  toast.className = 'toast-message';
+  toast.textContent = message;
+  
+  // 스타일 설정
+  toast.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: ${type === 'error' ? '#ff6b6b' : type === 'success' ? '#51cf66' : '#4ecdc4'};
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 10000;
+    transition: all 0.3s ease;
+    transform: translateX(100%);
+  `;
+  
+  document.body.appendChild(toast);
+  
+  // 애니메이션으로 나타내기
+  setTimeout(() => {
+    toast.style.transform = 'translateX(0)';
+  }, 10);
+  
+  // 지정된 시간 후 제거
+  setTimeout(() => {
+    toast.style.transform = 'translateX(100%)';
+    setTimeout(() => {
+      if (toast.parentNode) {
+        toast.parentNode.removeChild(toast);
+      }
+    }, 300);
+  }, duration);
 }
 
 // 세트 공간 변경 시 패드 시스템 업데이트
