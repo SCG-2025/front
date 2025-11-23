@@ -3596,7 +3596,7 @@ function mouseDragged() {
       padAvatar.y = worldMouseY;
     }
     
-    console.log(`🖱️ 패드 아바타 드래그 중: (${worldMouseX.toFixed(0)}, ${worldMouseY.toFixed(0)}), elevation: ${padAvatar.dragElevation}`);
+    // console.log(`🖱️ 패드 아바타 드래그 중: (${worldMouseX.toFixed(0)}, ${worldMouseY.toFixed(0)}), elevation: ${padAvatar.dragElevation}`); // 렉 방지를 위해 제거
     return; // 다른 드래그 처리 방지
   }
   
@@ -3663,16 +3663,16 @@ function mouseReleased() {
       window.selectedPadAvatar.dragStartPos.y
     );
     
-    console.log(`🎯 패드 아바타 드래그 종료 - 거리: ${dragDistance.toFixed(0)}px`);
+    // console.log(`🎯 패드 아바타 드래그 종료 - 거리: ${dragDistance.toFixed(0)}px`); // 렉 방지를 위해 제거
     
     // 최소 드래그 거리 확인 (실수 클릭 방지)
     if (dragDistance > 20) {
       const isInStage = isInStageArea(worldMouseX, worldMouseY);
-      console.log(`📍 드롭 위치 무대 확인: ${isInStage}`);
+      // console.log(`📍 드롭 위치 무대 확인: ${isInStage}`); // 렉 방지를 위해 제거
       
       if (!isInStage) {
         // 무대 밖으로 드래그 시 제거
-        console.log('🗑️ 패드 아바타를 무대 밖으로 드래그 - 제거');
+        // console.log('🗑️ 패드 아바타를 무대 밖으로 드래그 - 제거'); // 렉 방지를 위해 제거
         const { buttonKey } = window.selectedPadAvatar;
         const btn = document.querySelector(`.instrument-btn[data-instrument*="${buttonKey.split('-')[0]}"][data-recipe="${buttonKey.split('-')[1]}"]`);
         
@@ -3680,17 +3680,17 @@ function mouseReleased() {
           deactivatePadButton(buttonKey, btn);
         }
       } else {
-        console.log('✅ 무대 내 이동 - 위치만 변경');
+        // console.log('✅ 무대 내 이동 - 위치만 변경'); // 렉 방지를 위해 제거
         // 무대 내에서만 이동 (제거하지 않음)
       }
     } else {
-      console.log('📍 최소 드래그 거리 미달 - 클릭으로 처리');
+      // console.log('📍 최소 드래그 거리 미달 - 클릭으로 처리'); // 렉 방지를 위해 제거
       // 짧은 드래그는 클릭으로 처리 (제거)
       const { buttonKey } = window.selectedPadAvatar;
       const btn = document.querySelector(`.instrument-btn[data-instrument*="${buttonKey.split('-')[0]}"][data-recipe="${buttonKey.split('-')[1]}"]`);
       
       if (btn && activePadButtons.has(buttonKey)) {
-        console.log('🔽 패드 아바타 클릭 제거');
+        // console.log('🔽 패드 아바타 클릭 제거'); // 렉 방지를 위해 제거
         deactivatePadButton(buttonKey, btn);
       }
     }
@@ -5177,7 +5177,7 @@ function playAvatarMusic(avatar) {
     }
 
     effectiveMusicSet = inferMusicSetForBpm(avatar);
-    console.log(`🔍 ${avatar.nickname} BPM 계산용 musicSet 추론: ${avatar.musicSet} → ${effectiveMusicSet}`);
+    // console.log(`🔍 ${avatar.nickname} BPM 계산용 musicSet 추론: ${avatar.musicSet} → ${effectiveMusicSet}`); // 렉 방지를 위해 제거
   }
 
   const avatarBpm = musicSetBpms[effectiveMusicSet] || 140;
@@ -5194,10 +5194,10 @@ function playAvatarMusic(avatar) {
       - 계산된 BPM: ${avatarBpm}`);
   }
 
-  // BPM 호환성 체크
+  // BPM 호환성 체크 (렉 방지를 위해 경고 로그 제거)
   if (playingAvatars.size > 0 && avatarBpm !== masterClock.bpm) {
-    console.warn(`⚠️ BPM 불일치 감지: ${avatar.nickname}(${avatarBpm}) vs 현재 마스터(${masterClock.bpm})`);
-    console.log(`🔄 마스터 클럭을 ${avatarBpm} BPM으로 리셋합니다.`);
+    // console.warn(`⚠️ BPM 불일치 감지: ${avatar.nickname}(${avatarBpm}) vs 현재 마스터(${masterClock.bpm})`); // 렉 방지
+    // console.log(`🔄 마스터 클럭을 ${avatarBpm} BPM으로 리셋합니다.`); // 렉 방지
 
     // 기존 재생 중인 다른 BPM 아바타들 정지
     resetStage();
