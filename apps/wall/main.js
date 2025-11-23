@@ -2588,11 +2588,11 @@ function draw() {
   if (deltaTime > 33) { // 30 FPS 이하로 떨어지면 (더 엄격)
     if (!performanceMode) {
       performanceMode = true;
-      console.log('⚡ 성능 모드 활성화 - 최적화 진행');
+      // console.log('⚡ 성능 모드 활성화 - 최적화 진행'); // 렉 방지를 위해 제거
     }
   } else if (performanceMode && deltaTime < 20) { // 50 FPS 이상 복구되면
     performanceMode = false;
-    console.log('✅ 성능 모드 해제 - 정상 렌더링 복구');
+    // console.log('✅ 성능 모드 해제 - 정상 렌더링 복구'); // 렉 방지를 위해 제거
   }
 
   // 카메라 변환
