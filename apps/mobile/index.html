@@ -25,10 +25,11 @@
       flex-direction: column;
       justify-content: space-between;
       align-items: center;
-      /* 배경 완전 고정 */
+      /* 배경 이미지 설정 - 모바일 최적화 */
+      background-color: #f5f5f5; /* fallback 배경색 */
       background: url('bg_sample.jpg') no-repeat center center;
-      background-size: 100% 100%; /* 화면에 정확히 맞춤 */
-      background-attachment: fixed; /* 스크롤해도 고정 */
+      background-size: cover; /* 화면을 가득 채우면서 비율 유지 */
+      background-attachment: scroll; /* iOS Safari 호환성을 위해 scroll로 변경 */
       overflow: hidden; /* 모든 스크롤 차단 */
       position: relative;
     }
@@ -117,7 +118,7 @@
       fill: #fff;
     }
 
-    /* 모바일에서 스크롤 완전 방지 */
+    /* 모바일에서 스크롤 완전 방지 및 배경 최적화 */
     @media (hover: none) and (pointer: coarse) {
       html, body {
         position: fixed; /* 모바일에서 스크롤 완전 차단 */
@@ -130,6 +131,10 @@
       body {
         height: 100vh;
         height: -webkit-fill-available; /* iOS Safari 지원 */
+        /* 모바일에서 배경 이미지 처리 강화 */
+        background-attachment: scroll; /* iOS Safari 호환성 */
+        background-size: cover;
+        background-position: center center;
       }
     }
 
@@ -137,6 +142,18 @@
     @supports (-webkit-touch-callout: none) {
       body {
         height: -webkit-fill-available;
+        /* iOS Safari 배경 이미지 문제 해결 */
+        background-attachment: scroll;
+      }
+    }
+
+    /* 안드로이드 크롬 뷰포트 높이 문제 해결 */
+    @media screen and (max-width: 768px) {
+      body {
+        min-height: 100vh;
+        min-height: 100dvh; /* 동적 뷰포트 높이 지원 */
+        background-attachment: scroll;
+        background-size: cover;
       }
     }
   </style>
