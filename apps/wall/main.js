@@ -2006,51 +2006,51 @@ try {
     // 기존 Firebase 아바타 전체 제거 (새로 로딩)
     avatars.length = 0;
 
-    snapshot.docChanges().forEach(change => {
-      if (change.type === 'added') {
-        const docData = change.doc.data();
+    // 모든 문서를 직접 처리 (docChanges 대신 snapshot.docs 사용)
+    snapshot.docs.forEach(doc => {
+      const docData = doc.data();
 
-        // SCG2025 아바타 특별 디버깅
-        if (change.doc.id.includes('SCG2025') || change.doc.id.includes('scg2025') || docData.nickname === 'SCG2025') {
-          console.log('🚨 SCG2025 아바타 발견! 상세 정보:');
-          // ID와 docData 디버깅 (로그 제거)
-        }
+      // SCG2025 아바타 특별 디버깅
+      if (doc.id.includes('SCG2025') || doc.id.includes('scg2025') || docData.nickname === 'SCG2025') {
+        console.log('🚨 SCG2025 아바타 발견! 상세 정보:');
+        // ID와 docData 디버깅 (로그 제거)
+      }
 
-        // 새 아바타 데이터 (로그 제거)
+      // 새 아바타 데이터 (로그 제거)
 
-        // 아바타 객체 생성: 외형 정보와 커스텀 정보 분리
-        const avatar = {
-          id: change.doc.id,
-          nickname: docData.nickname,
-          memory: docData.memory,
-          category: docData.category || (docData.selectedRecipe && docData.selectedRecipe.name) || '기타', // Firebase category 또는 selectedRecipe.name 사용
-          selectedRecipe: docData.selectedRecipe,
-          setName: docData.setName || 'set1', // setName이 없으면 기본값 set1로 설정
-          musicType: docData.musicType || (docData.avatar && docData.avatar.musicType) || null,
-          musicSet: docData.musicSet,
-          musicPosition: docData.musicPosition,
-          musicBpm: docData.musicBpm,
-          extractedKeywords: docData.extractedKeywords,
-          keywords: docData.keywords,
-          customData: docData.avatar && typeof docData.avatar === 'object' ? docData.avatar : null,
-          x: -100,
-          y: 750, // 원래 1120에서 370 올림
-          vx: 6,
-          state: 'plane-in',
-          direction: 1,
-          walkTimer: 0,
-          idleTimer: 0,
-          currentAction: 'walking',
-          isDragged: false,
-          dragElevation: 0,
-          dropBounce: 0,
-          dropBounceVel: 0,
-          baseY: 750, // 원래 1120에서 370 올림
-          clickTimer: 0,
-          isClicked: false,
-          isOnStage: false,
-          stageSlot: -1,
-          isSpecial: true
+      // 아바타 객체 생성: 외형 정보와 커스텀 정보 분리
+      const avatar = {
+        id: doc.id,
+        nickname: docData.nickname,
+        memory: docData.memory,
+        category: docData.category || (docData.selectedRecipe && docData.selectedRecipe.name) || '기타', // Firebase category 또는 selectedRecipe.name 사용
+        selectedRecipe: docData.selectedRecipe,
+        setName: docData.setName || 'set1', // setName이 없으면 기본값 set1로 설정
+        musicType: docData.musicType || (docData.avatar && docData.avatar.musicType) || null,
+        musicSet: docData.musicSet,
+        musicPosition: docData.musicPosition,
+        musicBpm: docData.musicBpm,
+        extractedKeywords: docData.extractedKeywords,
+        keywords: docData.keywords,
+        customData: docData.avatar && typeof docData.avatar === 'object' ? docData.avatar : null,
+        x: -100,
+        y: 750, // 원래 1120에서 370 올림
+        vx: 6,
+        state: 'plane-in',
+        direction: 1,
+        walkTimer: 0,
+        idleTimer: 0,
+        currentAction: 'walking',
+        isDragged: false,
+        dragElevation: 0,
+        dropBounce: 0,
+        dropBounceVel: 0,
+        baseY: 750, // 원래 1120에서 370 올림
+        clickTimer: 0,
+        isClicked: false,
+        isOnStage: false,
+        stageSlot: -1,
+        isSpecial: true
         };
 
         // musicSet이 없거나 null인 경우 musicType에서 추출
@@ -2388,7 +2388,6 @@ try {
           position: getAvatarPosition(avatar)
         });
         */
-      }
     });
 
     // 🔥 Firebase 데이터 로딩 완료 요약
